@@ -1,1 +1,1 @@
-# E-ai-photo-studio-static-replica
+# ai-photo-studio-static-replica
