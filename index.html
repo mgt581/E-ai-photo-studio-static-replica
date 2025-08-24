@@ -1,43 +1,51 @@
 <!doctype html>
 <html lang="en">
-<head> <meta name="x-version" content="v-2025-08-24-01">
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>AI Photo Studio</title>
-<meta name="theme-color" content="#0ea5e9">
-<style>
-  :root{--bg:#f7f9fc;--card:#ffffff;--text:#0f172a;--muted:#475569;--border:#e5e7eb;--primary:#4f46e5;--primary2:#7c3aed;--ring:0 12px 30px rgba(79,70,229,.18)}
-  *,*::before,*::after{box-sizing:border-box} html,body{height:100%}
-  body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#f8fbff,#f2f5fb)}
-  .wrap{max-width:1080px;margin:0 auto;padding:16px}
-  .topbar{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.82);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
-  .topbar .inner{display:flex;align-items:center;gap:12px;padding:12px 8px}
-  .badge{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,#7c3aed,#3b82f6);box-shadow:var(--ring)}
-  .icon{width:22px;height:22px} .spacer{flex:1}
-  .pill{width:38px;height:38px;border-radius:10px;background:#eef2ff;display:grid;place-items:center;border:1px solid #e2e8f0;cursor:pointer}
-  .hero{padding:22px 10px 8px} .center{text-align:center}
-  .title{font-size:34px;font-weight:800;color:#0f172a;letter-spacing:.2px;margin:8px 0 6px}
-  .subtitle{color:#475569;max-width:720px;margin:0 auto}
-  .grid{display:grid;gap:16px} @media(min-width:900px){.grid{grid-template-columns:1.1fr .9fr}}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:18px;box-shadow:0 10px 30px rgba(2,6,23,.06)}
-  .card.pad{padding:18px}
-  .uploadBox{display:grid;gap:12px;place-items:center;padding:24px 18px;text-align:center}
-  .uploadGlyph{width:82px;height:82px;border-radius:20px;background:linear-gradient(135deg,#dbeafe,#ede9fe);display:grid;place-items:center}
-  .button{height:48px;padding:0 18px;border-radius:12px;border:1px solid var(--border);background:#fff;color:#0f172a;cursor:pointer;font-weight:600}
-  .button.primary{background:linear-gradient(90deg,var(--primary),var(--primary2));color:#fff;border:none;box-shadow:var(--ring)}
-  .button.ghost{background:#fff} .button:disabled{opacity:.5;cursor:not-allowed}
-  .ctaRow{display:grid;gap:12px;max-width:520px;margin:6px auto 0}
-  .feature{padding:16px 18px;border-top:1px solid var(--border)} .feature h3{margin:0 0 4px;font-size:18px} .feature p{margin:0;color:#64748b}
-  .stage{padding:10px} .canvasWrap{border-radius:14px;overflow:hidden;border:1px solid var(--border)}
-  canvas{display:block;width:100%;height:auto;background:conic-gradient(at 10% 10%, #f1f5f9 25%, #ffffff 0 50%, #f1f5f9 0 75%, #ffffff 0) 0 0/24px 24px}
-  .tools{display:grid;gap:10px} .status{text-align:center;color:#475569}
-  .footerNote{text-align:center;color:#6b7280;font-size:12px;padding:8px}
-  .galleryHead{display:flex;align-items:center;gap:10px;margin-bottom:6px}
-  .galleryGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-  .thumb{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:#fff} .thumb img{width:100%;display:block}
-  .thumb .dl{position:absolute;right:6px;bottom:6px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px;font-size:12px}
-  .hide{display:none !important} .muted{color:#64748b}
-</style>
+<head>
+  <meta name="x-version" content="v-2025-08-24-05">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Photo Studio</title>
+  <meta name="theme-color" content="#0ea5e9">
+  <style>
+    :root{--bg:#f7f9fc;--card:#ffffff;--text:#0f172a;--muted:#475569;--border:#e5e7eb;--primary:#4f46e5;--primary2:#7c3aed;--ring:0 12px 30px rgba(79,70,229,.18)}
+    *,*::before,*::after{box-sizing:border-box} html,body{height:100%}
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#f8fbff,#f2f5fb)}
+    .wrap{max-width:1080px;margin:0 auto;padding:16px}
+    .topbar{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.82);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+    .topbar .inner{display:flex;align-items:center;gap:12px;padding:12px 8px}
+    .badge{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,#7c3aed,#3b82f6);box-shadow:var(--ring)}
+    .icon{width:22px;height:22px} .spacer{flex:1}
+    .pill{width:38px;height:38px;border-radius:10px;background:#eef2ff;display:grid;place-items:center;border:1px solid #e2e8f0;cursor:pointer}
+    .hero{padding:22px 10px 8px} .center{text-align:center}
+    .title{font-size:34px;font-weight:800;color:#0f172a;letter-spacing:.2px;margin:8px 0 6px}
+    .subtitle{color:#475569;max-width:720px;margin:0 auto}
+    .grid{display:grid;gap:16px} @media(min-width:900px){.grid{grid-template-columns:1.1fr .9fr}}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:18px;box-shadow:0 10px 30px rgba(2,6,23,.06)}
+    .card.pad{padding:18px}
+    .uploadBox{display:grid;gap:12px;place-items:center;padding:24px 18px;text-align:center;cursor:pointer}
+    .uploadGlyph{width:82px;height:82px;border-radius:20px;background:linear-gradient(135deg,#dbeafe,#ede9fe);display:grid;place-items:center}
+    .button{height:48px;padding:0 18px;border-radius:12px;border:1px solid var(--border);background:#fff;color:#0f172a;cursor:pointer;font-weight:600}
+    .button.primary{background:linear-gradient(90deg,var(--primary),var(--primary2));color:#fff;border:none;box-shadow:var(--ring)}
+    .button.ghost{background:#fff} .button:disabled{opacity:.5;cursor:not-allowed}
+    .ctaRow{display:grid;gap:12px;max-width:520px;margin:6px auto 0}
+    .feature{padding:16px 18px;border-top:1px solid var(--border)} .feature h3{margin:0 0 4px;font-size:18px} .feature p{margin:0;color:#64748b}
+    .stage{padding:10px} .canvasWrap{border-radius:14px;overflow:hidden;border:1px solid var(--border)}
+    canvas{display:block;width:100%;height:auto;background:conic-gradient(at 10% 10%, #f1f5f9 25%, #ffffff 0 50%, #f1f5f9 0 75%, #ffffff 0) 0 0/24px 24px}
+    .tools{display:grid;gap:10px} .status{text-align:center;color:#475569}
+    .footerNote{text-align:center;color:#6b7280;font-size:12px;padding:8px}
+    .galleryHead{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+    .galleryGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .thumb{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:#fff} .thumb img{width:100%;display:block}
+    .thumb .dl{position:absolute;right:6px;bottom:6px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px;font-size:12px}
+    .hide{display:none !important} .muted{color:#64748b}
+    .proBadge{display:none;font-size:12px;padding:6px 10px;border-radius:10px;background:#10b98122;color:#065f46;border:1px solid #10b98155}
+    @media (max-width: 640px){
+      .ctaRow{ grid-template-columns: 1fr !important; }
+      .button{ height:56px; font-size:16px; }
+      .pill{ width:44px; height:44px; }
+      .title{ font-size:28px; }
+    }
+  </style>
 </head>
 <body>
   <div class="topbar">
@@ -52,6 +60,8 @@
       <div class="pill" id="navReset" title="New Photo">
         <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 1 0 9-9v3" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round"/><path d="M3 5v5h5" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round"/></svg>
       </div>
+      <a id="proCta" class="button primary" href="https://buy.stripe.com/9B6fZj1om5EbeNR6MCd3i01" target="_blank" rel="noopener">Go Pro — £4.99/year</a>
+      <span id="proBadge" class="proBadge">Free</span>
     </div>
   </div>
 
@@ -72,7 +82,7 @@
             <div class="muted" style="max-width:480px">Drag and drop your image here, or click to browse</div>
             <div class="ctaRow">
               <button class="button primary" id="btnChoose">Choose Photo</button>
-              <input id="fileInput" type="file" accept="image/*" style="display:none">
+              <input id="fileInput" type="file" accept="image/*" capture="environment" style="display:none">
             </div>
           </div>
 
@@ -100,7 +110,7 @@
               <button class="button" id="btnRemove" disabled>Remove Background</button>
               <button class="button" id="btnChange" disabled>Change Background</button>
               <button class="button ghost" id="btnPickBg">Choose Background</button>
-              <input id="bgInput" type="file" accept="image/*" style="display:none">
+              <input id="bgInput" type="file" accept="image/*" capture="environment" style="display:none">
             </div>
             <div class="ctaRow">
               <button class="button" id="btnPreview" disabled>Download (Preview)</button>
@@ -132,6 +142,44 @@
   </main>
 
 <script>
+/* Pro unlock via URL: ?pro=1  / reset via ?reset=1 */
+(function () {
+  try {
+    const sp = new URLSearchParams(location.search);
+    if (sp.get('pro') === '1') localStorage.setItem('studio_pro','1');
+    if (sp.get('pro') === '0' || sp.get('reset') === '1') localStorage.removeItem('studio_pro');
+    if (sp.has('pro') || sp.has('reset')) history.replaceState({}, '', location.pathname);
+  } catch {}
+})();
+function isPro(){ try { return localStorage.getItem('studio_pro') === '1'; } catch { return false; } }
+function updateProUI(){
+  const pro = isPro();
+  const cta = document.getElementById('proCta');
+  const badge = document.getElementById('proBadge');
+  if (cta && badge){
+    if (pro) {
+      cta.style.display = 'none';
+      badge.style.display = 'inline-block';
+      badge.textContent = 'Studio Pro';
+      badge.style.background = '#10b98122';
+      badge.style.border = '1px solid #10b98155';
+      badge.style.color = '#065f46';
+    } else {
+      cta.style.display = 'inline-block';
+      badge.style.display = 'inline-block';
+      badge.textContent = 'Free';
+      badge.style.background = '#fef9c3';
+      badge.style.border = '1px solid #fde68a';
+      badge.style.color = '#92400e';
+    }
+  }
+  const hd = document.getElementById('btnHD');
+  const share = document.getElementById('btnShare');
+  if (hd) hd.disabled = !pro || !state.photoSrc || state.isBusy;
+  if (share) share.disabled = !pro || !state.photoSrc || state.isBusy;
+}
+document.addEventListener('DOMContentLoaded', updateProUI);
+
 const viewHome = document.getElementById('viewHome');
 const viewGallery = document.getElementById('viewGallery');
 document.getElementById('navGallery').onclick = () => { viewHome.classList.add('hide'); viewGallery.classList.remove('hide'); renderGallery(); };
@@ -150,26 +198,68 @@ const statusEl = document.getElementById('status');
 
 const canvas = document.getElementById('stage');
 const ctx = canvas.getContext('2d');
-ctx.imageSmoothingEnabled = True = true; ctx.imageSmoothingQuality = 'high';
+ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
 
 const state = { photoSrc: null, bgSrc: null, isBusy: false };
 
 function setStatus(m){ statusEl.textContent = m; }
-function setBusy(b){ state.isBusy=b; [btnRemove,btnChange,btnPreview,btnHD,btnShare].forEach(el=> el.disabled = !state.photoSrc || b); }
-function setPhoto(src){ state.photoSrc=src; btnRemove.disabled=false; btnChange.disabled=false; btnPreview.disabled=false; btnHD.disabled=false; btnShare.disabled=false; drawToCanvas({imgSrc:src,bgSrc:state.bgSrc}); }
+function setBusy(b){
+  state.isBusy=b;
+  [btnRemove,btnChange,btnPreview].forEach(el=> el.disabled = !state.photoSrc || b);
+  if (btnHD) btnHD.disabled = !isPro() || !state.photoSrc || b;
+  if (btnShare) btnShare.disabled = !isPro() || !state.photoSrc || b;
+}
+function setPhoto(src){
+  state.photoSrc=src;
+  btnRemove.disabled=false; btnChange.disabled=false; btnPreview.disabled=false;
+  updateProUI();
+  drawToCanvas({imgSrc:src,bgSrc:state.bgSrc});
+}
 function setBg(src){ state.bgSrc=src; drawToCanvas({imgSrc:state.photoSrc,bgSrc:src}); }
 
-function resetAll(){ state.photoSrc=null; state.bgSrc=null; setStatus('Upload a photo to begin.'); ctx.clearRect(0,0,canvas.width,canvas.height); drawChecker(); [btnRemove,btnChange,btnPreview,btnHD,btnShare].forEach(el=> el.disabled = true); }
+function resetAll(){
+  state.photoSrc=null; state.bgSrc=null; setStatus('Upload a photo to begin.');
+  ctx.clearRect(0,0,canvas.width,canvas.height); drawChecker();
+  [btnRemove,btnChange,btnPreview].forEach(el=> el.disabled = true);
+  updateProUI();
+}
 
 function readFileToDataURL(file){ return new Promise((resolve,reject)=>{ if(!file) return resolve(null); const r=new FileReader(); r.onload=()=>resolve(r.result); r.onerror=()=>reject(new Error('read-failed')); r.readAsDataURL(file); }); }
 function loadImage(url){ return new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=url; }); }
+
 function drawChecker(){ const size=20; for(let y=0;y<canvas.height;y+=size){ for(let x=0;x<canvas.width;x+=size){ ctx.fillStyle = ((x/size+y/size)%2===0)?'#e5e7eb':'#ffffff'; ctx.fillRect(x,y,size,size);} } }
+
+function drawWatermarkTo(c){
+  if (isPro()) return;
+  const w = c.width, h = c.height;
+  const wctx = c.getContext('2d');
+  const text = 'Made with Photo Studio — Upgrade to Studio Pro';
+  const size = Math.max(48, Math.round(Math.min(w, h) * 0.10));
+  wctx.save();
+  wctx.textAlign = 'center';
+  wctx.textBaseline = 'middle';
+  wctx.font = '700 ' + size + 'px system-ui, -apple-system, Segoe UI, Roboto';
+  wctx.lineWidth = Math.max(2, Math.round(size * 0.06));
+  wctx.strokeStyle = 'rgba(0,0,0,0.35)';
+  wctx.fillStyle = 'rgba(255,255,255,0.25)';
+  wctx.strokeText(text, Math.round(w/2), Math.round(h/2));
+  wctx.fillText(text, Math.round(w/2), Math.round(h/2));
+  wctx.restore();
+}
 
 async function drawToCanvas({imgSrc, bgSrc=null}){
   if(!imgSrc) return; ctx.clearRect(0,0,canvas.width,canvas.height);
-  if(bgSrc){ const bg=await loadImage(bgSrc); const s1=Math.max(canvas.width/bg.width, canvas.height/bg.height); const bw=bg.width*s1, bh=bg.height*s1; ctx.drawImage(bg,(canvas.width-bw)/2,(canvas.height-bh)/2,bw,bh); }
-  else{ drawChecker(); }
-  const img=await loadImage(imgSrc); const s=Math.min(canvas.width/img.width, canvas.height/img.height); const w=img.width*s, h=img.height*s; ctx.drawImage(img,(canvas.width-w)/2,(canvas.height-h)/2,w,h);
+  if(bgSrc){
+    const bg=await loadImage(bgSrc);
+    const s1=Math.max(canvas.width/bg.width, canvas.height/bg.height);
+    const bw=bg.width*s1, bh=bg.height*s1;
+    ctx.drawImage(bg,(canvas.width-bw)/2,(canvas.height-bh)/2,bw,bh);
+  } else { drawChecker(); }
+  const img=await loadImage(imgSrc);
+  const s=Math.min(canvas.width/img.width, canvas.height/img.height);
+  const w=img.width*s, h=img.height*s;
+  ctx.drawImage(img,(canvas.width-w)/2,(canvas.height-h)/2,w,h);
+  drawWatermarkTo(canvas);
 }
 
 let ssLoading=null;
@@ -218,22 +308,48 @@ async function drawCutoutToCanvas(img, maskCanvas, bgSrc=null){
   const mC=document.createElement('canvas'); mC.width=sw; mC.height=sh; const mctx=mC.getContext('2d'); mctx.drawImage(maskCanvas,0,0,img.width,img.height,0,0,sw,sh);
   const subj=document.createElement('canvas'); subj.width=sw; subj.height=sh; const sctx=subj.getContext('2d'); sctx.drawImage(img,0,0,img.width,img.height,0,0,sw,sh); sctx.globalCompositeOperation='destination-in'; sctx.drawImage(mC,0,0); sctx.globalCompositeOperation='source-over';
   ctx.drawImage(subj,dx,dy);
+  drawWatermarkTo(canvas);
 }
 
 function downloadBlob(blob, filename){ const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename; a.click(); setTimeout(()=>URL.revokeObjectURL(url), 500); }
 function downloadPreview(){ canvas.toBlob((b)=>{ if(!b) return; downloadBlob(b,'photo-studio-preview.png'); }, 'image/png', .95); }
-async function exportFullRes(format='png', quality=.95){ if(!state.photoSrc) return null; const img=await loadImage(state.photoSrc); const mask=await getSegmentationMask(img); const iw=img.width, ih=img.height; const out=document.createElement('canvas'); out.width=iw; out.height=ih; const octx=out.getContext('2d'); if(state.bgSrc){ const bg=await loadImage(state.bgSrc); const s=Math.max(iw/bg.width, ih/bg.height); const bw=Math.round(bg.width*s), bh=Math.round(bg.height*s); octx.drawImage(bg, Math.round((iw-bw)/2), Math.round((ih-bh)/2), bw, bh);} else { octx.clearRect(0,0,iw,ih);} const subj=document.createElement('canvas'); subj.width=iw; subj.height=ih; const sctx=subj.getContext('2d'); sctx.drawImage(img,0,0,iw,ih); sctx.globalCompositeOperation='destination-in'; sctx.drawImage(mask,0,0,iw,ih); sctx.globalCompositeOperation='source-over'; octx.drawImage(subj,0,0); return await new Promise((resolve)=>{ const mime = format==='jpeg'?'image/jpeg':'image/png'; out.toBlob((b)=>resolve(b), mime, quality); }); }
-async function downloadHD(as='png'){ const blob = await exportFullRes(as); if(!blob) return; const ext = as==='jpeg'?'jpg':'png'; downloadBlob(blob, `photo-studio-hd.${ext}`); }
-async function shareHD(){ const blob=await exportFullRes('png'); if(!blob) return; const file=new File([blob],'photo-studio.png',{type:'image/png'}); if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({ files:[file], title:'Photo Studio' }); } else { downloadBlob(blob,'photo-studio.png'); } }
+
+async function exportFullRes(format='png', quality=.95){
+  if(!state.photoSrc) return null;
+  const img=await loadImage(state.photoSrc);
+  const mask=await getSegmentationMask(img);
+  const iw=img.width, ih=img.height;
+  const out=document.createElement('canvas'); out.width=iw; out.height=ih;
+  const octx=out.getContext('2d');
+  if(state.bgSrc){
+    const bg=await loadImage(state.bgSrc);
+    const s=Math.max(iw/bg.width, ih/bg.height);
+    const bw=Math.round(bg.width*s), bh=Math.round(bg.height*s);
+    octx.drawImage(bg, Math.round((iw-bw)/2), Math.round((ih-bh)/2), bw, bh);
+  } else { octx.clearRect(0,0,iw,ih); }
+  const subj=document.createElement('canvas'); subj.width=iw; subj.height=ih;
+  const sctx=subj.getContext('2d'); sctx.drawImage(img,0,0,iw,ih);
+  sctx.globalCompositeOperation='destination-in'; sctx.drawImage(mask,0,0,iw,ih); sctx.globalCompositeOperation='source-over';
+  octx.drawImage(subj,0,0);
+  if(!isPro()) drawWatermarkTo(out);
+  return await new Promise((resolve)=>{ const mime = format==='jpeg'?'image/jpeg':'image/png'; out.toBlob((b)=>resolve(b), mime, quality); });
+}
+async function downloadHD(as='png'){ if(!isPro()){ setStatus('Studio Pro required for HD export.'); return; } const blob = await exportFullRes(as); if(!blob) return; const ext = as==='jpeg'?'jpg':'png'; downloadBlob(blob, 'photo-studio-hd.'+ext); }
+async function shareHD(){ if(!isPro()){ setStatus('Studio Pro required to share full quality.'); return; } const blob=await exportFullRes('png'); if(!blob) return; const file=new File([blob],'photo-studio.png',{type:'image/png'}); if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({ files:[file], title:'Photo Studio' }); } else { downloadBlob(blob,'photo-studio.png'); } }
 
 function saveToGallery(){ try{ const url = canvas.toDataURL('image/png', .85); const arr = JSON.parse(localStorage.getItem('ps_gallery') || '[]'); arr.unshift({ts: Date.now(), url}); localStorage.setItem('ps_gallery', JSON.stringify(arr.slice(0,60))); } catch{} }
 function getGallery(){ try{ return JSON.parse(localStorage.getItem('ps_gallery')||'[]'); } catch{ return []; } }
-function renderGallery(){ const grid = document.getElementById('galleryGrid'); const empty = document.getElementById('galleryEmpty'); const items = getGallery(); empty.style.display = items.length? 'none':'block'; grid.innerHTML=''; items.forEach(item=>{ const d=document.createElement('div'); d.className='thumb'; d.innerHTML = `<img src="${item.url}"/><button class="dl">Download</button>`; d.querySelector('.dl').onclick=()=>{ fetch(item.url).then(r=>r.blob()).then(b=>downloadBlob(b,'photo.png')); }; grid.appendChild(d); }); }
+function renderGallery(){ const grid = document.getElementById('galleryGrid'); const empty = document.getElementById('galleryEmpty'); const items = getGallery(); empty.style.display = items.length? 'none':'block'; grid.innerHTML=''; items.forEach(item=>{ const d=document.createElement('div'); d.className='thumb'; d.innerHTML = '<img src="'+item.url+'"/><button class="dl">Download</button>'; d.querySelector('.dl').onclick=()=>{ fetch(item.url).then(r=>r.blob()).then(b=>downloadBlob(b,'photo.png')); }; grid.appendChild(d); }); }
 document.getElementById('btnRefresh').onclick = renderGallery;
 document.getElementById('btnStartEditing').onclick = ()=>{ viewGallery.classList.add('hide'); viewHome.classList.remove('hide'); };
 
+document.querySelector('.uploadBox').addEventListener('click', (e)=>{
+  const t=e.target;
+  if(!(t && (t.id==='fileInput' || t.id==='btnChoose' || (t.closest && t.closest('#btnChoose'))))) fileInput.click();
+});
 chooseBtn.onclick = ()=> fileInput.click();
 btnPickBg.onclick = ()=> bgInput.click();
+
 fileInput.onchange = async (e)=>{ const f=e.target.files && e.target.files[0]; if(!f) return; const src= await readFileToDataURL(f); setPhoto(src); setStatus('Choose an action below.'); e.target.value=''; };
 bgInput.onchange = async (e)=>{ const f=e.target.files && e.target.files[0]; if(!f) return; const src= await readFileToDataURL(f); setBg(src); e.target.value=''; };
 btnRemove.onclick = async ()=>{ if(!state.photoSrc) return; try{ setBusy(true); setStatus('Removing background…'); const img=await loadImage(state.photoSrc); const mask=await getSegmentationMask(img); await drawCutoutToCanvas(img,mask,null); setStatus('Done.'); saveToGallery(); } catch{ setStatus('Background removal failed.'); } finally{ setBusy(false); } };
@@ -242,8 +358,8 @@ btnPreview.onclick = ()=> downloadPreview();
 btnHD.onclick = ()=> downloadHD('png');
 btnShare.onclick = ()=> shareHD();
 
-function drawChecker(){ const size=20; for(let y=0;y<canvas.height;y+=size){ for(let x=0;x<canvas.width;x+=size){ ctx.fillStyle = ((x/size+y/size)%2===0)?'#e5e7eb':'#ffffff'; ctx.fillRect(x,y,size,size);} } }
 drawChecker();
 </script>
 </body>
 </html>
+
