@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta name="x-version" content="v-2025-08-24-05">
+  <meta name="x-version" content="v-2025-08-24-12">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>AI Photo Studio</title>
@@ -22,9 +22,9 @@
     .grid{display:grid;gap:16px} @media(min-width:900px){.grid{grid-template-columns:1.1fr .9fr}}
     .card{background:var(--card);border:1px solid var(--border);border-radius:18px;box-shadow:0 10px 30px rgba(2,6,23,.06)}
     .card.pad{padding:18px}
-    .uploadBox{display:grid;gap:12px;place-items:center;padding:24px 18px;text-align:center;cursor:pointer}
+    .uploadBox{display:grid;gap:12px;place-items:center;padding:24px 18px;text-align:center}
     .uploadGlyph{width:82px;height:82px;border-radius:20px;background:linear-gradient(135deg,#dbeafe,#ede9fe);display:grid;place-items:center}
-    .button{height:48px;padding:0 18px;border-radius:12px;border:1px solid var(--border);background:#fff;color:#0f172a;cursor:pointer;font-weight:600}
+    .button{height:48px;padding:0 18px;border-radius:12px;border:1px solid var(--border);background:#fff;color:#0f172a;cursor:pointer;font-weight:600;display:inline-grid;place-items:center;text-decoration:none}
     .button.primary{background:linear-gradient(90deg,var(--primary),var(--primary2));color:#fff;border:none;box-shadow:var(--ring)}
     .button.ghost{background:#fff} .button:disabled{opacity:.5;cursor:not-allowed}
     .ctaRow{display:grid;gap:12px;max-width:520px;margin:6px auto 0}
@@ -39,6 +39,9 @@
     .thumb .dl{position:absolute;right:6px;bottom:6px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px;font-size:12px}
     .hide{display:none !important} .muted{color:#64748b}
     .proBadge{display:none;font-size:12px;padding:6px 10px;border-radius:10px;background:#10b98122;color:#065f46;border:1px solid #10b98155}
+    /* File input overlay: rock-solid on iOS */
+    .fileBtn{position:relative;display:inline-grid}
+    .fileCatch{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
     @media (max-width: 640px){
       .ctaRow{ grid-template-columns: 1fr !important; }
       .button{ height:56px; font-size:16px; }
@@ -78,11 +81,13 @@
             <div class="uploadGlyph">
               <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M12 16V4m0 0l-4 4m4-4l4 4" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 16.5a4.5 4.5 0 00-4.5-4.5h-7A4.5 4.5 0 004 16.5v0A3.5 3.5 0 007.5 20h9A3.5 3.5 0 0020 16.5v0z" stroke="#7c3aed" stroke-width="2"/></svg>
             </div>
-            <h2 style="margin:6px 0 2px;font-size:22px">Upload Your Photo</h2>
-            <div class="muted" style="max-width:480px">Drag and drop your image here, or click to browse</div>
+            <h2 style="margin:6px 0 2px;font-size:22px">Add Your Photo</h2>
+            <div class="muted" style="max-width:520px">Tap the button to choose from your device.</div>
             <div class="ctaRow">
-              <button class="button primary" id="btnChoose">Choose Photo</button>
-              <input id="fileInput" type="file" accept="image/*" capture="environment" style="display:none">
+              <div class="fileBtn">
+                <button class="button primary" type="button">Upload from Device</button>
+                <input id="fileInput" class="fileCatch" type="file" accept="image/*">
+              </div>
             </div>
           </div>
 
@@ -109,8 +114,10 @@
             <div class="ctaRow">
               <button class="button" id="btnRemove" disabled>Remove Background</button>
               <button class="button" id="btnChange" disabled>Change Background</button>
-              <button class="button ghost" id="btnPickBg">Choose Background</button>
-              <input id="bgInput" type="file" accept="image/*" capture="environment" style="display:none">
+              <div class="fileBtn">
+                <button class="button ghost" id="btnPickBg" type="button">Choose Background</button>
+                <input id="bgInput" class="fileCatch" type="file" accept="image/*">
+              </div>
             </div>
             <div class="ctaRow">
               <button class="button" id="btnPreview" disabled>Download (Preview)</button>
@@ -142,7 +149,6 @@
   </main>
 
 <script>
-/* Pro unlock via URL: ?pro=1  / reset via ?reset=1 */
 (function () {
   try {
     const sp = new URLSearchParams(location.search);
@@ -185,12 +191,10 @@ const viewGallery = document.getElementById('viewGallery');
 document.getElementById('navGallery').onclick = () => { viewHome.classList.add('hide'); viewGallery.classList.remove('hide'); renderGallery(); };
 document.getElementById('navReset').onclick = () => { viewGallery.classList.add('hide'); viewHome.classList.remove('hide'); resetAll(); };
 
-const chooseBtn = document.getElementById('btnChoose');
 const fileInput = document.getElementById('fileInput');
 const bgInput = document.getElementById('bgInput');
 const btnRemove = document.getElementById('btnRemove');
 const btnChange = document.getElementById('btnChange');
-const btnPickBg = document.getElementById('btnPickBg');
 const btnPreview = document.getElementById('btnPreview');
 const btnHD = document.getElementById('btnHD');
 const btnShare = document.getElementById('btnShare');
@@ -343,41 +347,17 @@ function renderGallery(){ const grid = document.getElementById('galleryGrid'); c
 document.getElementById('btnRefresh').onclick = renderGallery;
 document.getElementById('btnStartEditing').onclick = ()=>{ viewGallery.classList.add('hide'); viewHome.classList.remove('hide'); };
 
-document.querySelector('.uploadBox').addEventListener('click', (e)=>{
-  const t=e.target;
-  if(!(t && (t.id==='fileInput' || t.id==='btnChoose' || (t.closest && t.closest('#btnChoose'))))) fileInput.click();
-});
-chooseBtn.onclick = ()=> fileInput.click();
-btnPickBg.onclick = ()=> bgInput.click();
-
 fileInput.onchange = async (e)=>{ const f=e.target.files && e.target.files[0]; if(!f) return; const src= await readFileToDataURL(f); setPhoto(src); setStatus('Choose an action below.'); e.target.value=''; };
 bgInput.onchange = async (e)=>{ const f=e.target.files && e.target.files[0]; if(!f) return; const src= await readFileToDataURL(f); setBg(src); e.target.value=''; };
+
 btnRemove.onclick = async ()=>{ if(!state.photoSrc) return; try{ setBusy(true); setStatus('Removing background…'); const img=await loadImage(state.photoSrc); const mask=await getSegmentationMask(img); await drawCutoutToCanvas(img,mask,null); setStatus('Done.'); saveToGallery(); } catch{ setStatus('Background removal failed.'); } finally{ setBusy(false); } };
 btnChange.onclick = async ()=>{ if(!state.photoSrc) return; if(!state.bgSrc){ setStatus('Choose a background image first…'); bgInput.click(); return; } try{ setBusy(true); setStatus('Compositing…'); const img=await loadImage(state.photoSrc); const mask=await getSegmentationMask(img); await drawCutoutToCanvas(img,mask,state.bgSrc); setStatus('Done.'); saveToGallery(); } catch{ setStatus('Change background failed.'); } finally{ setBusy(false); } };
+
 btnPreview.onclick = ()=> downloadPreview();
 btnHD.onclick = ()=> downloadHD('png');
 btnShare.onclick = ()=> shareHD();
 
-  <!doctype html>
-<html lang="en">
-<head>
-  <!-- your meta, css, title, etc -->
-</head>
-<body>
-  <!-- your app content -->
-
-  <!-- ✅ uploader here -->
-  <div id="uploader"> ... </div>
-
-  <script>
-    // uploader script
-  </script>
-</body>
-</html>
-
-  
 drawChecker();
 </script>
 </body>
-  </html>
-
+</html>
