@@ -1,79 +1,107 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>AI Photo Studio</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <!-- PWA Manifest & Icons -->
-  <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="logo-192.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="logo-192.png">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="PhotoStudioAI">
-  <meta name="theme-color" content="#0ea5e9">
+  <meta charset="UTF-8" />
+  <title>AI Photo Studio (Test)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="logo-192.png">
   <style>
-    /* Your existing styling here… */
-
-    /* Install Button */
-    #installBtn { display:none; position:fixed; bottom:16px; right:16px; padding:12px 18px; background:#4f46e5;color:#fff;border:none;border-radius:8px; cursor:pointer; }
-
-    /* iOS Install Instructions */
-    #iosInstall { display:none; padding:12px; background:#f3f4f6; border:1px solid #ccc; border-radius:8px; margin:12px 0; text-align:center; }
+    body { font-family: sans-serif; padding: 20px; background: #f9fafb; }
+    h1 { color: #0f172a; }
+    .tools { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+    .toggle, .sliderGroup { display: flex; align-items: center; gap: 10px; }
+    .sliderGroup label { width: 120px; }
+    #bgLibrary { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .thumb { width: 80px; height: 60px; cursor: pointer; border: 1px solid #ccc; border-radius: 6px; overflow: hidden; }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; }
+    #trialInfo { margin-top: 10px; font-size: 14px; color: #555; }
+    button:disabled { opacity: 0.5; }
   </style>
 </head>
 <body>
-  <!-- App UI -->
-  <div id="appHeader">
-    <!-- your top bar, logo, buttons... -->
+
+<h1>AI Photo Studio (Test)</h1>
+
+<div class="tools">
+  <div class="toggle">
+    <label><input type="checkbox" id="smartToggle" checked /> Smart Positioning</label>
   </div>
 
-  <!-- iOS add-to-home message -->
-  <div id="iosInstall">Tap  (Share) → <strong>Add to Home Screen</strong> to install this app.</div>
+  <div class="sliderGroup">
+    <label for="sharpenSlider">Edge Refine</label>
+    <input type="range" id="sharpenSlider" min="0" max="100" value="40" />
+  </div>
 
-  <!-- Install Button for Android -->
-  <button id="installBtn">Install App</button>
+  <div class="sliderGroup">
+    <label for="shadowSlider">Shadow Strength</label>
+    <input type="range" id="shadowSlider" min="0" max="100" value="20" />
+  </div>
 
-  <!-- Your existing app content -->
-  <!-- Enhance panel, login, features... -->
+  <div>
+    <button id="btnHD">Download HD</button>
+    <span id="trialInfo">Checking trial...</span>
+  </div>
 
-  <!-- Register Service Worker -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js');
+  <div>
+    <strong>Choose Background:</strong>
+    <div id="bgLibrary"></div>
+  </div>
+</div>
+
+<script>
+  const trialInfo = document.getElementById('trialInfo');
+  const btnHD = document.getElementById('btnHD');
+
+  function initTrial() {
+    if (!localStorage.getItem('trial_start')) {
+      localStorage.setItem('trial_start', Date.now());
     }
-  </script>
+  }
 
-  <script>
-    // === PWA Install Prompt Logic ===
-    let deferredPrompt;
-    const installBtn = document.getElementById('installBtn');
-    window.addEventListener('beforeinstallprompt', e => {
-      e.preventDefault();
-      deferredPrompt = e;
-      installBtn.style.display = 'block';
-    });
+  function trialDaysLeft() {
+    const start = parseInt(localStorage.getItem('trial_start'), 10);
+    const elapsed = (Date.now() - start) / (1000 * 60 * 60 * 24);
+    return Math.max(0, 7 - Math.floor(elapsed));
+  }
 
-    installBtn.addEventListener('click', async () => {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      deferredPrompt = null;
-      installBtn.style.display = 'none';
-    });
-
-    window.addEventListener('appinstalled', () => {
-      installBtn.style.display = 'none';
-    });
-
-    // === iOS Detection ===
-    const isIOS = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
-    const isInStandalone = window.matchMedia('(display-mode: standalone)').matches;
-    if (isIOS && !isInStandalone) {
-      document.getElementById('iosInstall').style.display = 'block';
+  function updateTrialUI() {
+    const days = trialDaysLeft();
+    if (days > 0) {
+      trialInfo.textContent = `✅ Trial active: ${days} day(s) left`;
+      btnHD.disabled = false;
+    } else {
+      trialInfo.textContent = `❌ Trial expired. Upgrade to download HD.`;
+      btnHD.disabled = true;
     }
-  </script>
+  }
 
-  <!-- Include your other scripts here: Firebase Auth, Enhance panel logic, mask smoothing, etc. -->
+  function renderBgLibrary() {
+    const presets = [
+      {name: 'Beach', url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e'},
+      {name: 'City', url: 'https://images.unsplash.com/photo-1468436139062-f60a71c5c892'},
+      {name: 'Park', url: 'https://images.unsplash.com/photo-1503264116251-35a269479413'},
+      {name: 'White', url: 'https://via.placeholder.com/800x600/ffffff/000000?text=White+BG'}
+    ];
+    const lib = document.getElementById('bgLibrary');
+    lib.innerHTML = presets.map(p =>
+      `<div class="thumb" title="${p.name}" onclick="alert('Background selected: ${p.name}')"><img src="${p.url}" /></div>`
+    ).join('');
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initTrial();
+    updateTrialUI();
+    renderBgLibrary();
+
+    document.getElementById('btnHD').addEventListener('click', () => {
+      if (trialDaysLeft() === 0) {
+        alert("Trial expired. Please upgrade for HD export.");
+      } else {
+        alert("✅ HD export successful.");
+      }
+    });
+  });
+</script>
+
 </body>
 </html>
