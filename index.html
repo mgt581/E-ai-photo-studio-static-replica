@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -6,28 +6,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AI Photo Studio</title>
 
-  <!-- PWA & App Icon Support -->
+  <!-- PWA & Home Screen Support -->
   <link rel="manifest" href="/manifest.json">
-  <link rel="icon" type="image/png" sizes="192x192" href="/logo-192.png">
-  <link rel="apple-touch-icon" sizes="512x512" href="/logo-512.png">
+  <link rel="icon" href="/logo-192.png" sizes="192x192">
+  <link rel="apple-touch-icon" href="/logo-512.png" sizes="512x512">
   <meta name="theme-color" content="#0ea5e9">
 
   <style>
+    :root { --primary: #4f46e5; --muted: #64748b; }
     body { margin: 0; font-family: system-ui, sans-serif; background: #f8fafc; color: #0f172a; }
-    .wrap { width: 100%; max-width: 1080px; margin: 0 auto; padding: 16px; }
+    .wrap { max-width: 800px; margin: 0 auto; padding: 16px; }
     .hero { text-align: center; margin-bottom: 20px; }
-    .card { background: white; padding: 16px; border: 1px solid #e5e7eb; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
-    .button { background: #4f46e5; color: #fff; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; margin: 5px; }
-    .muted { color: #64748b; }
-    #status { text-align: center; margin: 10px 0; }
-    canvas { display: block; margin: 20px auto; background: white; border: 1px solid #ddd; }
+    .card { background: #fff; padding: 16px; border: 1px solid #e5e7eb; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .button { background: var(--primary); color: #fff; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; margin: 5px; }
+    .button:disabled { background: #9ca3af; cursor: not-allowed; }
+    .muted { color: var(--muted); }
+    #authPanel { text-align: center; margin-bottom: 20px; }
+    #status, #authStatus { text-align: center; margin: 10px 0; }
+    canvas { display: block; margin: 20px auto; background: #fff; border: 1px solid #ddd; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <section class="hero">
       <h1>AI Photo Studio</h1>
-      <p class="muted">Enhance your photos with AI-powered editing tools</p>
+      <p class="muted">Enhance your photos with intuitive AI tools</p>
     </section>
 
     <!-- Authentication Panel -->
@@ -39,9 +42,9 @@
       <p id="authStatus" class="muted">Not signed in</p>
     </div>
 
-    <!-- Photo Editing UI -->
-    <input id="fileInput" type="file" accept="image/*" style="display:block; margin: 0 auto 10px;">
-    <p id="status">Upload or input a photo to begin</p>
+    <!-- Upload / Download Area -->
+    <input id="fileInput" type="file" accept="image/*" style="display:block; margin:0 auto;">
+    <p id="status">Upload a photo to begin</p>
     <button id="btnHD" class="button" disabled>Download HD</button>
     <canvas id="stage" width="960" height="600"></canvas>
   </div>
@@ -52,21 +55,20 @@
   <script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js"></script>
 
   <script>
-    // — Placeholder config: inject real values using environment variables or secure build process
+    // ⚡ Firebase Setup (Insert your actual config here)
     const firebaseConfig = {
-      apiKey: "FIREBASE_API_KEY",
-      authDomain: "FIREBASE_AUTH_DOMAIN",
-      projectId: "FIREBASE_PROJECT_ID",
-      storageBucket: "FIREBASE_STORAGE_BUCKET",
-      messagingSenderId: "FIREBASE_MESSAGING_SENDER_ID",
-      appId: "FIREBASE_APP_ID",
-      measurementId: "FIREBASE_MEASUREMENT_ID"
+      apiKey: "AIzaSyDsBDuaZ_rl7ro63Fv5gPh37EwSkfh-NqM",
+      authDomain: "aiphotostudioapp.firebaseapp.com",
+      projectId: "aiphotostudioapp",
+      storageBucket: "aiphotostudioapp.appspot.com",
+      messagingSenderId: "1056724519182",
+      appId: "1:1056724519182:web:93410e1b71a292e531ef5f",
+      measurementId: "G-YMB9JJHNBE"
     };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
-    const db = firebase.firestore();
 
-    // UI elements
+    // UI Bindings
     const authStatus = document.getElementById('authStatus');
     const btnLoginGoogle = document.getElementById('btnLoginGoogle');
     const btnLoginEmail = document.getElementById('btnLoginEmail');
@@ -77,7 +79,7 @@
     const canvas = document.getElementById('stage');
     const ctx = canvas.getContext('2d');
 
-    // Authentication logic
+    // Auth State Listener
     auth.onAuthStateChanged(user => {
       if (user) {
         authStatus.textContent = `Signed in as ${user.displayName || user.email}`;
@@ -96,15 +98,16 @@
       }
     });
 
-    btnLoginGoogle.onclick = async () => {
+    // Login Handlers
+    btnLoginGoogle.onclick = () => {
       const provider = new firebase.auth.GoogleAuthProvider();
-      try { await auth.signInWithPopup(provider); } catch { alert('Google sign-in failed.'); }
+      auth.signInWithPopup(provider).catch(() => alert('Google sign-in failed.'));
     };
 
     btnLoginEmail.onclick = async () => {
       const email = prompt('Enter your email:');
-      if (!email) return alert('Email is required');
-      const password = prompt('Enter a password:');
+      if (!email) return alert('Email required');
+      const password = prompt('Enter your password:');
       try {
         await auth.signInWithEmailAndPassword(email, password);
       } catch (e) {
@@ -118,13 +121,13 @@
 
     btnLogout.onclick = () => auth.signOut();
 
-    // Photo upload and canvas logic
-    fileInput.onchange = async (e) => {
+    // Image Upload & Segmentation
+    fileInput.onchange = async e => {
       if (!e.target.files[0]) return;
       const src = await new Promise(res => {
-        const reader = new FileReader();
-        reader.onload = () => res(reader.result);
-        reader.readAsDataURL(e.target.files[0]);
+        const r = new FileReader();
+        r.onload = () => res(r.result);
+        r.readAsDataURL(e.target.files[0]);
       });
       const img = new Image();
       img.onload = () => {
@@ -135,14 +138,15 @@
       img.src = src;
     };
 
+    // HD Download
     btnHD.onclick = () => {
-      const link = document.createElement('a');
-      link.href = canvas.toDataURL('image/png', .95);
-      link.download = 'photo-hd.png';
-      link.click();
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png', .95);
+      a.download = 'studio-photo.png';
+      a.click();
     };
 
-    // Register service worker for PWA
+    // Register Service Worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(console.error);
     }
