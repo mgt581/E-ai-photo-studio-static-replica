@@ -10,4 +10,3 @@ self.addEventListener("activate", evt => {
 });
 self.addEventListener("fetch", evt => {
   evt.respondWith(caches.match(evt.request).then(r => r || fetch(evt.request)));
-});
