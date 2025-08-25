@@ -14,95 +14,13 @@
   <meta name="apple-mobile-web-app-title" content="PhotoStudioAI">
   <meta name="theme-color" content="#0ea5e9">
   <style>
-    :root{--bg:#f7f9fc;--card:#ffffff;--text:#0f172a;--muted:#475569;--border:#e5e7eb;--primary:#4f46e5;--primary2:#7c3aed;--ring:0 12px 30px rgba(79,70,229,.18)}
-    *,*::before,*::after{box-sizing:border-box} html,body{height:100%;margin:0;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#f8fbff,#f2f5fb)}
-    .wrap{max-width:1080px;margin:0 auto;padding:16px}
-    .topbar{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.82);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
-    .topbar .inner{display:flex;align-items:center;gap:12px;padding:12px 8px}
-    .badge{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,#7c3aed,#3b82f6);box-shadow:var(--ring)}
-    .icon{width:22px;height:22px}.spacer{flex:1}
-    .pill{width:auto;padding:6px 10px;border-radius:10px;background:#eef2ff;display:inline-block;border:1px solid #e2e8f0;cursor:pointer}
-    .pill.free{background:#fef9c3;border:1px solid #fde68a;color:#92400e}
-    .pill.pro{background:#10b98122;border:1px solid #10b98155;color:#065f46}
-    .hero{padding:22px 10px 8px;text-align:center}
-    .title{font-size:34px;font-weight:800;color:#0f172a;letter-spacing:.2px;margin:8px 0 6px}
-    .subtitle{color:#475569;max-width:720px;margin:0 auto}
-    .grid{display:grid;gap:16px}@media(min-width:900px){.grid{grid-template-columns:1.1fr .9fr}}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:18px;box-shadow:0 10px 30px rgba(2,6,23,.06)}
-    .card.pad{padding:18px}
-    .uploadBox{display:grid;gap:12px;place-items:center;padding:24px 18px;text-align:center;cursor:pointer}
-    .uploadGlyph{width:82px;height:82px;border-radius:20px;background:linear-gradient(135deg,#dbeafe,#ede9fe);display:grid;place-items:center}
-    .button{height:48px;padding:0 18px;border-radius:12px;border:1px solid var(--border);background:#fff;color:#0f172a;cursor:pointer;font-weight:600;display:inline-grid;place-items:center;text-decoration:none}
-    .button.primary{background:linear-gradient(90deg,var(--primary),var(--primary2));color:#fff;border:none;box-shadow:var(--ring)}
-    .button.ghost{background:#fff}.button:disabled{opacity:.5;cursor:not-allowed}
-    .ctaRow{display:grid;gap:12px;max-width:520px;margin:6px auto 0}
-    .stage{padding:10px}
-    .canvasWrap{border-radius:14px;overflow:hidden;border:1px solid var(--border);box-shadow:0 10px 30px rgba(0,0,0,.2)}
-    canvas{display:block;width:100%;height:auto;background:conic-gradient(at 10% 10%, #f1f5f9 25%, #ffffff 0 50%, #f1f5f9 0 75%, #ffffff 0) 0 0/24px 24px}
-    .status{text-align:center;color:#475569}
-    .bgLibrary{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-    .bgLibrary .thumb{width:80px;height:60px;cursor:pointer;border:1px solid var(--border);border-radius:6px;overflow:hidden}
-    .bgLibrary .thumb img{width:100%;height:100%;object-fit:cover}
-    #enhancePanel{margin:16px 0;padding:12px;border:1px solid var(--border);border-radius:10px}
-    #enhancePanel label{font-weight:600}
-    #enhancePanel input[type=range]{width:100%}
-    #installBtn{display:none;position:fixed;bottom:24px;right:24px;padding:12px 18px;background:var(--primary2);color:#fff;border:none;border-radius:8px;cursor:pointer;z-index:50}
-    #iosInstall{display:none;padding:12px;background:#f3f4f6;border:1px solid #ccc;border-radius:8px;margin:12px 0;text-align:center}
+    /* Include your existing styles here—abbreviated for clarity */
+    /* ... */
   </style>
 </head>
 <body>
-  <div class="topbar">
-    <div class="wrap inner">
-      <div class="badge" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M4 13l6-9 4 6 6-4-6 14-4-7-6 0z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-      <div class="spacer"></div>
-      <div id="authStatus" class="pill free">Free</div>
-      <a id="authBtn" class="pill">Login</a>
-    </div>
-  </div>
-
-  <div class="wrap">
-    <section class="hero">
-      <h1 class="title">AI Photo Studio</h1>
-      <p class="subtitle">Polish, refine, and replace backgrounds with ease</p>
-    </section>
-
-    <section class="grid">
-      <div class="card pad">
-        <div class="uploadBox" id="uploadTrigger">
-          <div class="uploadGlyph">
-            <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M12 16V4m0 0l-4 4m4-4l4 4" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16.5a4.5 4.5 0 014.5-4.5h7a4.5 4.5 0 014.5 4.5v0a3.5 3.5 0 01-3.5 3.5h-9a3.5 3.5 0 01-3.5-3.5v0z" stroke="#7c3aed" stroke-width="2"/></svg>
-          </div>
-          <h2>Upload Your Photo</h2>
-          <p class="muted">Tap to choose an image (front/back camera supported)</p>
-          <input id="fileInput" type="file" accept="image/*" capture="environment" style="display:none">
-        </div>
-
-        <div id="enhancePanel">
-          <label><input type="checkbox" id="smartToggle" checked> Smart Positioning</label>
-          <div><label>Edge Refine <span id="edgeVal">0.5</span></label><input type="range" id="edgeSlider" min="0" max="1" step="0.01" value="0.5"></div>
-          <div><label>Shadow <span id="shadowVal">0.2</span></label><input type="range" id="shadowSlider" min="0" max="1" step="0.05" value="0.2"></div>
-        </div>
-
-        <div><strong>Choose Background</strong>
-          <div id="bgLibrary" class="bgLibrary"></div>
-        </div>
-
-        <div class="ctaRow">
-          <button id="btnPreview" class="button primary" disabled>Download Preview</button>
-          <button id="btnHD" class="button primary" disabled>Download HD</button>
-        </div>
-      </div>
-
-      <div class="card stage">
-        <div class="canvasWrap"><canvas id="stage" width="320" height="240"></canvas></div>
-        <p id="status" class="status">Upload to begin</p>
-      </div>
-    </section>
-
-    <div id="iosInstall">Tap Share → <strong>Add to Home Screen</strong> to install this app.</div>
-  </div>
-
-  <button id="installBtn">Install App</button>
+  <!-- Your HTML structure... -->
+  <!-- Upload box, enhance panel, bgLibrary, buttons, canvas, etc. -->
 
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js"></script>
@@ -110,12 +28,12 @@
   <script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js"></script>
 
   <script>
-    //  ---------------- Firebase Initialization ----------------
+    // Firebase setup (replace with your config)
     const firebaseConfig = { /* YOUR FIREBASE CONFIG */ };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth(), db = firebase.firestore();
 
-    //  ---------------- Trial Logic ----------------
+    // Trial logic
     function initTrial() {
       if (!localStorage.getItem('trial_start')) localStorage.setItem('trial_start', Date.now());
     }
@@ -124,16 +42,13 @@
       return Math.max(0, 7 - Math.floor((Date.now() - start) / (1000 * 60 * 60 * 24)));
     }
 
-    //  ---------------- UI Elements ----------------
-    const 
-      edgeSlider = document.getElementById('edgeSlider'), edgeVal = document.getElementById('edgeVal'),
-      shadowSlider = document.getElementById('shadowSlider'), shadowVal = document.getElementById('shadowVal'),
-      smartToggle = document.getElementById('smartToggle'), btnHD = document.getElementById('btnHD'),
-      authStatus = document.getElementById('authStatus'), authBtn = document.getElementById('authBtn'),
-      fileInput = document.getElementById('fileInput'), uploadTrigger = document.getElementById('uploadTrigger'),
-      bgLibrary = document.getElementById('bgLibrary'), btnPreview = document.getElementById('btnPreview'),
-      statusEl = document.getElementById('status'), installBtn = document.getElementById('installBtn'),
-      iosInstall = document.getElementById('iosInstall');
+    // UI elements
+    const canvas = document.getElementById('stage');
+    const ctx = canvas.getContext('2d');
+    const fileInput = document.getElementById('fileInput');
+    const uploadTrigger = document.getElementById('uploadTrigger');
+    const btnHD = document.getElementById('btnHD');
+    const statusEl = document.getElementById('status');
 
     window.addEventListener('DOMContentLoaded', () => {
       initTrial();
@@ -142,15 +57,13 @@
       registerServiceWorker();
     });
 
-    edgeSlider.oninput = () => edgeVal.textContent = edgeSlider.value;
-    shadowSlider.oninput = () => shadowVal.textContent = shadowSlider.value;
+    // Clear canvas AND draw new image properly
+    async function setPhoto(src) {
+      const img = await loadImage(src);
+      ctx.clearRect(0, 0, canvas.width, canvas.height); // Clears old photo  [oai_citation:1‡Stack Overflow](https://stackoverflow.com/questions/56139798/how-to-clear-canvas-before-drop-new-image-on-html5/56139832?utm_source=chatgpt.com) [oai_citation:2‡MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/clearRect?utm_source=chatgpt.com)
+      drawToCanvas({ imgSrc: src, bgSrc: window.currentBg });
+    }
 
-    btnHD.onclick = () => {
-      if (trialDaysLeft() === 0 && authStatus.textContent !== 'Pro') alert("Trial expired. Please upgrade to Pro to download HD.");
-      else alert("HD Download processed!");
-    };
-
-    uploadTrigger.addEventListener('click', () => fileInput.click());
     fileInput.onchange = async e => {
       if (!e.target.files[0]) return;
       const src = await readFileToDataURL(e.target.files[0]);
@@ -158,55 +71,25 @@
       statusEl.textContent = 'Photo loaded. Choose an action below.';
     };
 
-    function renderBgLibrary() {
-      const presets = [
-        { name: 'Beach', url: 'beach.jpg' },
-        { name: 'City', url: 'city.jpg' },
-        { name: 'Park', url: 'park.jpg' },
-        { name: 'White', url: 'white.jpg' }
-      ];
-      bgLibrary.innerHTML = presets.map(p => `
-        <div class="thumb" title="${p.name}" onclick="setBg('${p.url}')">
-          <img src="${p.url}" alt="${p.name}">
-        </div>
-      `).join('');
-    }
-
-    window.addEventListener('beforeinstallprompt', e => {
-      e.preventDefault();
-      installBtn.style.display = 'block';
-      window.deferredPrompt = e;
-    });
-    installBtn.onclick = async () => {
-      window.deferredPrompt && window.deferredPrompt.prompt();
-      installBtn.style.display = 'none';
-    };
-    window.addEventListener('appinstalled', () => installBtn.style.display = 'none');
-
-    if (/iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase()) && !window.matchMedia('(display-mode: standalone)').matches) {
-      iosInstall.style.display = 'block';
-    }
-
-    function registerServiceWorker() {
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').then(() => {}).catch(() => {});
+    btnHD.onclick = () => {
+      if (trialDaysLeft() === 0 && authStatus.textContent !== 'Pro') {
+        alert("Trial expired. Upgrade to Pro to download HD.");
+      } else {
+        downloadHD('png');
       }
-    }
-
-    auth.onAuthStateChanged(async user => {
-      if (!user) { authStatus.textContent = 'Free'; authBtn.textContent = 'Login'; return; }
-      authBtn.textContent = user.email || 'Account';
-      const doc = await db.collection('users').doc(user.uid).get();
-      const data = doc.exists ? doc.data() : { isPro: false, trialStarted: Date.now() };
-      authStatus.textContent = data.isPro ? 'Pro' : 'Free';
-      localStorage.setItem('trial_start', data.trialStarted);
-    });
-
-    authBtn.onclick = () => {
-      auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
     };
 
-    // Included utility functions (drawToCanvas, getSegmentationMask, etc.) go here...
+    // Background rendering, install prompt, service worker, auth, etc. go here...
+
+    // Example helper for loading image
+    function loadImage(src) {
+      return new Promise((res, rej) => {
+        const img = new Image();
+        img.onload = () => res(img);
+        img.onerror = rej;
+        img.src = src;
+      });
+    }
   </script>
 </body>
 </html>
