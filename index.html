@@ -49,107 +49,107 @@
     <canvas id="stage" width="960" height="600"></canvas>
   </div>
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js"></script>
+  <!-- Firebase SDKs (Browser Safe, compat versions for classic interface) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <script>
-    // ⚡ Firebase Setup (Insert your actual config here)
-    const firebaseConfig = {
-      apiKey: "AIzaSyDsBDuaZ_rl7ro63Fv5gPh37EwSkfh-NqM",
-      authDomain: "aiphotostudioapp.firebaseapp.com",
-      projectId: "aiphotostudioapp",
-      storageBucket: "aiphotostudioapp.appspot.com",
-      messagingSenderId: "1056724519182",
-      appId: "1:1056724519182:web:93410e1b71a292e531ef5f",
-      measurementId: "G-YMB9JJHNBE"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
+    document.addEventListener("DOMContentLoaded", () => {
+      // Firebase Setup
+      const firebaseConfig = {
+        apiKey: "AIzaSyDsBDuaZ_rl7ro63Fv5gPh37EwSkfh-NqM",
+        authDomain: "aiphotostudioapp.firebaseapp.com",
+        projectId: "aiphotostudioapp",
+        storageBucket: "aiphotostudioapp.appspot.com",
+        messagingSenderId: "1056724519182",
+        appId: "1:1056724519182:web:93410e1b71a292e531ef5f",
+        measurementId: "G-YMB9JJHNBE"
+      };
+      firebase.initializeApp(firebaseConfig);
+      const auth = firebase.auth();
 
-    // UI Bindings
-    const authStatus = document.getElementById('authStatus');
-    const btnLoginGoogle = document.getElementById('btnLoginGoogle');
-    const btnLoginEmail = document.getElementById('btnLoginEmail');
-    const btnLogout = document.getElementById('btnLogout');
-    const btnHD = document.getElementById('btnHD');
-    const statusEl = document.getElementById('status');
-    const fileInput = document.getElementById('fileInput');
-    const canvas = document.getElementById('stage');
-    const ctx = canvas.getContext('2d');
+      // UI elements
+      const authStatus = document.getElementById('authStatus');
+      const btnLoginGoogle = document.getElementById('btnLoginGoogle');
+      const btnLoginEmail = document.getElementById('btnLoginEmail');
+      const btnLogout = document.getElementById('btnLogout');
+      const btnHD = document.getElementById('btnHD');
+      const statusEl = document.getElementById('status');
+      const fileInput = document.getElementById('fileInput');
+      const canvas = document.getElementById('stage');
+      const ctx = canvas.getContext('2d');
 
-    // Auth State Listener
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        authStatus.textContent = `Signed in as ${user.displayName || user.email}`;
-        btnLogout.style.display = 'inline-block';
-        btnLoginGoogle.style.display = 'none';
-        btnLoginEmail.style.display = 'none';
-        localStorage.setItem('studio_pro', '1');
-        btnHD.disabled = false;
-      } else {
-        authStatus.textContent = 'Not signed in';
-        btnLogout.style.display = 'none';
-        btnLoginGoogle.style.display = 'inline-block';
-        btnLoginEmail.style.display = 'inline-block';
-        localStorage.removeItem('studio_pro');
-        btnHD.disabled = true;
+      // Auth Flow
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          authStatus.textContent = `Signed in as ${user.displayName || user.email}`;
+          btnLogout.style.display = 'inline-block';
+          btnLoginGoogle.style.display = 'none';
+          btnLoginEmail.style.display = 'none';
+          localStorage.setItem('studio_pro', '1');
+          btnHD.disabled = false;
+        } else {
+          authStatus.textContent = 'Not signed in';
+          btnLogout.style.display = 'none';
+          btnLoginGoogle.style.display = 'inline-block';
+          btnLoginEmail.style.display = 'inline-block';
+          localStorage.removeItem('studio_pro');
+          btnHD.disabled = true;
+        }
+      });
+
+      btnLoginGoogle.onclick = () => {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider).catch(() => alert('Google sign-in failed.'));
+      };
+
+      btnLoginEmail.onclick = async () => {
+        const email = prompt('Enter your email:');
+        if (!email) return alert('Email required');
+        const password = prompt('Enter your password:');
+        try {
+          await auth.signInWithEmailAndPassword(email, password);
+        } catch (e) {
+          if (e.code === 'auth/user-not-found') {
+            await auth.createUserWithEmailAndPassword(email, password);
+          } else {
+            alert('Email sign-in failed.');
+          }
+        }
+      };
+
+      btnLogout.onclick = () => auth.signOut();
+
+      // Image upload logic
+      fileInput.onchange = async e => {
+        if (!e.target.files[0]) return;
+        const src = await new Promise(res => {
+          const r = new FileReader();
+          r.onload = () => res(r.result);
+          r.readAsDataURL(e.target.files[0]);
+        });
+        const img = new Image();
+        img.onload = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          statusEl.textContent = 'Photo loaded!';
+        };
+        img.src = src;
+      };
+
+      btnHD.onclick = () => {
+        const a = document.createElement('a');
+        a.href = canvas.toDataURL('image/png', .95);
+        a.download = 'studio-photo.png';
+        a.click();
+      };
+
+      // PWA service worker
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(console.error);
       }
     });
-
-    // Login Handlers
-    btnLoginGoogle.onclick = () => {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider).catch(() => alert('Google sign-in failed.'));
-    };
-
-    btnLoginEmail.onclick = async () => {
-      const email = prompt('Enter your email:');
-      if (!email) return alert('Email required');
-      const password = prompt('Enter your password:');
-      try {
-        await auth.signInWithEmailAndPassword(email, password);
-      } catch (e) {
-        if (e.code === 'auth/user-not-found') {
-          await auth.createUserWithEmailAndPassword(email, password);
-        } else {
-          alert('Email sign-in failed.');
-        }
-      }
-    };
-
-    btnLogout.onclick = () => auth.signOut();
-
-    // Image Upload & Segmentation
-    fileInput.onchange = async e => {
-      if (!e.target.files[0]) return;
-      const src = await new Promise(res => {
-        const r = new FileReader();
-        r.onload = () => res(r.result);
-        r.readAsDataURL(e.target.files[0]);
-      });
-      const img = new Image();
-      img.onload = () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        statusEl.textContent = 'Photo loaded!';
-      };
-      img.src = src;
-    };
-
-    // HD Download
-    btnHD.onclick = () => {
-      const a = document.createElement('a');
-      a.href = canvas.toDataURL('image/png', .95);
-      a.download = 'studio-photo.png';
-      a.click();
-    };
-
-    // Register Service Worker
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(console.error);
-    }
   </script>
 </body>
 </html>
