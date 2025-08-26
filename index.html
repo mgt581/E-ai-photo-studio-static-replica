@@ -94,6 +94,38 @@
     function drawChecker(){ const s=20; for(let y=0;y<canvas.height;y+=s){ for(let x=0;x<canvas.width;x+=s){ ctx.fillStyle=((x/s+y/s)%2===0)?'#e5e7eb':'#fff'; ctx.fillRect(x,y,s,s); } } }
     function stampWatermark(){ if(proEnabled) return; ctx.save(); ctx.font="20px ui-sans-serif,system-ui"; ctx.fillStyle="rgba(0,0,0,.35)"; ctx.textAlign="right"; ctx.fillText("AI Photo Studio · FREE", canvas.width-20, canvas.height-20); ctx.restore(); }
 
+    // ----- graceful fallback loader (only if needed) -----
+    let selfieLoader = null;
+    function ensureSelfieSegmentation(){
+      if (window.SelfieSegmentation) return Promise.resolve();
+      if (selfieLoader) return selfieLoader;
+      selfieLoader = new Promise((resolve,reject)=>{
+        const s=document.createElement('script');
+        s.src='https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1/selfie_segmentation.js';
+        s.onload=()=>resolve();
+        s.onerror=()=>reject(new Error('mediapipe-load-failed'));
+        document.head.appendChild(s);
+      });
+      return selfieLoader;
+    }
+
+    async function maskWithSelfie(img){
+      await ensureSelfieSegmentation();
+      const ss = new SelfieSegmentation({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${f}` });
+      ss.setOptions({ modelSelection: 1 });
+      const maskCanvas = document.createElement('canvas');
+      maskCanvas.width = img.width; maskCanvas.height = img.height;
+      await new Promise((resolve)=>{
+        ss.onResults((r)=>{
+          const m = maskCanvas.getContext('2d');
+          m.drawImage(r.segmentationMask, 0,0, img.width, img.height);
+          resolve();
+        });
+        ss.send({ image: img });
+      });
+      return maskCanvas;
+    }
+
     // ----- App -----
     const btnRemove = document.getElementById('btnRemove');
     const btnChange = document.getElementById('btnChange');
@@ -102,11 +134,36 @@
       let mainSrc = null;      // uploaded photo (data URL)
       let cutoutURL = null;    // object URL of transparent PNG after removal
       let bgSrc = null;        // background (data URL)
+      let busy = false;
+
+      function setBusy(b){
+        busy = b;
+        btnRemove.disabled = b || !mainSrc;
+        btnChange.disabled = b || !cutoutURL;
+      }
 
       function updateButtons(){
-        // Only allow Change Background AFTER we have a cutout
-        btnRemove.disabled = !mainSrc;
-        btnChange.disabled = !cutoutURL;
+        btnRemove.disabled = busy || !mainSrc;
+        btnChange.disabled = busy || !cutoutURL;
+      }
+
+      // downscale for memory safety on iOS (keeps aspect)
+      async function downscaleToMax(dataUrl, maxSide = 1400){
+        const img = await loadImage(dataUrl);
+        const max = Math.max(img.width, img.height);
+        if (max <= maxSide) return img; // use original
+        const ratio = maxSide / max;
+        const w = Math.round(img.width * ratio);
+        const h = Math.round(img.height * ratio);
+        const c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        const cx = c.getContext('2d');
+        cx.imageSmoothingEnabled = true; cx.imageSmoothingQuality = 'high';
+        cx.drawImage(img, 0, 0, w, h);
+        const out = new Image();
+        out.src = c.toDataURL('image/png', 0.92);
+        await (out.decode ? out.decode() : new Promise(r => out.onload = r));
+        return out;
       }
 
       async function draw({img, bg=null}){
@@ -128,7 +185,6 @@
 
       async function onUploadMain(file){
         mainSrc = await readFileURL(file);
-        // reset any previous cutout
         if (cutoutURL) { URL.revokeObjectURL(cutoutURL); cutoutURL=null; }
         await draw({img: mainSrc});
         setStatus("Photo loaded — tap Remove Background.");
@@ -142,11 +198,33 @@
 
       async function removeBg(){
         if(!mainSrc) return alert("Upload a photo first.");
+        setBusy(true);
         try{
           setStatus("Removing background… (on your device)");
-          // Use createImageBitmap for speed/memory
-          const imgBitmap = await createImageBitmap(await (await fetch(mainSrc)).blob());
-          const blob = await removeBackground(imgBitmap, { model:"u2net", output:"image/png" });
+          // 1) Safe-size the image to avoid iOS memory/WebGL crashes
+          const safeImg = await downscaleToMax(mainSrc, 1400);
+
+          // 2) Try high-quality U²-Net first
+          let blob;
+          try {
+            blob = await removeBackground(safeImg, { model:"u2net", output:"image/png" });
+          } catch (e) {
+            console.warn('U2Net failed, falling back to MediaPipe', e);
+          }
+
+          // 3) Fallback: MediaPipe Selfie Segmentation (lower quality but reliable)
+          if (!blob) {
+            const maskC = await maskWithSelfie(safeImg);
+            // composite to transparent PNG using the mask
+            const out = document.createElement('canvas');
+            out.width = safeImg.width; out.height = safeImg.height;
+            const ox = out.getContext('2d');
+            ox.drawImage(safeImg,0,0);
+            ox.globalCompositeOperation='destination-in';
+            ox.drawImage(maskC,0,0);
+            blob = await new Promise(r => out.toBlob(r,'image/png',0.95));
+          }
+
           if (cutoutURL) URL.revokeObjectURL(cutoutURL);
           cutoutURL = URL.createObjectURL(blob);
           await draw({img: cutoutURL});
@@ -156,6 +234,7 @@
           alert("Remove BG failed. Try a smaller image and close other apps.");
           setStatus("Remove BG failed.");
         }finally{
+          setBusy(false);
           updateButtons();
         }
       }
@@ -163,8 +242,14 @@
       async function changeBg(){
         if(!cutoutURL){ alert("Remove background first."); return; }
         if(!bgSrc){ document.getElementById('bgInput').click(); return; }
-        await draw({img: cutoutURL, bg: bgSrc});
-        setStatus("Background changed. You can download now.");
+        setBusy(true);
+        try{
+          await draw({img: cutoutURL, bg: bgSrc});
+          setStatus("Background changed. You can download now.");
+        } finally {
+          setBusy(false);
+          updateButtons();
+        }
       }
 
       function download(type="png", hd=false){
