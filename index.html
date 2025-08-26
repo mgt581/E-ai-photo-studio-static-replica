@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-  <!-- In-browser background removal (FREE, no API key) -->
+  <!-- FREE, on-device background removal -->
   <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@latest/dist/background-removal.min.js"></script>
 
   <style>
@@ -28,6 +28,7 @@
     canvas{width:100%;height:auto;display:block;background:#f3f4f6}
     .actions{display:grid;gap:12px}
     .hint{font-size:13px;color:#6b7280;text-align:center}
+    .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;background:#111827;color:#fff;padding:10px 14px;border-radius:10px;font-weight:600;box-shadow:0 6px 18px rgba(0,0,0,.25);z-index:9999}
   </style>
 </head>
 <body>
@@ -62,26 +63,63 @@
   </div>
 
   <script>
-    // ----- Pro demo toggle + HD lock -----
+    // ====== STRIPE Payment Link (live) ======
+    // In Stripe, set "After payment" redirect to:
+    // https://aiphotostudio.co.uk/?checkout=success&pro=1
+    const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/9B6fZj1om5EbeNR6MCd3i01";
+    // ========================================
+
+    // --- Pro gating
     let proEnabled = false;
-    const proBtn = document.getElementById('proToggle');
+    const proBtn   = document.getElementById('proToggle');
     const hdBtnPng = document.getElementById('btnHDpng');
     const hdBtnJpg = document.getElementById('btnHDjpg');
+
+    function toast(msg){ const el=document.createElement('div'); el.className='toast'; el.textContent=msg; document.body.appendChild(el); setTimeout(()=>el.remove(),2200); }
+    function setPro(on){
+      proEnabled = !!on;
+      if (on) localStorage.setItem('studio_pro','1'); else localStorage.removeItem('studio_pro');
+      setPlanUI();
+      if (on) toast("✅ Pro activated");
+    }
     function setPlanUI(){
-      if(proEnabled){
-        proBtn.textContent = "✅ Pro enabled (demo)";
+      if (proEnabled){
+        proBtn.textContent = "✅ Pro active — manage / renew";
         hdBtnPng.textContent = "Download HD (PNG)";
         hdBtnJpg.textContent = "Download HD (JPEG)";
         hdBtnPng.disabled = hdBtnJpg.disabled = false;
-      }else{
+      } else {
         proBtn.textContent = "Pro plan · £4.99/yr · 7-day trial";
         hdBtnPng.textContent = "Download HD (PNG) · Pro required";
         hdBtnJpg.textContent = "Download HD (JPEG) · Pro required";
         hdBtnPng.disabled = hdBtnJpg.disabled = true;
       }
     }
-    proBtn.onclick = ()=>{ proEnabled = !proEnabled; setPlanUI(); };
-    setPlanUI();
+    proBtn.onclick = () => {
+      if (!proEnabled) {
+        if (!STRIPE_PAYMENT_LINK) { alert("Stripe link missing."); return; }
+        location.href = STRIPE_PAYMENT_LINK;   // go to Stripe Checkout
+      } else {
+        alert("You're already on Pro. (We'll add Manage Subscription next.)");
+      }
+    };
+
+    // Activate Pro when Stripe redirects back with ?pro=1
+    (function bootstrapPro(){
+      const sp = new URLSearchParams(location.search);
+      if (sp.get('pro') === '1') {
+        setPro(true);
+        // Clean the URL so the query doesn’t linger
+        if (history.replaceState) {
+          const clean = location.pathname + location.hash;
+          history.replaceState(null, "", clean);
+        }
+      } else if (localStorage.getItem('studio_pro') === '1') {
+        setPro(true);
+      } else {
+        setPlanUI();
+      }
+    })();
 
     // ----- helpers -----
     const $status = document.getElementById('status');
@@ -94,7 +132,7 @@
     function drawChecker(){ const s=20; for(let y=0;y<canvas.height;y+=s){ for(let x=0;x<canvas.width;x+=s){ ctx.fillStyle=((x/s+y/s)%2===0)?'#e5e7eb':'#fff'; ctx.fillRect(x,y,s,s); } } }
     function stampWatermark(){ if(proEnabled) return; ctx.save(); ctx.font="20px ui-sans-serif,system-ui"; ctx.fillStyle="rgba(0,0,0,.35)"; ctx.textAlign="right"; ctx.fillText("AI Photo Studio · FREE", canvas.width-20, canvas.height-20); ctx.restore(); }
 
-    // ----- graceful fallback loader (only if needed) -----
+    // ----- Selfie fallback loader (only if U²-Net fails)
     let selfieLoader = null;
     function ensureSelfieSegmentation(){
       if (window.SelfieSegmentation) return Promise.resolve();
@@ -108,7 +146,6 @@
       });
       return selfieLoader;
     }
-
     async function maskWithSelfie(img){
       await ensureSelfieSegmentation();
       const ss = new SelfieSegmentation({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${f}` });
@@ -141,17 +178,16 @@
         btnRemove.disabled = b || !mainSrc;
         btnChange.disabled = b || !cutoutURL;
       }
-
       function updateButtons(){
         btnRemove.disabled = busy || !mainSrc;
         btnChange.disabled = busy || !cutoutURL;
       }
 
-      // downscale for memory safety on iOS (keeps aspect)
+      // downscale for memory safety on iOS
       async function downscaleToMax(dataUrl, maxSide = 1400){
         const img = await loadImage(dataUrl);
         const max = Math.max(img.width, img.height);
-        if (max <= maxSide) return img; // use original
+        if (max <= maxSide) return img;
         const ratio = maxSide / max;
         const w = Math.round(img.width * ratio);
         const h = Math.round(img.height * ratio);
@@ -170,7 +206,7 @@
         ctx.clearRect(0,0,canvas.width,canvas.height);
         if (bg){
           const b = await loadImage(bg);
-          const s = Math.max(canvas.width/b.width, canvas.height/b.height); // cover
+          const s = Math.max(canvas.width/b.width, canvas.height/b.height);
           const bw=b.width*s, bh=b.height*s;
           ctx.drawImage(b,(canvas.width-bw)/2,(canvas.height-bh)/2,bw,bh);
         } else {
@@ -201,10 +237,8 @@
         setBusy(true);
         try{
           setStatus("Removing background… (on your device)");
-          // 1) Safe-size the image to avoid iOS memory/WebGL crashes
           const safeImg = await downscaleToMax(mainSrc, 1400);
 
-          // 2) Try high-quality U²-Net first
           let blob;
           try {
             blob = await removeBackground(safeImg, { model:"u2net", output:"image/png" });
@@ -212,10 +246,8 @@
             console.warn('U2Net failed, falling back to MediaPipe', e);
           }
 
-          // 3) Fallback: MediaPipe Selfie Segmentation (lower quality but reliable)
           if (!blob) {
             const maskC = await maskWithSelfie(safeImg);
-            // composite to transparent PNG using the mask
             const out = document.createElement('canvas');
             out.width = safeImg.width; out.height = safeImg.height;
             const ox = out.getContext('2d');
@@ -283,10 +315,10 @@
     // Initial
     drawChecker();
 
-    // Service worker (make sure your file is /sw.js and bump its VERSION when you deploy)
+    // Service worker (v8)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(()=>{});
+        navigator.serviceWorker.register('/sw.js?v=v8').catch(()=>{});
       });
     }
   </script>
