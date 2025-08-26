@@ -1,12 +1,13 @@
 // ---- BUMP THIS WHEN YOU DEPLOY ----
-const VERSION = 'v7';                 // ⬅️ bumped
+const VERSION = 'v8';                 // ⬅️ your requested version
 const CACHE   = `photo-studio-${VERSION}`;
 
 // Add/adjust paths to match your project
 const FILES_TO_CACHE = [
   '/',                // entry
   '/index.html',
-  '/manifest.webmanifest',   // change to /manifest.json if that's your file
+  '/manifest.webmanifest',   // keep both if you like
+  '/manifest.json',
   '/logo-192.png',
   '/logo-512.png'
 ];
@@ -34,7 +35,6 @@ self.addEventListener('activate', (evt) => {
 // - other GET requests => cache-first with background refresh (SW-R)
 self.addEventListener('fetch', (evt) => {
   const req = evt.request;
-
   if (req.method !== 'GET') return;
 
   const isHTML =
