@@ -24,7 +24,10 @@
     :root { --primary: #4f46e5; --muted: #64748b; }
     body { margin:0; font-family:system-ui, sans-serif; background:#f8fafc; color:#0f172a; }
     .wrap{max-width:800px;margin:0 auto;padding:16px;}
-    .hero{text-align:center;margin-bottom:20px;}
+    .hero{text-align:center;margin-bottom:20px;padding:28px 16px;}
+    .brand-logo{width:72px;height:72px;border-radius:16px;}
+    .brand-title{font-size:42px;font-weight:800;letter-spacing:.2px;margin:16px 0 6px;}
+    .tagline{color:#667085;max-width:680px;margin:0 auto;line-height:1.5;}
     .card{background:#fff;padding:16px;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.05);margin-bottom:20px;}
     .button{background:var(--primary);color:#fff;padding:12px 20px;border:none;border-radius:8px;cursor:pointer;margin:5px;}
     .button.primary{box-shadow:0 0 12px rgba(79,70,229,0.45);}
@@ -38,18 +41,16 @@
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <section class="hero">
-      <h1>AI Photo Studio</h1>
-      <!-- Stripe Buy Button: add your actual Stripe IDs below -->
-      <script async src="https://js.stripe.com/v3/buy-button.js"></script>
-      <stripe-buy-button
-        buy-button-id="YOUR_STRIPE_BUY_BUTTON_ID"
-        publishable-key="pk_live_YOUR_PUBLISHABLE_KEY">
-      </stripe-buy-button>
-      <p class="muted">Enhance, customize backgrounds & share your creations!</p>
-    </section>
+  <!-- ✅ Restored header/hero -->
+  <header class="hero">
+    <img src="/logo-512.png" alt="AI Photo Studio" class="brand-logo" />
+    <h1 class="brand-title">AI Photo Studio</h1>
+    <p class="tagline">
+      Professional photo editing with recommended tools & easy workflow management
+    </p>
+  </header>
 
+  <div class="wrap">
     <div id="authPanel" class="card">
       <h3>Proceed</h3>
       <button class="button" id="btnContinueAsGuest">Continue as Guest</button>
@@ -194,3 +195,4 @@
     function setBg(url) { alert('Set background to: '+url); }
   </script>
 </body>
+</html>
