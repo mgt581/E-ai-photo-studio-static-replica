@@ -1,15 +1,16 @@
 // ---- BUMP THIS WHEN YOU DEPLOY ----
-const VERSION = 'v8';                 // ⬅️ your requested version
+const VERSION = 'v8';
 const CACHE   = `photo-studio-${VERSION}`;
 
 // Add/adjust paths to match your project
 const FILES_TO_CACHE = [
-  '/',                // entry
+  '/',                    // entry
   '/index.html',
-  '/manifest.webmanifest',   // keep both if you like
-  '/manifest.json',
+  '/manifest.webmanifest',
+  '/manifest.json',       // harmless if missing
   '/logo-192.png',
-  '/logo-512.png'
+  '/logo-512.png',
+  '/apple-touch-icon.png' // harmless if missing
 ];
 
 // Install: precache core files
@@ -30,9 +31,9 @@ self.addEventListener('activate', (evt) => {
   self.clients.claim();
 });
 
-// Fetch strategy:
-// - HTML/documents => network-first (so new index.html shows immediately)
-// - other GET requests => cache-first with background refresh (SW-R)
+// Fetch strategy
+// - HTML/documents: network-first (so new index.html shows immediately)
+// - Other GETs: stale-while-revalidate (fast, then refresh in background)
 self.addEventListener('fetch', (evt) => {
   const req = evt.request;
   if (req.method !== 'GET') return;
@@ -50,14 +51,12 @@ self.addEventListener('fetch', (evt) => {
           caches.open(CACHE).then((cache) => cache.put(req, copy));
           return resp;
         })
-        .catch(() =>
-          caches.match(req).then((c) => c || caches.match('/index.html'))
-        )
+        .catch(() => caches.match(req).then((c) => c || caches.match('/index.html')))
     );
     return;
   }
 
-  // Stale-while-revalidate for assets
+  // Assets: SWR
   evt.respondWith(
     caches.match(req).then((cached) => {
       const fetchPromise = fetch(req)
