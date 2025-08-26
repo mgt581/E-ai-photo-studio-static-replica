@@ -1,12 +1,12 @@
 // ---- BUMP THIS WHEN YOU DEPLOY ----
-const VERSION = 'v6';
-const CACHE = `photo-studio-${VERSION}`;
+const VERSION = 'v7';                 // ⬅️ bumped
+const CACHE   = `photo-studio-${VERSION}`;
 
 // Add/adjust paths to match your project
 const FILES_TO_CACHE = [
   '/',                // entry
   '/index.html',
-  '/manifest.webmanifest', // use '/manifest.json' if that's your file
+  '/manifest.webmanifest',   // change to /manifest.json if that's your file
   '/logo-192.png',
   '/logo-512.png'
 ];
@@ -34,12 +34,9 @@ self.addEventListener('activate', (evt) => {
 // - other GET requests => cache-first with background refresh (SW-R)
 self.addEventListener('fetch', (evt) => {
   const req = evt.request;
-  const url = new URL(req.url);
 
-  // Only handle GET requests
   if (req.method !== 'GET') return;
 
-  // Treat navigations and HTML as network-first
   const isHTML =
     req.mode === 'navigate' ||
     (req.headers.get('accept') || '').includes('text/html') ||
@@ -60,7 +57,7 @@ self.addEventListener('fetch', (evt) => {
     return;
   }
 
-  // For assets: stale-while-revalidate
+  // Stale-while-revalidate for assets
   evt.respondWith(
     caches.match(req).then((cached) => {
       const fetchPromise = fetch(req)
