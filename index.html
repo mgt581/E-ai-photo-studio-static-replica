@@ -36,7 +36,7 @@
     <button class="pro-pill" id="proToggle">Pro plan · £4.99/yr · 7-day trial</button>
   </header>
 
-  <div class="wrap">
+  <div class="wrap" ondragover="event.preventDefault()" ondrop="Studio.handleDrop(event)">
     <div class="card">
       <p class="status" id="status">Upload a photo to begin.</p>
       <div class="actions">
@@ -113,7 +113,7 @@
         ctx.clearRect(0,0,canvas.width,canvas.height);
         if (bg){
           const b = await loadImage(bg);
-          const s = Math.max(canvas.width/b.width, canvas.height/b.height);
+          const s = Math.max(canvas.width/b.width, canvas.height/b.height); // cover
           const bw=b.width*s, bh=b.height*s;
           ctx.drawImage(b,(canvas.width-bw)/2,(canvas.height-bh)/2,bw,bh);
         } else {
@@ -173,11 +173,18 @@
         canvas.toBlob((b)=>{ if(!b) return; const url=URL.createObjectURL(b); const a=document.createElement('a'); a.href=url; a.download=`photo-studio.${type==="jpeg"?"jpg":"png"}`; a.click(); URL.revokeObjectURL(url); }, mime, .95);
       }
 
+      function handleDrop(e){
+        e.preventDefault();
+        const f = e.dataTransfer.files && e.dataTransfer.files[0];
+        if (f) onUploadMain(f);
+      }
+
       return {
         onUploadMain, onUploadBg,
         removeBg, changeBg,
         downloadPreview: ()=>download("png", false),
-        downloadHD: (fmt)=>download(fmt, true)
+        downloadHD: (fmt)=>download(fmt, true),
+        handleDrop
       };
     })();
 
@@ -191,7 +198,7 @@
     // Initial
     drawChecker();
 
-    // Service worker (ensure you have /sw.js with a bumped CACHE_NAME)
+    // Service worker (make sure your file is /sw.js and bump its VERSION when you deploy)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').catch(()=>{});
