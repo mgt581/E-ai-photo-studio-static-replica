@@ -2,197 +2,173 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="x-version" content="v-2025-08-24-full">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AI Photo Studio</title>
 
-  <!-- PWA Icons & Manifest -->
-  <link rel="icon" href="/logo-192.png" sizes="192x192">
-  <link rel="apple-touch-icon" sizes="180x180" href="/logo-180.png">
-  <link rel="apple-touch-icon" sizes="152x152" href="/logo-152.png">
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0ea5e9">
-
-  <!-- SEO / Social Meta -->
-  <meta name="description" content="Enhance your photos with intuitive AI tools in a mobile-friendly web app.">
-  <meta property="og:title" content="AI Photo Studio">
-  <meta property="og:description" content="Enhance your photos with intuitive AI tools.">
-  <meta property="og:image" content="/logo-512.png">
-  <meta property="og:type" content="website">
+  <!-- FREE client-side background remover -->
+  <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@latest/dist/background-removal.min.js"></script>
 
   <style>
     :root { --primary: #4f46e5; --muted: #64748b; }
-    body { margin:0; font-family:system-ui, sans-serif; background:#f8fafc; color:#0f172a; }
-    .wrap{max-width:800px;margin:0 auto;padding:16px;}
+    body { margin:0; font-family:system-ui,sans-serif; background:#f8fafc; color:#0f172a; }
+    .wrap{max-width:900px;margin:0 auto;padding:16px;}
     .hero{text-align:center;margin-bottom:20px;padding:28px 16px;}
     .brand-logo{width:72px;height:72px;border-radius:16px;}
-    .brand-title{font-size:42px;font-weight:800;letter-spacing:.2px;margin:16px 0 6px;}
-    .tagline{color:#667085;max-width:680px;margin:0 auto;line-height:1.5;}
-    .card{background:#fff;padding:16px;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.05);margin-bottom:20px;}
+    .brand-title{font-size:42px;font-weight:800;margin:16px 0 6px;}
+    .tagline{color:#667085;max-width:680px;margin:0 auto;}
+    .card{background:#fff;padding:16px;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,.05);margin-bottom:20px;}
     .button{background:var(--primary);color:#fff;padding:12px 20px;border:none;border-radius:8px;cursor:pointer;margin:5px;}
-    .button.primary{box-shadow:0 0 12px rgba(79,70,229,0.45);}
     .button:disabled{background:#9ca3af;cursor:not-allowed;}
     .muted{color:var(--muted);}
-    canvas{display:block;margin:20px auto;border:1px solid #ddd;}
-    .bgLibrary{display:flex;gap:8px;overflow-x:auto;padding:8px 0;}
-    .bgLibrary .thumb{width:80px;height:60px;cursor:pointer;overflow:hidden;border:1px solid #e5e7eb;border-radius:6px;}
-    .bgLibrary .thumb img{width:100%;height:100%;object-fit:cover;}
+    canvas{display:block;margin:20px auto;border:1px solid #ddd;max-width:100%;height:auto;}
     label{display:block;margin:8px 0;}
   </style>
 </head>
 <body>
-  <!-- ✅ Restored header/hero -->
   <header class="hero">
     <img src="/logo-512.png" alt="AI Photo Studio" class="brand-logo" />
     <h1 class="brand-title">AI Photo Studio</h1>
-    <p class="tagline">
-      Professional photo editing with recommended tools & easy workflow management
-    </p>
+    <p class="tagline">Professional photo editing with easy background tools</p>
   </header>
 
   <div class="wrap">
-    <div id="authPanel" class="card">
-      <h3>Proceed</h3>
-      <button class="button" id="btnContinueAsGuest">Continue as Guest</button>
-      <button class="button" id="btnSignUpEmail">Sign Up / Sign In</button>
-      <button class="button" id="btnLogout" style="display:none">Logout</button>
-      <p id="authStatus" class="muted">Not signed in</p>
-    </div>
-
     <div id="controls" class="card">
       <p id="status" class="muted">Upload a photo to begin</p>
       <label for="photoUpload">Select Photo</label>
       <input type="file" id="photoUpload" accept="image/*">
+
       <div>
-        <button class="button" id="btnPreview" disabled>Download Preview</button>
-        <button class="button" id="btnDownload" disabled>Download HD (Pro)</button>
+        <button class="button" id="btnRemoveBg" disabled>Remove Background</button>
+        <label for="bgUpload">Choose Your Own Background</label>
+        <input type="file" id="bgUpload" accept="image/*">
+        <button class="button" id="btnChangeBg" disabled>Change Background</button>
       </div>
-      <canvas id="main-canvas" width="400" height="400"></canvas>
-    </div>
 
-    <div id="enhancePanel" class="card">
-      <h4>Enhance</h4>
-      <label><input type="checkbox" id="smartPos" checked> Smart Positioning</label>
-      <label>Edge Refine: <input type="range" id="edgeRefine" min="0" max="10" value="0"></label>
-      <label>Shadow: <input type="range" id="shadow" min="0" max="100" value="0"></label>
-      <label>Quality: <input type="range" id="quality" min="0.4" max="1.0" step="0.05" value="0.95"></label>
-    </div>
+      <!-- New toggle -->
+      <label>
+        <input type="checkbox" id="fitToggle" checked>
+        Fit subject to background
+      </label>
 
-    <div id="bgActions" class="card">
-      <button class="button" id="btnRemoveBg">Remove Background</button>
-      <button class="button" id="btnChangeBg">Change Background</button>
-    </div>
-
-    <div id="bgLibrary" class="card">
-      <h4>Background Library</h4>
-      <div class="bgLibrary">
-        <div class="thumb" onclick="setBg('beach.jpg')"><img src="beach.jpg" alt="Beach"></div>
-        <div class="thumb" onclick="setBg('city.jpg')"><img src="city.jpg" alt="City"></div>
-        <div class="thumb" onclick="setBg('park.jpg')"><img src="park.jpg" alt="Park"></div>
-        <div class="thumb" onclick="setBg('white.jpg')"><img src="white.jpg" alt="White"></div>
-      </div>
+      <canvas id="main-canvas"></canvas>
+      <button class="button" id="btnDownload" disabled>Download Result</button>
     </div>
   </div>
 
-  <!-- Firebase Compat SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDsBDuaZ_rl7ro63Fv5gPh37EwSkfh-NqM",
-      authDomain: "aiphotostudioapp.firebaseapp.com",
-      projectId: "aiphotostudioapp",
-      storageBucket: "aiphotostudioapp.firebasestorage.app",
-      messagingSenderId: "1056724519182",
-      appId: "1:1056724519182:web:93410e1b71a292e531ef5f",
-      measurementId: "G-YMB9JJHNBE"
+    const photoUpload = document.getElementById('photoUpload');
+    const bgUpload = document.getElementById('bgUpload');
+    const btnRemoveBg = document.getElementById('btnRemoveBg');
+    const btnChangeBg = document.getElementById('btnChangeBg');
+    const btnDownload = document.getElementById('btnDownload');
+    const statusEl = document.getElementById('status');
+    const fitToggle = document.getElementById('fitToggle');
+    const canvas = document.getElementById('main-canvas');
+    const ctx = canvas.getContext('2d');
+
+    let originalFile = null;
+    let currentResultUrl = null;
+    let bgFile = null;
+
+    // Load main photo
+    photoUpload.onchange = e => {
+      originalFile = e.target.files[0];
+      if (!originalFile) return;
+      const img = new Image();
+      img.src = URL.createObjectURL(originalFile);
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        ctx.drawImage(img,0,0,canvas.width,canvas.height);
+        statusEl.textContent = "Photo loaded!";
+        btnRemoveBg.disabled = false;
+      }
     };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
 
-    document.addEventListener("DOMContentLoaded", () => {
-      const authStatus = document.getElementById('authStatus');
-      const btnGuest = document.getElementById('btnContinueAsGuest');
-      const btnSignEmail = document.getElementById('btnSignUpEmail');
-      const btnLogout = document.getElementById('btnLogout');
-      const btnDownload = document.getElementById('btnDownload');
-      const btnPreview = document.getElementById('btnPreview');
-      const statusEl = document.getElementById('status');
-      const photoUpload = document.getElementById('photoUpload');
-      const canvas = document.getElementById('main-canvas');
-      const ctx = canvas.getContext('2d');
-      const smartPos = document.getElementById('smartPos');
-      const edgeRefine = document.getElementById('edgeRefine');
-      const shadow = document.getElementById('shadow');
-      const quality = document.getElementById('quality');
+    // Remove BG locally
+    btnRemoveBg.onclick = async () => {
+      if (!originalFile) return;
+      statusEl.textContent = "Removing background...";
 
-      auth.onAuthStateChanged(user => {
-        if (user) {
-          authStatus.textContent = user.isAnonymous ? 'Guest Mode' : `Signed in as ${user.email}`;
-          btnLogout.style.display = 'inline-block';
-          btnGuest.style.display = btnSignEmail.style.display = 'none';
-          if (!user.isAnonymous) localStorage.setItem('studio_pro','1');
-          btnDownload.disabled = !localStorage.getItem('studio_pro');
-        } else {
-          authStatus.textContent = 'Not signed in';
-          btnGuest.style.display = btnSignEmail.style.display = 'inline-block';
-          btnLogout.style.display = 'none';
-          btnDownload.disabled = true;
-        }
-      });
-
-      btnGuest.onclick = () => auth.signInAnonymously().catch(e => alert(e.message));
-
-      btnSignEmail.onclick = async () => {
-        const email = prompt('Enter your email:');
-        if (!email) return alert('Email is required');
-        const pwd = prompt('Enter a password:');
-        if (!pwd) return alert('Password required');
-        try { await auth.createUserWithEmailAndPassword(email, pwd); }
-        catch (e) { alert('Auth error: '+e.message); }
+      const toBitmap = async file => {
+        if ('createImageBitmap' in window) return await createImageBitmap(file);
+        return await new Promise((res,rej)=>{
+          const i=new Image();
+          i.src=URL.createObjectURL(file);
+          i.onload=()=>res(i); i.onerror=rej;
+        });
       };
 
-      btnLogout.onclick = () => auth.signOut();
+      const imgBitmap = await toBitmap(originalFile);
+      try {
+        const resultBlob = await removeBackground(imgBitmap, {
+          model:"u2net", output:"image/png"
+        });
 
-      photoUpload.onchange = e => loadImage(e.target.files[0]);
-
-      function loadImage(file) {
-        if (!file) return;
-        const img = new Image();
-        img.src = URL.createObjectURL(file);
-        img.onload = () => {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          const r = Math.min(canvas.width / img.width, canvas.height / img.height);
-          const w = img.width * r, h = img.height * r;
-          ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
-          statusEl.textContent = 'Photo loaded!';
-          btnPreview.disabled = false;
+        currentResultUrl = URL.createObjectURL(resultBlob);
+        const cut = new Image();
+        cut.src = currentResultUrl;
+        cut.onload = () => {
+          canvas.width = cut.width;
+          canvas.height = cut.height;
+          ctx.clearRect(0,0,canvas.width,canvas.height);
+          ctx.drawImage(cut,0,0,canvas.width,canvas.height);
+          statusEl.textContent = "Background removed!";
+          btnChangeBg.disabled = false;
+          btnDownload.disabled = false;
         };
-        img.onerror = () => statusEl.textContent = 'Failed to load image.';
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "Remove Background failed.";
+        alert("Remove BG failed: " + err.message);
+      }
+    };
+
+    // Pick custom background
+    bgUpload.onchange = e => {
+      bgFile = e.target.files[0] || null;
+    };
+
+    // Change BG with uploaded background
+    btnChangeBg.onclick = async () => {
+      if (!currentResultUrl || !bgFile) return alert("Upload a background first!");
+      const fg = new Image(); fg.src = currentResultUrl;
+      const bg = new Image(); bg.src = URL.createObjectURL(bgFile);
+
+      await Promise.all([fg.decode?.(), bg.decode?.()]);
+
+      // Resize canvas to match background
+      canvas.width = bg.width;
+      canvas.height = bg.height;
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+
+      // Draw background
+      ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
+
+      if (fitToggle.checked) {
+        // Fit subject to background
+        const scale = Math.min(canvas.width/fg.width, canvas.height/fg.height);
+        const x = (canvas.width - fg.width*scale)/2;
+        const y = (canvas.height - fg.height*scale)/2;
+        ctx.drawImage(fg, x, y, fg.width*scale, fg.height*scale);
+      } else {
+        // Keep original subject size, center it
+        const x = (canvas.width - fg.width)/2;
+        const y = (canvas.height - fg.height)/2;
+        ctx.drawImage(fg, x, y);
       }
 
-      btnPreview.onclick = () => {
-        const link = document.createElement('a');
-        link.href = canvas.toDataURL('image/png', parseFloat(quality.value));
-        link.download = 'photo-preview.png';
-        link.click();
-      };
+      statusEl.textContent = "Background changed!";
+    };
 
-      btnDownload.onclick = () => {
-        if (!localStorage.getItem('studio_pro')) return alert('Pro required.');
-        const link = document.createElement('a');
-        link.href = canvas.toDataURL('image/png', parseFloat(quality.value));
-        link.download = 'photo-studio.png';
-        link.click();
-      };
-
-      document.getElementById('btnRemoveBg').onclick = () => alert('Remove BG logic here');
-      document.getElementById('btnChangeBg').onclick = () => alert('Change BG logic here');
-    });
-
-    function setBg(url) { alert('Set background to: '+url); }
+    // Download result
+    btnDownload.onclick = () => {
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL("image/png");
+      link.download = "photo-studio.png";
+      link.click();
+    };
   </script>
 </body>
 </html>
