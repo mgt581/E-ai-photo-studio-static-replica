@@ -1,4 +1,4 @@
-!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -10,83 +10,30 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
+  <!-- In-browser background removal (FREE, no API key) -->
+  <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@latest/dist/background-removal.min.js"></script>
+
   <style>
-    body {
-      margin: 0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      background: #f9fafb;
-      color: #111827;
-    }
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 16px 24px;
-      border-bottom: 1px solid #e5e7eb;
-    }
-    header h1 {
-      margin: 0;
-      font-size: 20px;
-      font-weight: 700;
-    }
-    .pro-pill {
-      background: linear-gradient(90deg,#6366f1,#8b5cf6);
-      color: #fff;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 9999px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 600;
-    }
-    .wrap {
-      max-width: 640px;
-      margin: 0 auto;
-      padding: 24px;
-      display: grid;
-      gap: 16px;
-    }
-    .card {
-      background: #fff;
-      padding: 20px;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,.05);
-    }
-    .btn {
-      height: 44px;
-      padding: 0 16px;
-      border-radius: 10px;
-      border: none;
-      cursor: pointer;
-      font-size: 15px;
-      font-weight: 600;
-      background: #e5e7eb;
-      color: #111827;
-    }
-    .btn.primary {
-      background: linear-gradient(90deg,#6366f1,#8b5cf6);
-      color: #fff;
-    }
-    .btn:disabled { opacity: .5; cursor: not-allowed; }
-    .status { text-align:center; color:#6b7280; font-size:14px; }
-    .stage {
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      overflow: hidden;
-    }
-    canvas { width: 100%; height: auto; display:block; background: #f3f4f6; }
-    .actions {
-      display: grid;
-      gap: 12px;
-    }
-    .hint { font-size: 13px; color:#6b7280; text-align:center; }
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#f9fafb;color:#111827}
+    header{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-bottom:1px solid #e5e7eb}
+    header h1{margin:0;font-size:20px;font-weight:700}
+    .pro-pill{background:linear-gradient(90deg,#6366f1,#8b5cf6);color:#fff;border:0;padding:8px 16px;border-radius:9999px;cursor:pointer;font-size:14px;font-weight:600}
+    .wrap{max-width:640px;margin:0 auto;padding:24px;display:grid;gap:16px}
+    .card{background:#fff;padding:20px;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.05)}
+    .btn{height:44px;padding:0 16px;border-radius:10px;border:0;cursor:pointer;font-size:15px;font-weight:600;background:#e5e7eb;color:#111827}
+    .btn.primary{background:linear-gradient(90deg,#6366f1,#8b5cf6);color:#fff}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .status{text-align:center;color:#6b7280;font-size:14px}
+    .stage{border:1px solid #e5e7eb;border-radius:12px;overflow:hidden}
+    canvas{width:100%;height:auto;display:block;background:#f3f4f6}
+    .actions{display:grid;gap:12px}
+    .hint{font-size:13px;color:#6b7280;text-align:center}
   </style>
 </head>
 <body>
   <header>
     <h1>AI Photo Studio</h1>
-    <button class="pro-pill" id="proToggle">Pro plan · £4.99/yr demo</button>
+    <button class="pro-pill" id="proToggle">Pro plan · £4.99/yr · 7-day trial</button>
   </header>
 
   <div class="wrap">
@@ -94,10 +41,12 @@
       <p class="status" id="status">Upload a photo to begin.</p>
       <div class="actions">
         <button class="btn primary" onclick="document.getElementById('mainInput').click()">Choose Photo</button>
-        <input id="mainInput" type="file" accept="image/*" style="display:none" onchange="PhotoStudio.onUploadMain(this.files[0]); this.value=''" />
-        <input id="bgInput" type="file" accept="image/*" style="display:none" onchange="PhotoStudio.onUploadBg(this.files[0]); this.value=''" />
-        <button id="btnRemove" class="btn" disabled onclick="PhotoStudio.removeBackground()">Remove Background</button>
-        <button id="btnChange" class="btn" disabled onclick="PhotoStudio.changeBackground()">Change Background</button>
+        <input id="mainInput" type="file" accept="image/*" style="display:none"
+               onchange="Studio.onUploadMain(this.files[0]); this.value=''" />
+        <input id="bgInput" type="file" accept="image/*" style="display:none"
+               onchange="Studio.onUploadBg(this.files[0]); this.value=''" />
+        <button id="btnRemove" class="btn" disabled onclick="Studio.removeBg()">Remove Background</button>
+        <button id="btnChange" class="btn" disabled onclick="Studio.changeBg()">Change Background</button>
         <button class="btn" onclick="document.getElementById('bgInput').click()">Choose Background (from device)</button>
       </div>
       <p class="hint">Drag & drop also works!</p>
@@ -106,88 +55,148 @@
     <div class="stage card"><canvas id="stage" width="960" height="600"></canvas></div>
 
     <div class="card actions">
-      <button class="btn" onclick="PhotoStudio.downloadPreview()">Download (Preview)</button>
-      <button class="btn primary" onclick="PhotoStudio.downloadHD('png')">Download HD (PNG)</button>
-      <button class="btn primary" onclick="PhotoStudio.downloadHD('jpeg')">Download HD (JPEG)</button>
+      <button class="btn" onclick="Studio.downloadPreview()">Download (Preview)</button>
+      <button id="btnHDpng" class="btn primary" disabled>Download HD (PNG) · Pro required</button>
+      <button id="btnHDjpg" class="btn primary" disabled>Download HD (JPEG) · Pro required</button>
     </div>
   </div>
 
   <script>
-  let proEnabled = false;
+    // ----- Pro demo toggle + HD lock -----
+    let proEnabled = false;
+    const proBtn = document.getElementById('proToggle');
+    const hdBtnPng = document.getElementById('btnHDpng');
+    const hdBtnJpg = document.getElementById('btnHDjpg');
+    function setPlanUI(){
+      if(proEnabled){
+        proBtn.textContent = "✅ Pro enabled (demo)";
+        hdBtnPng.textContent = "Download HD (PNG)";
+        hdBtnJpg.textContent = "Download HD (JPEG)";
+        hdBtnPng.disabled = hdBtnJpg.disabled = false;
+      }else{
+        proBtn.textContent = "Pro plan · £4.99/yr · 7-day trial";
+        hdBtnPng.textContent = "Download HD (PNG) · Pro required";
+        hdBtnJpg.textContent = "Download HD (JPEG) · Pro required";
+        hdBtnPng.disabled = hdBtnJpg.disabled = true;
+      }
+    }
+    proBtn.onclick = ()=>{ proEnabled = !proEnabled; setPlanUI(); };
+    setPlanUI();
 
-  document.getElementById('proToggle').onclick = () => {
-    proEnabled = !proEnabled;
-    alert(proEnabled ? "✅ Pro enabled (demo)." : "❌ Pro disabled.");
-  };
-
-  const PhotoStudio = (() => {
-    const state = { photoSrc:null, bgSrc:null };
+    // ----- helpers -----
+    const $status = document.getElementById('status');
     const canvas = document.getElementById('stage');
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d',{willReadFrequently:true});
     ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+    function setStatus(t){ $status.textContent = t; }
+    const readFileURL = (f)=>new Promise((res,rej)=>{ if(!f) return res(null); const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f); });
+    const loadImage = (src)=>new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=src; });
+    function drawChecker(){ const s=20; for(let y=0;y<canvas.height;y+=s){ for(let x=0;x<canvas.width;x+=s){ ctx.fillStyle=((x/s+y/s)%2===0)?'#e5e7eb':'#fff'; ctx.fillRect(x,y,s,s); } } }
+    function stampWatermark(){ if(proEnabled) return; ctx.save(); ctx.font="20px ui-sans-serif,system-ui"; ctx.fillStyle="rgba(0,0,0,.35)"; ctx.textAlign="right"; ctx.fillText("AI Photo Studio · FREE", canvas.width-20, canvas.height-20); ctx.restore(); }
 
-    const setStatus = (m)=> document.getElementById('status').textContent = m;
-    const loadImage = (url) => new Promise((res, rej) => { const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=url; });
+    // ----- App -----
+    const btnRemove = document.getElementById('btnRemove');
+    const btnChange = document.getElementById('btnChange');
 
-    const readFileToDataURL = (f)=> new Promise((res,rej)=>{ if(!f) return res(null); const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f); });
+    const Studio = (() => {
+      let mainSrc = null;      // uploaded photo (data URL)
+      let cutoutURL = null;    // object URL of transparent PNG after removal
+      let bgSrc = null;        // background (data URL)
 
-    function watermark(ctx, w, h) {
-      if (proEnabled) return;
-      ctx.font = "20px sans-serif";
-      ctx.fillStyle = "rgba(0,0,0,.4)";
-      ctx.fillText("Made with AI Photo Studio", 20, h-20);
+      function updateButtons(){
+        // Only allow Change Background AFTER we have a cutout
+        btnRemove.disabled = !mainSrc;
+        btnChange.disabled = !cutoutURL;
+      }
+
+      async function draw({img, bg=null}){
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        if (bg){
+          const b = await loadImage(bg);
+          const s = Math.max(canvas.width/b.width, canvas.height/b.height);
+          const bw=b.width*s, bh=b.height*s;
+          ctx.drawImage(b,(canvas.width-bw)/2,(canvas.height-bh)/2,bw,bh);
+        } else {
+          drawChecker();
+        }
+        const im = await loadImage(img);
+        const sc = Math.min(canvas.width/im.width, canvas.height/im.height);
+        const w = im.width*sc, h = im.height*sc;
+        ctx.drawImage(im,(canvas.width-w)/2,(canvas.height-h)/2,w,h);
+        stampWatermark();
+      }
+
+      async function onUploadMain(file){
+        mainSrc = await readFileURL(file);
+        // reset any previous cutout
+        if (cutoutURL) { URL.revokeObjectURL(cutoutURL); cutoutURL=null; }
+        await draw({img: mainSrc});
+        setStatus("Photo loaded — tap Remove Background.");
+        updateButtons();
+      }
+
+      async function onUploadBg(file){
+        bgSrc = await readFileURL(file);
+        if (cutoutURL){ await draw({img: cutoutURL, bg: bgSrc}); setStatus("Background selected."); }
+      }
+
+      async function removeBg(){
+        if(!mainSrc) return alert("Upload a photo first.");
+        try{
+          setStatus("Removing background… (on your device)");
+          // Use createImageBitmap for speed/memory
+          const imgBitmap = await createImageBitmap(await (await fetch(mainSrc)).blob());
+          const blob = await removeBackground(imgBitmap, { model:"u2net", output:"image/png" });
+          if (cutoutURL) URL.revokeObjectURL(cutoutURL);
+          cutoutURL = URL.createObjectURL(blob);
+          await draw({img: cutoutURL});
+          setStatus("Background removed. Choose a background, then press Change Background.");
+        }catch(e){
+          console.error(e);
+          alert("Remove BG failed. Try a smaller image and close other apps.");
+          setStatus("Remove BG failed.");
+        }finally{
+          updateButtons();
+        }
+      }
+
+      async function changeBg(){
+        if(!cutoutURL){ alert("Remove background first."); return; }
+        if(!bgSrc){ document.getElementById('bgInput').click(); return; }
+        await draw({img: cutoutURL, bg: bgSrc});
+        setStatus("Background changed. You can download now.");
+      }
+
+      function download(type="png", hd=false){
+        if(hd && !proEnabled){ alert("Pro required."); return; }
+        const mime = type==="jpeg" ? "image/jpeg" : "image/png";
+        canvas.toBlob((b)=>{ if(!b) return; const url=URL.createObjectURL(b); const a=document.createElement('a'); a.href=url; a.download=`photo-studio.${type==="jpeg"?"jpg":"png"}`; a.click(); URL.revokeObjectURL(url); }, mime, .95);
+      }
+
+      return {
+        onUploadMain, onUploadBg,
+        removeBg, changeBg,
+        downloadPreview: ()=>download("png", false),
+        downloadHD: (fmt)=>download(fmt, true)
+      };
+    })();
+
+    // Hook HD buttons
+    hdBtnPng.onclick = ()=> Studio.downloadHD("png");
+    hdBtnJpg.onclick = ()=> Studio.downloadHD("jpeg");
+
+    // Expose for inputs/buttons
+    window.Studio = Studio;
+
+    // Initial
+    drawChecker();
+
+    // Service worker (ensure you have /sw.js with a bumped CACHE_NAME)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(()=>{});
+      });
     }
-
-    async function drawToCanvas({ imgSrc, bgSrc=null }){
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      if (!imgSrc) return;
-      if (bgSrc){ const bg=await loadImage(bgSrc); ctx.drawImage(bg,0,0,canvas.width,canvas.height); }
-      const img=await loadImage(imgSrc);
-      const s=Math.min(canvas.width/img.width, canvas.height/img.height);
-      const w=img.width*s, h=img.height*s;
-      ctx.drawImage(img,(canvas.width-w)/2,(canvas.height-h)/2,w,h);
-      watermark(ctx, canvas.width, canvas.height);
-    }
-
-    async function removeBackground(){
-      if (!state.photoSrc) return;
-      setStatus("Removing background...");
-      // uses Mediapipe Selfie Segmentation
-      setTimeout(()=>{ setStatus("Done (demo cutout)."); drawToCanvas({ imgSrc: state.photoSrc }); }, 800);
-    }
-
-    async function changeBackground(){
-      if (!state.photoSrc) return;
-      if (!state.bgSrc){ document.getElementById('bgInput').click(); return; }
-      setStatus("Changing background...");
-      setTimeout(()=>{ setStatus("Done."); drawToCanvas({ imgSrc: state.photoSrc, bgSrc: state.bgSrc }); }, 800);
-    }
-
-    function downloadPreview(){
-      canvas.toBlob(b=>{
-        const url=URL.createObjectURL(b);
-        const a=document.createElement('a');
-        a.href=url; a.download="preview.png"; a.click();
-        URL.revokeObjectURL(url);
-      },"image/png",.9);
-    }
-
-    async function downloadHD(fmt="png"){
-      const mime = fmt==="jpeg"?"image/jpeg":"image/png";
-      canvas.toBlob(b=>{
-        if (!b) return;
-        const url=URL.createObjectURL(b);
-        const a=document.createElement('a');
-        a.href=url; a.download="photo-studio."+fmt; a.click();
-        URL.revokeObjectURL(url);
-      }, mime, .95);
-    }
-
-    async function onUploadMain(file){ const src=await readFileToDataURL(file); state.photoSrc=src; drawToCanvas({ imgSrc:src }); setStatus("Photo loaded!"); document.getElementById('btnRemove').disabled=false; document.getElementById('btnChange').disabled=false; }
-    async function onUploadBg(file){ const src=await readFileToDataURL(file); state.bgSrc=src; drawToCanvas({ imgSrc:state.photoSrc, bgSrc:src }); }
-
-    return { onUploadMain, onUploadBg, removeBackground, changeBackground, downloadPreview, downloadHD };
-  })();
   </script>
 </body>
 </html>
