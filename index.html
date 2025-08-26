@@ -1,174 +1,256 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>AI Photo Studio</title>
 
-  <!-- FREE client-side background remover -->
-  <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@latest/dist/background-removal.min.js"></script>
+  <!-- Free, on-device background removal (browser globals) -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-segmentation@1.0.3/dist/body-segmentation.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1/selfie_segmentation.js"></script>
 
   <style>
-    :root { --primary: #4f46e5; --muted: #64748b; }
-    body { margin:0; font-family:system-ui,sans-serif; background:#f8fafc; color:#0f172a; }
-    .wrap{max-width:900px;margin:0 auto;padding:16px;}
-    .hero{text-align:center;margin-bottom:20px;padding:28px 16px;}
-    .brand-logo{width:72px;height:72px;border-radius:16px;}
-    .brand-title{font-size:42px;font-weight:800;margin:16px 0 6px;}
-    .tagline{color:#667085;max-width:680px;margin:0 auto;}
-    .card{background:#fff;padding:16px;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,.05);margin-bottom:20px;}
-    .button{background:var(--primary);color:#fff;padding:12px 20px;border:none;border-radius:8px;cursor:pointer;margin:5px;}
-    .button:disabled{background:#9ca3af;cursor:not-allowed;}
-    .muted{color:var(--muted);}
-    canvas{display:block;margin:20px auto;border:1px solid #ddd;max-width:100%;height:auto;}
-    label{display:block;margin:8px 0;}
+    :root{
+      --bg:#f6f8fb;
+      --card:#fff;
+      --text:#0f172a;
+      --muted:#667085;
+      --ring:#e5e7eb;
+      --primary-1:#6366f1;
+      --primary-2:#7c3aed;
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
+    .container{max-width:980px;margin:0 auto;padding:18px}
+    header{padding:24px 0 6px;text-align:center}
+    header h1{font-size:44px;font-weight:800;letter-spacing:.2px;margin:4px 0 8px}
+    header p{color:var(--muted);font-size:18px;margin:0 auto;max-width:760px;line-height:1.55}
+
+    .card{background:var(--card);border:1px solid var(--ring);border-radius:var(--radius);
+          box-shadow:0 8px 30px rgba(2,6,23,.06);padding:22px;margin:18px auto}
+    .upload-card{display:flex;flex-direction:column;align-items:center;text-align:center;padding:28px}
+    .u-icon{width:92px;height:92px;border-radius:24px;display:grid;place-items:center;
+            background:linear-gradient(180deg,#eef1ff,#f4e9ff)}
+    .u-icon svg{width:48px;height:48px;stroke:#5b5ce2}
+    .u-title{font-size:30px;font-weight:800;margin:14px 0 6px}
+    .u-sub{color:var(--muted);max-width:520px;line-height:1.55}
+
+    .btn{appearance:none;border:0;border-radius:14px;padding:14px 22px;font-weight:700;color:#fff;
+         background:linear-gradient(90deg,var(--primary-1),var(--primary-2));cursor:pointer;
+         box-shadow:0 10px 24px rgba(99,102,241,.35);transition:transform .04s}
+    .btn:active{transform:translateY(1px)}
+    .btn[disabled]{opacity:.55;cursor:not-allowed;box-shadow:none}
+
+    .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+    .section-title{font-size:22px;font-weight:800;margin:0 0 6px;display:flex;align-items:center;gap:8px;justify-content:center}
+    .section-sub{color:var(--muted);margin:0 0 12px;text-align:center}
+
+    .controls{display:grid;gap:14px;align-items:center;justify-items:center}
+    .file{display:inline-block}
+    input[type="file"]{font-size:16px}
+
+    canvas{display:block;width:100%;max-width:720px;height:auto;border:1px solid var(--ring);
+           border-radius:12px;background:#fff;margin:16px auto}
+
+    .row{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+    .muted{color:var(--muted)}
   </style>
 </head>
 <body>
-  <header class="hero">
-    <img src="/logo-512.png" alt="AI Photo Studio" class="brand-logo" />
-    <h1 class="brand-title">AI Photo Studio</h1>
-    <p class="tagline">Professional photo editing with easy background tools</p>
-  </header>
+  <div class="container">
+    <header>
+      <h1>AI Photo Studio</h1>
+      <p>Professional photo editing with recommended tools and easy workflow management</p>
+    </header>
 
-  <div class="wrap">
-    <div id="controls" class="card">
-      <p id="status" class="muted">Upload a photo to begin</p>
-      <label for="photoUpload">Select Photo</label>
-      <input type="file" id="photoUpload" accept="image/*">
-
-      <div>
-        <button class="button" id="btnRemoveBg" disabled>Remove Background</button>
-        <label for="bgUpload">Choose Your Own Background</label>
-        <input type="file" id="bgUpload" accept="image/*">
-        <button class="button" id="btnChangeBg" disabled>Change Background</button>
+    <!-- Upload Card -->
+    <section class="card upload-card">
+      <div class="u-icon" aria-hidden="true">
+        <!-- cloud upload icon -->
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+          <path d="M20 16.5a4.5 4.5 0 0 0-3.8-4.44A6 6 0 1 0 6 15H5a3 3 0 0 0 0 6h13a3 3 0 0 0 2-5.5Z" stroke="url(#g)"/>
+          <path d="M12 7v8m0 0l-3-3m3 3l3-3" stroke="url(#g)" stroke-linecap="round" stroke-linejoin="round"/>
+          <defs><linearGradient id="g" x1="0" y1="0" x2="24" y2="24"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs>
+        </svg>
       </div>
+      <h2 class="u-title">Upload Your Photo</h2>
+      <p class="u-sub">Drag and drop your image here, or tap the button to browse from your device.</p>
+      <div class="actions">
+        <label class="btn file">
+          <input id="photoInput" type="file" accept="image/*" hidden />
+          📷 Choose Photo
+        </label>
+      </div>
+    </section>
 
-      <!-- New toggle -->
-      <label>
-        <input type="checkbox" id="fitToggle" checked>
-        Fit subject to background
-      </label>
+    <!-- Remove BG -->
+    <section class="card">
+      <h3 class="section-title">🎭 Remove Background</h3>
+      <p class="section-sub">Clean cutouts in seconds — free, processed on your device.</p>
+      <div class="actions">
+        <button id="btnRemove" class="btn" disabled>Remove Background</button>
+      </div>
+    </section>
 
-      <canvas id="main-canvas"></canvas>
-      <button class="button" id="btnDownload" disabled>Download Result</button>
-    </div>
+    <!-- Change BG (user picks own) -->
+    <section class="card">
+      <h3 class="section-title">🖼️ Change Background</h3>
+      <p class="section-sub">Pick any image from your device and place your subject on it.</p>
+      <div class="controls">
+        <label class="file">
+          <input id="bgInput" type="file" accept="image/*" />
+        </label>
+        <div class="row">
+          <label><input type="checkbox" id="fitToggle" checked /> Fit subject to background</label>
+          <button id="btnComposite" class="btn" disabled>Apply Background</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Canvas + Download -->
+    <section class="card">
+      <p id="status" class="muted" style="text-align:center;margin:0 0 8px">Waiting for an image…</p>
+      <canvas id="stage"></canvas>
+      <div class="actions">
+        <button id="btnDownload" class="btn" disabled>Download PNG</button>
+      </div>
+    </section>
   </div>
 
   <script>
-    const photoUpload = document.getElementById('photoUpload');
-    const bgUpload = document.getElementById('bgUpload');
-    const btnRemoveBg = document.getElementById('btnRemoveBg');
-    const btnChangeBg = document.getElementById('btnChangeBg');
+    // Elements
+    const photoInput = document.getElementById('photoInput');
+    const bgInput = document.getElementById('bgInput');
+    const btnRemove = document.getElementById('btnRemove');
+    const btnComposite = document.getElementById('btnComposite');
     const btnDownload = document.getElementById('btnDownload');
-    const statusEl = document.getElementById('status');
     const fitToggle = document.getElementById('fitToggle');
-    const canvas = document.getElementById('main-canvas');
+    const statusEl = document.getElementById('status');
+    const canvas = document.getElementById('stage');
     const ctx = canvas.getContext('2d');
 
-    let originalFile = null;
-    let currentResultUrl = null;
-    let bgFile = null;
+    // State
+    let sourceImg = null;     // original user photo (HTMLImageElement)
+    let cutoutImg = null;     // subject with transparent bg (HTMLImageElement)
+    let bgImg = null;         // chosen background (HTMLImageElement)
+    let segmenter = null;     // TF/MediaPipe segmenter
 
-    // Load main photo
-    photoUpload.onchange = e => {
-      originalFile = e.target.files[0];
-      if (!originalFile) return;
+    // Load model once
+    async function loadModel(){
+      if (segmenter) return segmenter;
+      statusEl.textContent = "Loading AI model…";
+      const bs = bodySegmentation;
+      segmenter = await bs.createSegmenter(
+        bs.SupportedModels.MediaPipeSelfieSegmentation,
+        { runtime:"mediapipe", solutionPath:"https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1" }
+      );
+      statusEl.textContent = "Model ready. Upload a photo.";
+      return segmenter;
+    }
+    loadModel().catch(console.error);
+
+    // Helpers
+    const fileToImage = (file) => new Promise((res,rej)=>{
       const img = new Image();
-      img.src = URL.createObjectURL(originalFile);
-      img.onload = () => {
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.clearRect(0,0,canvas.width,canvas.height);
-        ctx.drawImage(img,0,0,canvas.width,canvas.height);
-        statusEl.textContent = "Photo loaded!";
-        btnRemoveBg.disabled = false;
-      }
-    };
+      img.onload = ()=> res(img);
+      img.onerror = rej;
+      img.src = URL.createObjectURL(file);
+    });
 
-    // Remove BG locally
-    btnRemoveBg.onclick = async () => {
-      if (!originalFile) return;
-      statusEl.textContent = "Removing background...";
-
-      const toBitmap = async file => {
-        if ('createImageBitmap' in window) return await createImageBitmap(file);
-        return await new Promise((res,rej)=>{
-          const i=new Image();
-          i.src=URL.createObjectURL(file);
-          i.onload=()=>res(i); i.onerror=rej;
-        });
-      };
-
-      const imgBitmap = await toBitmap(originalFile);
-      try {
-        const resultBlob = await removeBackground(imgBitmap, {
-          model:"u2net", output:"image/png"
-        });
-
-        currentResultUrl = URL.createObjectURL(resultBlob);
-        const cut = new Image();
-        cut.src = currentResultUrl;
-        cut.onload = () => {
-          canvas.width = cut.width;
-          canvas.height = cut.height;
-          ctx.clearRect(0,0,canvas.width,canvas.height);
-          ctx.drawImage(cut,0,0,canvas.width,canvas.height);
-          statusEl.textContent = "Background removed!";
-          btnChangeBg.disabled = false;
-          btnDownload.disabled = false;
-        };
-      } catch (err) {
-        console.error(err);
-        statusEl.textContent = "Remove Background failed.";
-        alert("Remove BG failed: " + err.message);
-      }
-    };
-
-    // Pick custom background
-    bgUpload.onchange = e => {
-      bgFile = e.target.files[0] || null;
-    };
-
-    // Change BG with uploaded background
-    btnChangeBg.onclick = async () => {
-      if (!currentResultUrl || !bgFile) return alert("Upload a background first!");
-      const fg = new Image(); fg.src = currentResultUrl;
-      const bg = new Image(); bg.src = URL.createObjectURL(bgFile);
-
-      await Promise.all([fg.decode?.(), bg.decode?.()]);
-
-      // Resize canvas to match background
-      canvas.width = bg.width;
-      canvas.height = bg.height;
+    // Upload main photo
+    photoInput.addEventListener('change', async (e)=>{
+      const file = e.target.files?.[0];
+      if (!file) return;
+      sourceImg = await fileToImage(file);
+      canvas.width = sourceImg.width;
+      canvas.height = sourceImg.height;
       ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.drawImage(sourceImg,0,0,canvas.width,canvas.height);
+      btnRemove.disabled = false;
+      btnDownload.disabled = false;
+      statusEl.textContent = "Photo loaded. Tap “Remove Background”.";
+    });
 
-      // Draw background
-      ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
+    // Remove background (on-device)
+    btnRemove.addEventListener('click', async ()=>{
+      if (!sourceImg) return;
+      try{
+        statusEl.textContent = "Removing background…";
+        const bs = bodySegmentation;
+        const segs = await (await loadModel()).segmentPeople(sourceImg);
+        const mask = await bs.toBinaryMask(segs,{foregroundThreshold:.6,backgroundThreshold:.1});
 
-      if (fitToggle.checked) {
-        // Fit subject to background
-        const scale = Math.min(canvas.width/fg.width, canvas.height/fg.height);
-        const x = (canvas.width - fg.width*scale)/2;
-        const y = (canvas.height - fg.height*scale)/2;
-        ctx.drawImage(fg, x, y, fg.width*scale, fg.height*scale);
-      } else {
-        // Keep original subject size, center it
-        const x = (canvas.width - fg.width)/2;
-        const y = (canvas.height - fg.height)/2;
-        ctx.drawImage(fg, x, y);
+        // Apply alpha mask to source
+        const off = document.createElement('canvas');
+        off.width = sourceImg.width; off.height = sourceImg.height;
+        const octx = off.getContext('2d');
+        octx.drawImage(sourceImg,0,0);
+        const imgData = octx.getImageData(0,0,off.width,off.height);
+        const m = mask.data; // RGBA
+        for (let i=0;i<imgData.data.length;i+=4){
+          imgData.data[i+3] = m[i+3]; // copy alpha
+        }
+        octx.putImageData(imgData,0,0);
+
+        cutoutImg = new Image();
+        cutoutImg.src = off.toDataURL('image/png');
+        cutoutImg.onload = ()=>{
+          canvas.width = cutoutImg.width;
+          canvas.height = cutoutImg.height;
+          ctx.clearRect(0,0,canvas.width,canvas.height);
+          ctx.drawImage(cutoutImg,0,0,canvas.width,canvas.height);
+          btnComposite.disabled = !bgImg; // enable if bg already chosen
+          statusEl.textContent = "Background removed. Pick a background and Apply.";
+        };
+      }catch(err){
+        console.error(err);
+        alert("Remove BG failed: "+err.message);
+        statusEl.textContent = "Remove BG failed.";
       }
+    });
 
-      statusEl.textContent = "Background changed!";
-    };
+    // Pick background
+    bgInput.addEventListener('change', async (e)=>{
+      const file = e.target.files?.[0];
+      if (!file) return;
+      bgImg = await fileToImage(file);
+      btnComposite.disabled = !cutoutImg;
+      statusEl.textContent = cutoutImg ? "Ready to apply background." : "Background selected. Now remove the background.";
+    });
 
-    // Download result
-    btnDownload.onclick = () => {
-      const link = document.createElement('a');
-      link.href = canvas.toDataURL("image/png");
-      link.download = "photo-studio.png";
-      link.click();
-    };
+    // Composite subject onto background
+    btnComposite.addEventListener('click', ()=>{
+      if (!cutoutImg || !bgImg) return;
+
+      // Canvas matches background
+      canvas.width = bgImg.width;
+      canvas.height = bgImg.height;
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.drawImage(bgImg,0,0,canvas.width,canvas.height);
+
+      if (fitToggle.checked){
+        const s = Math.min(canvas.width/cutoutImg.width, canvas.height/cutoutImg.height);
+        const w = cutoutImg.width*s, h = cutoutImg.height*s;
+        const x = (canvas.width - w)/2, y = (canvas.height - h)/2;
+        ctx.drawImage(cutoutImg,x,y,w,h);
+      }else{
+        const x = (canvas.width - cutoutImg.width)/2;
+        const y = (canvas.height - cutoutImg.height)/2;
+        ctx.drawImage(cutoutImg,x,y);
+      }
+      statusEl.textContent = "Background applied. You can download now.";
+      btnDownload.disabled = false;
+    });
+
+    // Download
+    btnDownload.addEventListener('click', ()=>{
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = 'photo-studio.png';
+      a.click();
+    });
   </script>
 </body>
 </html>
