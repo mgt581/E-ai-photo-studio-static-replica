@@ -6,11 +6,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AI Photo Studio</title>
 
-  <!-- PWA & Home Screen Support -->
-  <link rel="manifest" href="/manifest.json">
+  <!-- App Icons & PWA -->
   <link rel="icon" href="/logo-192.png" sizes="192x192">
   <link rel="apple-touch-icon" href="/logo-512.png" sizes="512x512">
+  <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#0ea5e9">
+
+  <!-- SEO / Social Meta -->
+  <meta name="description" content="Enhance your photos with intuitive AI tools in a mobile‑friendly web app.">
+  <meta property="og:title" content="AI Photo Studio">
+  <meta property="og:description" content="Enhance your photos with intuitive AI tools.">
+  <meta property="og:image" content="/logo-512.png">
+  <meta property="og:type" content="website">
 
   <style>
     :root { --primary: #4f46e5; --muted: #64748b; }
@@ -21,14 +28,15 @@
     .button { background: var(--primary); color: #fff; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; margin: 5px; }
     .button:disabled { background: #9ca3af; cursor: not-allowed; }
     .muted { color: var(--muted); }
-    #authPanel { text-align: center; margin-bottom: 20px; }
+    #authPanel, #controls { text-align: center; margin-bottom: 20px; }
     #status, #authStatus { text-align: center; margin: 10px 0; }
     canvas { display: block; margin: 20px auto; background: #fff; border: 1px solid #ddd; }
+    label[for="photoUpload"] { display: block; margin-top: 14px; margin-bottom: 6px; }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <section class="hero">
+    <section class="hero" aria-label="App introduction">
       <h1>AI Photo Studio</h1>
       <p class="muted">Enhance your photos with intuitive AI tools</p>
     </section>
@@ -42,77 +50,80 @@
       <p id="authStatus" class="muted">Not signed in</p>
     </div>
 
-    <!-- Upload / Download Area -->
-    <input id="fileInput" type="file" accept="image/*" style="display:block; margin:0 auto;">
-    <p id="status">Upload a photo to begin</p>
-    <button id="btnHD" class="button" disabled>Download HD</button>
-    <canvas id="stage" width="960" height="600"></canvas>
+    <!-- Photo Tools -->
+    <div id="controls" class="card">
+      <p id="status" class="muted">Upload a photo to begin</p>
+      <label for="photoUpload" class="muted">Select Photo</label>
+      <input type="file" id="photoUpload" accept="image/*">
+      <div>
+        <button class="button" id="btnEnhance">Enhance Photo</button>
+        <button class="button" id="btnDownload" disabled>Download HD</button>
+      </div>
+      <canvas id="main-canvas" width="400" height="400"></canvas>
+    </div>
   </div>
 
-  <!-- Firebase SDKs (Browser Safe, compat versions for classic interface) -->
+  <!-- Firebase Compat Scripts (fixes import/export issues) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      // Firebase Setup
       const firebaseConfig = {
         apiKey: "AIzaSyDsBDuaZ_rl7ro63Fv5gPh37EwSkfh-NqM",
         authDomain: "aiphotostudioapp.firebaseapp.com",
         projectId: "aiphotostudioapp",
-        storageBucket: "aiphotostudioapp.appspot.com",
+        storageBucket: "aiphotostudioapp.firebasestorage.app",
         messagingSenderId: "1056724519182",
         appId: "1:1056724519182:web:93410e1b71a292e531ef5f",
         measurementId: "G-YMB9JJHNBE"
       };
+
       firebase.initializeApp(firebaseConfig);
       const auth = firebase.auth();
 
-      // UI elements
       const authStatus = document.getElementById('authStatus');
-      const btnLoginGoogle = document.getElementById('btnLoginGoogle');
-      const btnLoginEmail = document.getElementById('btnLoginEmail');
+      const btnGoogle = document.getElementById('btnLoginGoogle');
+      const btnEmail = document.getElementById('btnLoginEmail');
       const btnLogout = document.getElementById('btnLogout');
-      const btnHD = document.getElementById('btnHD');
+      const btnDownload = document.getElementById('btnDownload');
       const statusEl = document.getElementById('status');
-      const fileInput = document.getElementById('fileInput');
-      const canvas = document.getElementById('stage');
+      const photoUpload = document.getElementById('photoUpload');
+      const canvas = document.getElementById('main-canvas');
       const ctx = canvas.getContext('2d');
 
-      // Auth Flow
       auth.onAuthStateChanged(user => {
         if (user) {
           authStatus.textContent = `Signed in as ${user.displayName || user.email}`;
           btnLogout.style.display = 'inline-block';
-          btnLoginGoogle.style.display = 'none';
-          btnLoginEmail.style.display = 'none';
+          btnGoogle.style.display = 'none';
+          btnEmail.style.display = 'none';
           localStorage.setItem('studio_pro', '1');
-          btnHD.disabled = false;
+          btnDownload.disabled = false;
         } else {
           authStatus.textContent = 'Not signed in';
           btnLogout.style.display = 'none';
-          btnLoginGoogle.style.display = 'inline-block';
-          btnLoginEmail.style.display = 'inline-block';
+          btnGoogle.style.display = 'inline-block';
+          btnEmail.style.display = 'inline-block';
           localStorage.removeItem('studio_pro');
-          btnHD.disabled = true;
+          btnDownload.disabled = true;
         }
       });
 
-      btnLoginGoogle.onclick = () => {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        auth.signInWithPopup(provider).catch(() => alert('Google sign-in failed.'));
-      };
+      btnGoogle.onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
+        .catch(() => alert('Google sign-in failed.'));
 
-      btnLoginEmail.onclick = async () => {
+      btnEmail.onclick = async () => {
         const email = prompt('Enter your email:');
-        if (!email) return alert('Email required');
-        const password = prompt('Enter your password:');
+        if (!email) return;
+        const pwd = prompt('Enter your password:');
+        if (!pwd) return;
         try {
-          await auth.signInWithEmailAndPassword(email, password);
+          await auth.signInWithEmailAndPassword(email, pwd);
         } catch (e) {
           if (e.code === 'auth/user-not-found') {
-            await auth.createUserWithEmailAndPassword(email, password);
+            await auth.createUserWithEmailAndPassword(email, pwd);
           } else {
             alert('Email sign-in failed.');
           }
@@ -121,35 +132,38 @@
 
       btnLogout.onclick = () => auth.signOut();
 
-      // Image upload logic
-      fileInput.onchange = async e => {
+      photoUpload.onchange = e => {
         if (!e.target.files[0]) return;
-        const src = await new Promise(res => {
-          const r = new FileReader();
-          r.onload = () => res(r.result);
-          r.readAsDataURL(e.target.files[0]);
-        });
         const img = new Image();
+        img.src = URL.createObjectURL(e.target.files[0]);
         img.onload = () => {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          let ratio = Math.min(canvas.width / img.width, canvas.height / img.height);
+          let w = img.width * ratio;
+          let h = img.height * ratio;
+          ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
           statusEl.textContent = 'Photo loaded!';
         };
-        img.src = src;
+        img.onerror = () => statusEl.textContent = 'Failed to load image.';
       };
 
-      btnHD.onclick = () => {
-        const a = document.createElement('a');
-        a.href = canvas.toDataURL('image/png', .95);
-        a.download = 'studio-photo.png';
-        a.click();
+      btnDownload.onclick = () => {
+        if (!localStorage.getItem('studio_pro')) return alert('Pro access required.');
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL('image/png', 0.95);
+        link.download = 'photo-studio.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       };
 
-      // PWA service worker
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').catch(console.error);
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(console.error);
+        });
       }
     });
   </script>
 </body>
 </html>
+
