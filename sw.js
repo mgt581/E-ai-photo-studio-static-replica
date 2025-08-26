@@ -5,8 +5,15 @@ self.addEventListener("install", evt => {
   evt.waitUntil(caches.open(CACHE).then(cache => cache.addAll(filesToCache)));
   self.skipWaiting();
 });
+
 self.addEventListener("activate", evt => {
-  evt.waitUntil(caches.keys().then(keys => Promise.all(keys.map(key => key !== CACHE && caches.delete(key)))));
+  evt.waitUntil(
+    caches.keys().then(keys => Promise.all(keys.map(key => key !== CACHE && caches.delete(key))))
+  );
 });
+
 self.addEventListener("fetch", evt => {
-  evt.respondWith(caches.match(evt.request).then(r => r || fetch(evt.request)));
+  evt.respondWith(
+    caches.match(evt.request).then(response => response || fetch(evt.request))
+  );
+});
