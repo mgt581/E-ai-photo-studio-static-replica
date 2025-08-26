@@ -5,252 +5,176 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>AI Photo Studio</title>
 
-  <!-- Free, on-device background removal (browser globals) -->
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-segmentation@1.0.3/dist/body-segmentation.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1/selfie_segmentation.js"></script>
+  <!-- MediaPipe Selfie Segmentation -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js"></script>
+
+  <!-- Firebase (for sign in / sign up / pro plan) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
   <style>
-    :root{
-      --bg:#f6f8fb;
-      --card:#fff;
-      --text:#0f172a;
-      --muted:#667085;
-      --ring:#e5e7eb;
-      --primary-1:#6366f1;
-      --primary-2:#7c3aed;
-      --radius:16px;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
-    .container{max-width:980px;margin:0 auto;padding:18px}
-    header{padding:24px 0 6px;text-align:center}
-    header h1{font-size:44px;font-weight:800;letter-spacing:.2px;margin:4px 0 8px}
-    header p{color:var(--muted);font-size:18px;margin:0 auto;max-width:760px;line-height:1.55}
-
-    .card{background:var(--card);border:1px solid var(--ring);border-radius:var(--radius);
-          box-shadow:0 8px 30px rgba(2,6,23,.06);padding:22px;margin:18px auto}
-    .upload-card{display:flex;flex-direction:column;align-items:center;text-align:center;padding:28px}
-    .u-icon{width:92px;height:92px;border-radius:24px;display:grid;place-items:center;
-            background:linear-gradient(180deg,#eef1ff,#f4e9ff)}
-    .u-icon svg{width:48px;height:48px;stroke:#5b5ce2}
-    .u-title{font-size:30px;font-weight:800;margin:14px 0 6px}
-    .u-sub{color:var(--muted);max-width:520px;line-height:1.55}
-
-    .btn{appearance:none;border:0;border-radius:14px;padding:14px 22px;font-weight:700;color:#fff;
-         background:linear-gradient(90deg,var(--primary-1),var(--primary-2));cursor:pointer;
-         box-shadow:0 10px 24px rgba(99,102,241,.35);transition:transform .04s}
-    .btn:active{transform:translateY(1px)}
-    .btn[disabled]{opacity:.55;cursor:not-allowed;box-shadow:none}
-
-    .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:12px}
-    .section-title{font-size:22px;font-weight:800;margin:0 0 6px;display:flex;align-items:center;gap:8px;justify-content:center}
-    .section-sub{color:var(--muted);margin:0 0 12px;text-align:center}
-
-    .controls{display:grid;gap:14px;align-items:center;justify-items:center}
-    .file{display:inline-block}
-    input[type="file"]{font-size:16px}
-
-    canvas{display:block;width:100%;max-width:720px;height:auto;border:1px solid var(--ring);
-           border-radius:12px;background:#fff;margin:16px auto}
-
-    .row{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
-    .muted{color:var(--muted)}
+    body{margin:0;font-family:sans-serif;background:#f8fafc;color:#111}
+    header{text-align:center;padding:20px}
+    header h1{font-size:40px;margin:0}
+    header p{color:#555}
+    .card{background:#fff;border:1px solid #ddd;border-radius:10px;padding:20px;margin:20px auto;max-width:600px;box-shadow:0 4px 10px rgba(0,0,0,.05)}
+    .btn{padding:12px 20px;border:none;border-radius:8px;color:#fff;background:#4f46e5;cursor:pointer;margin:5px;font-weight:bold}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    canvas{display:block;margin:20px auto;border:1px solid #ccc;max-width:100%}
+    .muted{color:#777}
   </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>AI Photo Studio</h1>
-      <p>Professional photo editing with recommended tools and easy workflow management</p>
-    </header>
+  <header>
+    <h1>AI Photo Studio</h1>
+    <p>Professional photo editing with easy workflow tools</p>
+  </header>
 
-    <!-- Upload Card -->
-    <section class="card upload-card">
-      <div class="u-icon" aria-hidden="true">
-        <!-- cloud upload icon -->
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
-          <path d="M20 16.5a4.5 4.5 0 0 0-3.8-4.44A6 6 0 1 0 6 15H5a3 3 0 0 0 0 6h13a3 3 0 0 0 2-5.5Z" stroke="url(#g)"/>
-          <path d="M12 7v8m0 0l-3-3m3 3l3-3" stroke="url(#g)" stroke-linecap="round" stroke-linejoin="round"/>
-          <defs><linearGradient id="g" x1="0" y1="0" x2="24" y2="24"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs>
-        </svg>
-      </div>
-      <h2 class="u-title">Upload Your Photo</h2>
-      <p class="u-sub">Drag and drop your image here, or tap the button to browse from your device.</p>
-      <div class="actions">
-        <label class="btn file">
-          <input id="photoInput" type="file" accept="image/*" hidden />
-          📷 Choose Photo
-        </label>
-      </div>
-    </section>
+  <div class="card">
+    <p id="status" class="muted">Upload a photo to begin</p>
+    <input type="file" id="photoInput" accept="image/*"><br>
+    <button id="btnRemove" class="btn" disabled>Remove Background</button><br>
+    <input type="file" id="bgInput" accept="image/*"><br>
+    <label><input type="checkbox" id="fitToggle" checked> Fit subject to background</label><br>
+    <button id="btnComposite" class="btn" disabled>Apply Background</button><br>
+    <button id="btnDownload" class="btn" disabled>Download Result</button>
+    <canvas id="stage"></canvas>
+  </div>
 
-    <!-- Remove BG -->
-    <section class="card">
-      <h3 class="section-title">🎭 Remove Background</h3>
-      <p class="section-sub">Clean cutouts in seconds — free, processed on your device.</p>
-      <div class="actions">
-        <button id="btnRemove" class="btn" disabled>Remove Background</button>
-      </div>
-    </section>
-
-    <!-- Change BG (user picks own) -->
-    <section class="card">
-      <h3 class="section-title">🖼️ Change Background</h3>
-      <p class="section-sub">Pick any image from your device and place your subject on it.</p>
-      <div class="controls">
-        <label class="file">
-          <input id="bgInput" type="file" accept="image/*" />
-        </label>
-        <div class="row">
-          <label><input type="checkbox" id="fitToggle" checked /> Fit subject to background</label>
-          <button id="btnComposite" class="btn" disabled>Apply Background</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- Canvas + Download -->
-    <section class="card">
-      <p id="status" class="muted" style="text-align:center;margin:0 0 8px">Waiting for an image…</p>
-      <canvas id="stage"></canvas>
-      <div class="actions">
-        <button id="btnDownload" class="btn" disabled>Download PNG</button>
-      </div>
-    </section>
+  <div class="card">
+    <h3>Pro Plan</h3>
+    <button id="btnUpgrade" class="btn">Upgrade to Pro</button>
+    <button id="btnSignOut" class="btn" style="display:none">Sign Out</button>
+    <p id="authStatus" class="muted">Not signed in</p>
   </div>
 
   <script>
+    // Firebase demo config (replace with your own if needed)
+    const firebaseConfig = {
+      apiKey: "AIzaSyXXXX",
+      authDomain: "aiphotostudioapp.firebaseapp.com",
+      projectId: "aiphotostudioapp"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
     // Elements
-    const photoInput = document.getElementById('photoInput');
-    const bgInput = document.getElementById('bgInput');
-    const btnRemove = document.getElementById('btnRemove');
-    const btnComposite = document.getElementById('btnComposite');
-    const btnDownload = document.getElementById('btnDownload');
-    const fitToggle = document.getElementById('fitToggle');
-    const statusEl = document.getElementById('status');
-    const canvas = document.getElementById('stage');
-    const ctx = canvas.getContext('2d');
+    const statusEl=document.getElementById('status');
+    const photoInput=document.getElementById('photoInput');
+    const bgInput=document.getElementById('bgInput');
+    const btnRemove=document.getElementById('btnRemove');
+    const btnComposite=document.getElementById('btnComposite');
+    const btnDownload=document.getElementById('btnDownload');
+    const btnUpgrade=document.getElementById('btnUpgrade');
+    const btnSignOut=document.getElementById('btnSignOut');
+    const authStatus=document.getElementById('authStatus');
+    const fitToggle=document.getElementById('fitToggle');
+    const canvas=document.getElementById('stage');
+    const ctx=canvas.getContext('2d');
 
-    // State
-    let sourceImg = null;     // original user photo (HTMLImageElement)
-    let cutoutImg = null;     // subject with transparent bg (HTMLImageElement)
-    let bgImg = null;         // chosen background (HTMLImageElement)
-    let segmenter = null;     // TF/MediaPipe segmenter
+    let sourceImg=null, cutoutImg=null, bgImg=null;
+    let isPro=false;
 
-    // Load model once
-    async function loadModel(){
-      if (segmenter) return segmenter;
-      statusEl.textContent = "Loading AI model…";
-      const bs = bodySegmentation;
-      segmenter = await bs.createSegmenter(
-        bs.SupportedModels.MediaPipeSelfieSegmentation,
-        { runtime:"mediapipe", solutionPath:"https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1" }
-      );
-      statusEl.textContent = "Model ready. Upload a photo.";
-      return segmenter;
+    // MediaPipe setup
+    const selfieSegmentation = new SelfieSegmentation({locateFile:(f)=>`https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${f}`});
+    selfieSegmentation.setOptions({modelSelection:1});
+    selfieSegmentation.onResults(onResults);
+
+    function fileToImage(file){
+      return new Promise((res,rej)=>{
+        const img=new Image();
+        img.onload=()=>res(img);
+        img.onerror=rej;
+        img.src=URL.createObjectURL(file);
+      });
     }
-    loadModel().catch(console.error);
 
-    // Helpers
-    const fileToImage = (file) => new Promise((res,rej)=>{
-      const img = new Image();
-      img.onload = ()=> res(img);
-      img.onerror = rej;
-      img.src = URL.createObjectURL(file);
-    });
-
-    // Upload main photo
-    photoInput.addEventListener('change', async (e)=>{
-      const file = e.target.files?.[0];
-      if (!file) return;
-      sourceImg = await fileToImage(file);
-      canvas.width = sourceImg.width;
-      canvas.height = sourceImg.height;
-      ctx.clearRect(0,0,canvas.width,canvas.height);
+    photoInput.onchange=async e=>{
+      const file=e.target.files[0];
+      if(!file)return;
+      sourceImg=await fileToImage(file);
+      canvas.width=sourceImg.width;
+      canvas.height=sourceImg.height;
       ctx.drawImage(sourceImg,0,0,canvas.width,canvas.height);
-      btnRemove.disabled = false;
-      btnDownload.disabled = false;
-      statusEl.textContent = "Photo loaded. Tap “Remove Background”.";
-    });
+      statusEl.textContent="Photo loaded!";
+      btnRemove.disabled=false;
+      btnDownload.disabled=false;
+    };
 
-    // Remove background (on-device)
-    btnRemove.addEventListener('click', async ()=>{
-      if (!sourceImg) return;
-      try{
-        statusEl.textContent = "Removing background…";
-        const bs = bodySegmentation;
-        const segs = await (await loadModel()).segmentPeople(sourceImg);
-        const mask = await bs.toBinaryMask(segs,{foregroundThreshold:.6,backgroundThreshold:.1});
+    function onResults(results){
+      if(!results.segmentationMask)return;
+      canvas.width=sourceImg.width;
+      canvas.height=sourceImg.height;
+      ctx.drawImage(results.segmentationMask,0,0,canvas.width,canvas.height);
+      ctx.globalCompositeOperation='source-in';
+      ctx.drawImage(sourceImg,0,0,canvas.width,canvas.height);
+      ctx.globalCompositeOperation='source-over';
+      cutoutImg=new Image();
+      cutoutImg.src=canvas.toDataURL();
+      statusEl.textContent="Background removed!";
+      btnComposite.disabled=!(!bgInput.files[0]);
+    }
 
-        // Apply alpha mask to source
-        const off = document.createElement('canvas');
-        off.width = sourceImg.width; off.height = sourceImg.height;
-        const octx = off.getContext('2d');
-        octx.drawImage(sourceImg,0,0);
-        const imgData = octx.getImageData(0,0,off.width,off.height);
-        const m = mask.data; // RGBA
-        for (let i=0;i<imgData.data.length;i+=4){
-          imgData.data[i+3] = m[i+3]; // copy alpha
-        }
-        octx.putImageData(imgData,0,0);
-
-        cutoutImg = new Image();
-        cutoutImg.src = off.toDataURL('image/png');
-        cutoutImg.onload = ()=>{
-          canvas.width = cutoutImg.width;
-          canvas.height = cutoutImg.height;
-          ctx.clearRect(0,0,canvas.width,canvas.height);
-          ctx.drawImage(cutoutImg,0,0,canvas.width,canvas.height);
-          btnComposite.disabled = !bgImg; // enable if bg already chosen
-          statusEl.textContent = "Background removed. Pick a background and Apply.";
-        };
-      }catch(err){
-        console.error(err);
-        alert("Remove BG failed: "+err.message);
-        statusEl.textContent = "Remove BG failed.";
+    btnRemove.onclick=()=>{
+      if(sourceImg){
+        selfieSegmentation.send({image:sourceImg});
       }
-    });
+    };
 
-    // Pick background
-    bgInput.addEventListener('change', async (e)=>{
-      const file = e.target.files?.[0];
-      if (!file) return;
-      bgImg = await fileToImage(file);
-      btnComposite.disabled = !cutoutImg;
-      statusEl.textContent = cutoutImg ? "Ready to apply background." : "Background selected. Now remove the background.";
-    });
+    bgInput.onchange=async e=>{
+      const file=e.target.files[0];
+      if(!file)return;
+      bgImg=await fileToImage(file);
+      statusEl.textContent="Background selected.";
+      btnComposite.disabled=!(!cutoutImg);
+    };
 
-    // Composite subject onto background
-    btnComposite.addEventListener('click', ()=>{
-      if (!cutoutImg || !bgImg) return;
-
-      // Canvas matches background
-      canvas.width = bgImg.width;
-      canvas.height = bgImg.height;
-      ctx.clearRect(0,0,canvas.width,canvas.height);
+    btnComposite.onclick=()=>{
+      if(!cutoutImg||!bgImg)return;
+      canvas.width=bgImg.width;
+      canvas.height=bgImg.height;
       ctx.drawImage(bgImg,0,0,canvas.width,canvas.height);
-
-      if (fitToggle.checked){
-        const s = Math.min(canvas.width/cutoutImg.width, canvas.height/cutoutImg.height);
-        const w = cutoutImg.width*s, h = cutoutImg.height*s;
-        const x = (canvas.width - w)/2, y = (canvas.height - h)/2;
+      if(fitToggle.checked){
+        const scale=Math.min(canvas.width/cutoutImg.width,canvas.height/cutoutImg.height);
+        const w=cutoutImg.width*scale,h=cutoutImg.height*scale;
+        const x=(canvas.width-w)/2,y=(canvas.height-h)/2;
         ctx.drawImage(cutoutImg,x,y,w,h);
       }else{
-        const x = (canvas.width - cutoutImg.width)/2;
-        const y = (canvas.height - cutoutImg.height)/2;
+        const x=(canvas.width-cutoutImg.width)/2,y=(canvas.height-cutoutImg.height)/2;
         ctx.drawImage(cutoutImg,x,y);
       }
-      statusEl.textContent = "Background applied. You can download now.";
-      btnDownload.disabled = false;
-    });
+      statusEl.textContent="Background applied!";
+    };
 
-    // Download
-    btnDownload.addEventListener('click', ()=>{
-      const a = document.createElement('a');
-      a.href = canvas.toDataURL('image/png');
-      a.download = 'photo-studio.png';
+    btnDownload.onclick=()=>{
+      const a=document.createElement('a');
+      a.href=canvas.toDataURL("image/png");
+      a.download="photo.png";
+      if(!isPro){
+        // apply watermark
+        ctx.font="28px sans-serif";
+        ctx.fillStyle="rgba(255,0,0,0.5)";
+        ctx.fillText("AI Photo Studio FREE",20,40);
+        a.href=canvas.toDataURL("image/png");
+      }
       a.click();
+    };
+
+    btnUpgrade.onclick=()=>{
+      isPro=true;alert("Pro mode enabled (demo). Add Stripe to make real.");
+    };
+
+    // Firebase Auth (demo)
+    auth.onAuthStateChanged(user=>{
+      if(user){
+        authStatus.textContent="Signed in: "+(user.email||"Guest");
+        btnSignOut.style.display="inline-block";
+      }else{
+        authStatus.textContent="Not signed in";
+        btnSignOut.style.display="none";
+      }
     });
+    btnSignOut.onclick=()=>auth.signOut();
   </script>
 </body>
 </html>
