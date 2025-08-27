@@ -5,8 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>AI Photo Studio</title>
   <meta name="theme-color" content="#4f46e5">
+
+  <!-- PWA / Icons -->
   <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2">
+  <link rel="icon" href="/logo-192.png">
+
+  <!-- iOS PWA niceties -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
@@ -14,27 +19,46 @@
   <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@latest/dist/background-removal.min.js"></script>
 
   <style>
+    :root{--grad:linear-gradient(90deg,#6366f1,#8b5cf6)}
     body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#f9fafb;color:#111827}
-    header{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-bottom:1px solid #e5e7eb}
-    header h1{margin:0;font-size:20px;font-weight:700}
-    .pro-pill{background:linear-gradient(90deg,#6366f1,#8b5cf6);color:#fff;border:0;padding:8px 16px;border-radius:9999px;cursor:pointer;font-size:14px;font-weight:600}
+    header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 24px;border-bottom:1px solid #e5e7eb}
+    .brand{display:flex;align-items:center;gap:10px}
+    .brand img{width:28px;height:28px;border-radius:6px}
+    .brand h1{margin:0;font-size:20px;font-weight:800;letter-spacing:.2px}
+    .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .pill{background:var(--grad);color:#fff;border:0;padding:8px 16px;border-radius:9999px;cursor:pointer;font-size:14px;font-weight:700}
+    .ghost{background:#eef2ff;color:#4338ca;border:0;padding:8px 12px;border-radius:10px;font-weight:700}
+    .muted{color:#6b7280;font-size:13px}
     .wrap{max-width:640px;margin:0 auto;padding:24px;display:grid;gap:16px}
     .card{background:#fff;padding:20px;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.05)}
-    .btn{height:44px;padding:0 16px;border-radius:10px;border:0;cursor:pointer;font-size:15px;font-weight:600;background:#e5e7eb;color:#111827}
-    .btn.primary{background:linear-gradient(90deg,#6366f1,#8b5cf6);color:#fff}
+    .btn{height:44px;padding:0 16px;border-radius:10px;border:0;cursor:pointer;font-size:15px;font-weight:700;background:#e5e7eb;color:#111827}
+    .btn.primary{background:var(--grad);color:#fff}
     .btn:disabled{opacity:.5;cursor:not-allowed}
     .status{text-align:center;color:#6b7280;font-size:14px}
     .stage{border:1px solid #e5e7eb;border-radius:12px;overflow:hidden}
     canvas{width:100%;height:auto;display:block;background:#f3f4f6}
     .actions{display:grid;gap:12px}
     .hint{font-size:13px;color:#6b7280;text-align:center}
-    .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;background:#111827;color:#fff;padding:10px 14px;border-radius:10px;font-weight:600;box-shadow:0 6px 18px rgba(0,0,0,.25);z-index:9999}
+    .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;background:#111827;color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.25);z-index:9999}
   </style>
 </head>
 <body>
   <header>
-    <h1>AI Photo Studio</h1>
-    <button class="pro-pill" id="proToggle">Pro plan · £4.99/yr · 7-day trial</button>
+    <div class="brand">
+      <img src="/logo-192.png" alt="Logo">
+      <h1>AI Photo Studio</h1>
+    </div>
+
+    <div class="row">
+      <!-- Auth controls -->
+      <button id="btnGuest"   class="ghost">Continue as Guest</button>
+      <button id="btnEmail"   class="ghost">Sign up / Sign in</button>
+      <button id="btnLogout"  class="ghost" style="display:none">Sign out</button>
+      <span id="authStatus" class="muted">Not signed in</span>
+
+      <!-- Pro plan -->
+      <button class="pill" id="proToggle">Pro plan · £4.99/yr · 7-day trial</button>
+    </div>
   </header>
 
   <div class="wrap" ondragover="event.preventDefault()" ondrop="Studio.handleDrop(event)">
@@ -56,23 +80,73 @@
     <div class="stage card"><canvas id="stage" width="960" height="600"></canvas></div>
 
     <div class="card actions">
-      <button class="btn" onclick="Studio.downloadPreview()">Download (Preview)</button>
+      <button class="btn" id="btnPrev">Download (Preview)</button>
       <button id="btnHDpng" class="btn primary" disabled>Download HD (PNG) · Pro required</button>
       <button id="btnHDjpg" class="btn primary" disabled>Download HD (JPEG) · Pro required</button>
     </div>
   </div>
 
+  <!-- Firebase (Compat for quick drop-in) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
   <script>
     // ====== STRIPE Payment Link (live) ======
-    // In Stripe, set "After payment" redirect to: https://aiphotostudio.co.uk/?pro=1
+    // Stripe "After payment" redirect should be: https://aiphotostudio.co.uk/?pro=1
     const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/eVq6oJ3wugiPcFJ7QGd3i02";
     // ========================================
+
+    // ====== Firebase quick auth (email + anonymous) ======
+    const firebaseConfig = {
+      apiKey: "AIzaSyDsBDuaZ_rl7ro63Fv5gPh37EwSkfh-NqM",
+      authDomain: "aiphotostudioapp.firebaseapp.com",
+      projectId: "aiphotostudioapp",
+      storageBucket: "aiphotostudioapp.firebasestorage.app",
+      messagingSenderId: "1056724519182",
+      appId: "1:1056724519182:web:93410e1b71a292e531ef5f",
+      measurementId: "G-YMB9JJHNBE"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    const elStatus = document.getElementById('authStatus');
+    const btnGuest = document.getElementById('btnGuest');
+    const btnEmail = document.getElementById('btnEmail');
+    const btnLogout = document.getElementById('btnLogout');
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        elStatus.textContent = user.isAnonymous ? 'Guest mode' : `Signed in as ${user.email}`;
+        btnLogout.style.display = 'inline-block';
+        btnGuest.style.display = btnEmail.style.display = 'none';
+      } else {
+        elStatus.textContent = 'Not signed in';
+        btnGuest.style.display = btnEmail.style.display = 'inline-block';
+        btnLogout.style.display = 'none';
+      }
+    });
+
+    btnGuest.onclick = () => auth.signInAnonymously().catch(e => alert(e.message));
+    btnEmail.onclick = async () => {
+      const email = prompt('Email:');
+      if (!email) return;
+      const pwd = prompt('Password:');
+      if (!pwd) return;
+      try {
+        await auth.signInWithEmailAndPassword(email, pwd);
+      } catch {
+        await auth.createUserWithEmailAndPassword(email, pwd).catch(e => alert(e.message));
+      }
+    };
+    btnLogout.onclick = () => auth.signOut();
+    // =====================================================
 
     // --- Pro gating
     let proEnabled = false;
     const proBtn   = document.getElementById('proToggle');
     const hdBtnPng = document.getElementById('btnHDpng');
     const hdBtnJpg = document.getElementById('btnHDjpg');
+    const prevBtn  = document.getElementById('btnPrev');
 
     function toast(msg){ const el=document.createElement('div'); el.className='toast'; el.textContent=msg; document.body.appendChild(el); setTimeout(()=>el.remove(),2200); }
     function setPro(on){
@@ -99,7 +173,7 @@
         if (!STRIPE_PAYMENT_LINK) { alert("Stripe link missing."); return; }
         location.href = STRIPE_PAYMENT_LINK;   // go to Stripe Checkout
       } else {
-        alert("You're already on Pro. (We'll add Manage Subscription next.)");
+        alert("You're already on Pro. (Manage portal coming soon.)");
       }
     };
 
@@ -108,7 +182,6 @@
       const sp = new URLSearchParams(location.search);
       if (sp.get('pro') === '1') {
         setPro(true);
-        // Clean the URL so the query doesn’t linger
         if (history.replaceState) {
           const clean = location.pathname + location.hash;
           history.replaceState(null, "", clean);
@@ -304,20 +377,20 @@
       };
     })();
 
-    // Hook HD buttons
+    // Hook download buttons
+    prevBtn.onclick  = ()=> Studio.downloadPreview();
     hdBtnPng.onclick = ()=> Studio.downloadHD("png");
     hdBtnJpg.onclick = ()=> Studio.downloadHD("jpeg");
 
-    // Expose for inputs/buttons
-    window.Studio = Studio;
-
-    // Initial
+    // Initial checkerboard
+    function setStatus(t){ document.getElementById('status').textContent = t; }
+    function drawChecker(){ const s=20; const c=document.getElementById('stage'); const ctx=c.getContext('2d'); for(let y=0;y<c.height;y+=s){ for(let x=0;x<c.width;x+=s){ ctx.fillStyle=((x/s+y/s)%2===0)?'#e5e7eb':'#fff'; ctx.fillRect(x,y,s,s); } } }
     drawChecker();
 
-    // Service worker (v8)
+    // Service worker (v10)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js?v=v8').catch(()=>{});
+        navigator.serviceWorker.register('/sw.js?v=v10').catch(()=>{});
       });
     }
   </script>
