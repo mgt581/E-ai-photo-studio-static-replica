@@ -1,5 +1,5 @@
 // ---- BUMP THIS WHEN YOU DEPLOY ----
-const VERSION = 'v10';
+const VERSION = 'v12';
 const CACHE   = `photo-studio-${VERSION}`;
 
 // Add/adjust paths to match your project
@@ -10,7 +10,8 @@ const FILES_TO_CACHE = [
   '/manifest.json',       // harmless if missing
   '/logo-192.png',
   '/logo-512.png',
-  '/apple-touch-icon.png' // harmless if missing
+  '/apple-touch-icon.png',       // base path
+  '/apple-touch-icon.png?v=3'    // cache-busted icon used in <head>
 ];
 
 // Install: precache core files
