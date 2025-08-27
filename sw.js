@@ -1,5 +1,5 @@
 // ---- BUMP THIS WHEN YOU DEPLOY ----
-const VERSION = 'v8';
+const VERSION = 'v10';
 const CACHE   = `photo-studio-${VERSION}`;
 
 // Add/adjust paths to match your project
@@ -15,9 +15,7 @@ const FILES_TO_CACHE = [
 
 // Install: precache core files
 self.addEventListener('install', (evt) => {
-  evt.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(FILES_TO_CACHE))
-  );
+  evt.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(FILES_TO_CACHE)));
   self.skipWaiting();
 });
 
