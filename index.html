@@ -8,8 +8,11 @@
 
   <!-- PWA / Icons -->
   <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2">
-  <link rel="icon" href="/logo-192.png">
+  <!-- iOS & favicon + cache-bust -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=3">
+  <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png?v=3">
+  <link rel="icon" type="image/png" href="/apple-touch-icon.png?v=3">
+  <meta name="apple-mobile-web-app-title" content="AI Photo Studio">
 
   <!-- iOS PWA niceties -->
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -22,9 +25,12 @@
     :root{--grad:linear-gradient(90deg,#6366f1,#8b5cf6)}
     body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#f9fafb;color:#111827}
     header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 24px;border-bottom:1px solid #e5e7eb}
+
+    /* Brand */
     .brand{display:flex;align-items:center;gap:10px}
-    .brand img{width:28px;height:28px;border-radius:6px}
-    .brand h1{margin:0;font-size:20px;font-weight:800;letter-spacing:.2px}
+    .brand-img{width:28px;height:28px;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+    .brand-text{font-size:20px;font-weight:800;letter-spacing:.2px}
+
     .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
     .pill{background:var(--grad);color:#fff;border:0;padding:8px 16px;border-radius:9999px;cursor:pointer;font-size:14px;font-weight:700}
     .ghost{background:#eef2ff;color:#4338ca;border:0;padding:8px 12px;border-radius:10px;font-weight:700}
@@ -45,8 +51,9 @@
 <body>
   <header>
     <div class="brand">
-      <img src="/logo-192.png" alt="Logo">
-      <h1>AI Photo Studio</h1>
+      <img src="/apple-touch-icon.png?v=3" alt="AI Photo Studio logo"
+           width="28" height="28" class="brand-img" onerror="this.remove()">
+      <span class="brand-text">AI Photo Studio</span>
     </div>
 
     <div class="row">
@@ -383,14 +390,12 @@
     hdBtnJpg.onclick = ()=> Studio.downloadHD("jpeg");
 
     // Initial checkerboard
-    function setStatus(t){ document.getElementById('status').textContent = t; }
-    function drawChecker(){ const s=20; const c=document.getElementById('stage'); const ctx=c.getContext('2d'); for(let y=0;y<c.height;y+=s){ for(let x=0;x<c.width;x+=s){ ctx.fillStyle=((x/s+y/s)%2===0)?'#e5e7eb':'#fff'; ctx.fillRect(x,y,s,s); } } }
     drawChecker();
 
-    // Service worker (v10)
+    // Service worker (v12)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js?v=v10').catch(()=>{});
+        navigator.serviceWorker.register('/sw.js?v=v12').catch(()=>{});
       });
     }
   </script>
