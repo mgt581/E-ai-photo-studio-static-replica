@@ -8,7 +8,6 @@
 
   <!-- PWA / Icons -->
   <link rel="manifest" href="/manifest.webmanifest">
-  <!-- iOS & favicon + cache-bust -->
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=3">
   <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png?v=3">
   <link rel="icon" type="image/png" href="/apple-touch-icon.png?v=3">
@@ -25,12 +24,9 @@
     :root{--grad:linear-gradient(90deg,#6366f1,#8b5cf6)}
     body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#f9fafb;color:#111827}
     header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 24px;border-bottom:1px solid #e5e7eb}
-
-    /* Brand */
     .brand{display:flex;align-items:center;gap:10px}
     .brand-img{width:28px;height:28px;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.15)}
     .brand-text{font-size:20px;font-weight:800;letter-spacing:.2px}
-
     .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
     .pill{background:var(--grad);color:#fff;border:0;padding:8px 16px;border-radius:9999px;cursor:pointer;font-size:14px;font-weight:700}
     .ghost{background:#eef2ff;color:#4338ca;border:0;padding:8px 12px;border-radius:10px;font-weight:700}
@@ -51,16 +47,15 @@
 <body>
   <header>
     <div class="brand">
-      <img src="/apple-touch-icon.png?v=3" alt="AI Photo Studio logo"
-           width="28" height="28" class="brand-img" onerror="this.remove()">
+      <img src="/apple-touch-icon.png?v=3" alt="AI Photo Studio logo" width="28" height="28" class="brand-img" onerror="this.remove()">
       <span class="brand-text">AI Photo Studio</span>
     </div>
 
     <div class="row">
       <!-- Auth controls -->
-      <button id="btnGuest"   class="ghost">Continue as Guest</button>
-      <button id="btnEmail"   class="ghost">Sign up / Sign in</button>
-      <button id="btnLogout"  class="ghost" style="display:none">Sign out</button>
+      <button id="btnGuest" class="ghost">Continue as Guest</button>
+      <button id="btnEmail" class="ghost">Sign up / Sign in</button>
+      <button id="btnLogout" class="ghost" style="display:none">Sign out</button>
       <span id="authStatus" class="muted">Not signed in</span>
 
       <!-- Pro plan -->
@@ -73,10 +68,8 @@
       <p class="status" id="status">Upload a photo to begin.</p>
       <div class="actions">
         <button class="btn primary" onclick="document.getElementById('mainInput').click()">Choose Photo</button>
-        <input id="mainInput" type="file" accept="image/*" style="display:none"
-               onchange="Studio.onUploadMain(this.files[0]); this.value=''" />
-        <input id="bgInput" type="file" accept="image/*" style="display:none"
-               onchange="Studio.onUploadBg(this.files[0]); this.value=''" />
+        <input id="mainInput" type="file" accept="image/*" style="display:none" onchange="Studio.onUploadMain(this.files[0]); this.value=''" />
+        <input id="bgInput" type="file" accept="image/*" style="display:none" onchange="Studio.onUploadBg(this.files[0]); this.value=''" />
         <button id="btnRemove" class="btn" disabled onclick="Studio.removeBg()">Remove Background</button>
         <button id="btnChange" class="btn" disabled onclick="Studio.changeBg()">Change Background</button>
         <button class="btn" onclick="document.getElementById('bgInput').click()">Choose Background (from device)</button>
@@ -96,6 +89,8 @@
   <!-- Firebase (Compat for quick drop-in) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
   <script>
     // ====== STRIPE Payment Link (live) ======
@@ -114,7 +109,29 @@
       measurementId: "G-YMB9JJHNBE"
     };
     firebase.initializeApp(firebaseConfig);
+
+    // ✅ Firebase services
     const auth = firebase.auth();
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+
+    // --- Firestore + Storage sanity test (remove after confirming) ---
+    (async () => {
+      try {
+        await db.collection("tests").add({ hello: "world", ts: new Date() });
+        console.log("✅ Firestore write worked");
+      } catch (e) {
+        console.error("❌ Firestore failed:", e);
+      }
+      try {
+        const testRef = storage.ref("test.txt");
+        await testRef.putString("Hello Storage!");
+        console.log("✅ Storage write worked");
+      } catch (e) {
+        console.error("❌ Storage failed:", e);
+      }
+    })();
+    // -----------------------------------------------------------------
 
     const elStatus = document.getElementById('authStatus');
     const btnGuest = document.getElementById('btnGuest');
@@ -135,18 +152,12 @@
 
     btnGuest.onclick = () => auth.signInAnonymously().catch(e => alert(e.message));
     btnEmail.onclick = async () => {
-      const email = prompt('Email:');
-      if (!email) return;
-      const pwd = prompt('Password:');
-      if (!pwd) return;
-      try {
-        await auth.signInWithEmailAndPassword(email, pwd);
-      } catch {
-        await auth.createUserWithEmailAndPassword(email, pwd).catch(e => alert(e.message));
-      }
+      const email = prompt('Email:'); if (!email) return;
+      const pwd = prompt('Password:'); if (!pwd) return;
+      try { await auth.signInWithEmailAndPassword(email, pwd); }
+      catch { await auth.createUserWithEmailAndPassword(email, pwd).catch(e => alert(e.message)); }
     };
     btnLogout.onclick = () => auth.signOut();
-    // =====================================================
 
     // --- Pro gating
     let proEnabled = false;
@@ -178,7 +189,7 @@
     proBtn.onclick = () => {
       if (!proEnabled) {
         if (!STRIPE_PAYMENT_LINK) { alert("Stripe link missing."); return; }
-        location.href = STRIPE_PAYMENT_LINK;   // go to Stripe Checkout
+        location.href = STRIPE_PAYMENT_LINK;
       } else {
         alert("You're already on Pro. (Manage portal coming soon.)");
       }
@@ -211,7 +222,7 @@
     function drawChecker(){ const s=20; for(let y=0;y<canvas.height;y+=s){ for(let x=0;x<canvas.width;x+=s){ ctx.fillStyle=((x/s+y/s)%2===0)?'#e5e7eb':'#fff'; ctx.fillRect(x,y,s,s); } } }
     function stampWatermark(){ if(proEnabled) return; ctx.save(); ctx.font="20px ui-sans-serif,system-ui"; ctx.fillStyle="rgba(0,0,0,.35)"; ctx.textAlign="right"; ctx.fillText("AI Photo Studio · FREE", canvas.width-20, canvas.height-20); ctx.restore(); }
 
-    // ----- Selfie fallback loader (only if U²-Net fails)
+    // ----- Selfie fallback loader -----
     let selfieLoader = null;
     function ensureSelfieSegmentation(){
       if (window.SelfieSegmentation) return Promise.resolve();
@@ -247,9 +258,9 @@
     const btnChange = document.getElementById('btnChange');
 
     const Studio = (() => {
-      let mainSrc = null;      // uploaded photo (data URL)
-      let cutoutURL = null;    // object URL of transparent PNG after removal
-      let bgSrc = null;        // background (data URL)
+      let mainSrc = null;
+      let cutoutURL = null;
+      let bgSrc = null;
       let busy = false;
 
       function setBusy(b){
@@ -262,7 +273,6 @@
         btnChange.disabled = busy || !cutoutURL;
       }
 
-      // downscale for memory safety on iOS
       async function downscaleToMax(dataUrl, maxSide = 1400){
         const img = await loadImage(dataUrl);
         const max = Math.max(img.width, img.height);
