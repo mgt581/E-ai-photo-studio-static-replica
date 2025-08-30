@@ -8,6 +8,7 @@
     { "src": "/logo-192.png", "dest": "/logo-192.png" },
     { "src": "/logo-512.png", "dest": "/logo-512.png" },
     { "src": "/apple-touch-icon.png", "dest": "/apple-touch-icon.png" },
+    { "src": "/sw.js", "dest": "/sw.js" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
