@@ -8,12 +8,12 @@
 
   <!-- PWA / Icons -->
   <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=3">
-  <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png?v=3">
-  <link rel="icon" type="image/png" href="/apple-touch-icon.png?v=3">
+  <link rel="icon" type="image/png" sizes="192x192" href="/logo-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="/logo-512.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <meta name="apple-mobile-web-app-title" content="AI Photo Studio">
 
-  <!-- Modern + Apple PWA -->
+  <!-- iOS PWA niceties -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -48,7 +48,7 @@
 <body>
   <header>
     <div class="brand">
-      <img src="/apple-touch-icon.png?v=3" alt="AI Photo Studio logo" width="28" height="28" class="brand-img" onerror="this.remove()">
+      <img src="/apple-touch-icon.png" alt="AI Photo Studio logo" width="28" height="28" class="brand-img" onerror="this.remove()">
       <span class="brand-text">AI Photo Studio</span>
     </div>
 
@@ -97,12 +97,12 @@
     // ====== STRIPE Payment Link (live) ======
     const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/eVq6oJ3wugiPcFJ7QGd3i02";
 
-    // ====== Firebase quick auth ======
+    // ====== Firebase quick auth (email + anonymous) ======
     const firebaseConfig = {
       apiKey: "AIzaSyDsBDuaZ_rl7ro63Fv5gPh37EwSkfh-NqM",
       authDomain: "aiphotostudioapp.firebaseapp.com",
       projectId: "aiphotostudioapp",
-      storageBucket: "aiphotostudioapp.firebasestorage.app",
+      storageBucket: "aiphotostudioapp.appspot.com",
       messagingSenderId: "1056724519182",
       appId: "1:1056724519182:web:93410e1b71a292e531ef5f",
       measurementId: "G-YMB9JJHNBE"
@@ -113,24 +113,6 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
     const storage = firebase.storage();
-
-    // --- Firestore + Storage sanity test ---
-    (async () => {
-      try {
-        await db.collection("tests").add({ hello: "world", ts: new Date() });
-        console.log("✅ Firestore write worked");
-      } catch (e) {
-        console.error("❌ Firestore failed:", e);
-      }
-      try {
-        const testRef = storage.ref("test.txt");
-        await testRef.putString("Hello Storage!");
-        console.log("✅ Storage write worked");
-      } catch (e) {
-        console.error("❌ Storage failed:", e);
-      }
-    })();
-    // -----------------------------------------------------------------
 
     const elStatus = document.getElementById('authStatus');
     const btnGuest = document.getElementById('btnGuest');
@@ -158,7 +140,7 @@
     };
     btnLogout.onclick = () => auth.signOut();
 
-    // --- Pro gating ---
+    // --- Pro gating
     let proEnabled = false;
     const proBtn   = document.getElementById('proToggle');
     const hdBtnPng = document.getElementById('btnHDpng');
@@ -219,37 +201,6 @@
     const loadImage = (src)=>new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=src; });
     function drawChecker(){ const s=20; for(let y=0;y<canvas.height;y+=s){ for(let x=0;x<canvas.width;x+=s){ ctx.fillStyle=((x/s+y/s)%2===0)?'#e5e7eb':'#fff'; ctx.fillRect(x,y,s,s); } } }
     function stampWatermark(){ if(proEnabled) return; ctx.save(); ctx.font="20px ui-sans-serif,system-ui"; ctx.fillStyle="rgba(0,0,0,.35)"; ctx.textAlign="right"; ctx.fillText("AI Photo Studio · FREE", canvas.width-20, canvas.height-20); ctx.restore(); }
-
-    // ----- Selfie fallback loader -----
-    let selfieLoader = null;
-    function ensureSelfieSegmentation(){
-      if (window.SelfieSegmentation) return Promise.resolve();
-      if (selfieLoader) return selfieLoader;
-      selfieLoader = new Promise((resolve,reject)=>{
-        const s=document.createElement('script');
-        s.src='https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1/selfie_segmentation.js';
-        s.onload=()=>resolve();
-        s.onerror=()=>reject(new Error('mediapipe-load-failed'));
-        document.head.appendChild(s);
-      });
-      return selfieLoader;
-    }
-    async function maskWithSelfie(img){
-      await ensureSelfieSegmentation();
-      const ss = new SelfieSegmentation({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${f}` });
-      ss.setOptions({ modelSelection: 1 });
-      const maskCanvas = document.createElement('canvas');
-      maskCanvas.width = img.width; maskCanvas.height = img.height;
-      await new Promise((resolve)=>{
-        ss.onResults((r)=>{
-          const m = maskCanvas.getContext('2d');
-          m.drawImage(r.segmentationMask, 0,0, img.width, img.height);
-          resolve();
-        });
-        ss.send({ image: img });
-      });
-      return maskCanvas;
-    }
 
     // ----- App -----
     const btnRemove = document.getElementById('btnRemove');
@@ -374,38 +325,4 @@
       function download(type="png", hd=false){
         if(hd && !proEnabled){ alert("Pro required."); return; }
         const mime = type==="jpeg" ? "image/jpeg" : "image/png";
-        canvas.toBlob((b)=>{ if(!b) return; const url=URL.createObjectURL(b); const a=document.createElement('a'); a.href=url; a.download=`photo-studio.${type==="jpeg"?"jpg":"png"}`; a.click(); URL.revokeObjectURL(url); }, mime, .95);
-      }
-
-      function handleDrop(e){
-        e.preventDefault();
-        const f = e.dataTransfer.files && e.dataTransfer.files[0];
-        if (f) onUploadMain(f);
-      }
-
-      return {
-        onUploadMain, onUploadBg,
-        removeBg, changeBg,
-        downloadPreview: ()=>download("png", false),
-        downloadHD: (fmt)=>download(fmt, true),
-        handleDrop
-      };
-    })();
-
-    // Hook download buttons
-    prevBtn.onclick  = ()=> Studio.downloadPreview();
-    hdBtnPng.onclick = ()=> Studio.downloadHD("png");
-    hdBtnJpg.onclick = ()=> Studio.downloadHD("jpeg");
-
-    // Initial checkerboard
-    drawChecker();
-
-    // Service worker (v12)
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js?v=v12').catch(()=>{});
-      });
-    }
-  </script>
-</body>
-</html>
+        canvas.toBlob((b)=>{ if(!b) return; const url=URL.createObjectURL(b); const a=document.createElement('a'); a.href=url; a.download=`photo-studio.${type==="jpeg
