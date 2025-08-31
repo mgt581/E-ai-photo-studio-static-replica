@@ -6,7 +6,7 @@
   <title>AI Photo Studio</title>
   <meta name="theme-color" content="#4f46e5">
 
-  <!-- PWA / Icons -->
+  <!-- PWA / Icons (keep if you have the files deployed at root) -->
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=3">
   <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png?v=3">
@@ -43,70 +43,125 @@
     .actions{display:grid;gap:12px}
     .hint{font-size:13px;color:#6b7280;text-align:center}
     .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;background:#111827;color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.25);z-index:9999}
-    .planRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-    .badge{background:#eef2ff;color:#4338ca;border-radius:8px;padding:4px 8px;font-size:12px;font-weight:700}
+    .hide{display:none !important}
+
+    /* Auth page */
+    .auth-wrap{max-width:520px;margin:40px auto;padding:0 16px}
+    .auth-title{font-size:28px;font-weight:800;margin:0 0 6px}
+    .auth-sub{color:#6b7280;margin:0 0 16px}
+    .auth-card{display:grid;gap:14px}
+    .field{display:grid;gap:6px}
+    .input{height:44px;border:1px solid #e5e7eb;border-radius:10px;padding:0 12px;font-size:15px}
+    .or{display:flex;align-items:center;gap:10px;color:#6b7280}
+    .or:before,.or:after{content:"";height:1px;background:#e5e7eb;flex:1}
+    .link{background:none;border:0;color:#4338ca;font-weight:700;cursor:pointer}
+
+    /* Pro bar under header */
+    .probar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .badge{background:#eef2ff;color:#4338ca;padding:6px 10px;border-radius:999px;font-weight:700;font-size:13px}
   </style>
 </head>
 <body>
   <header>
     <div class="brand">
-      <img src="/apple-touch-icon.png?v=3" alt="AI Photo Studio logo"
-           width="28" height="28" class="brand-img" onerror="this.remove()">
+      <img src="/apple-touch-icon.png?v=3" alt="AI Photo Studio logo" width="28" height="28" class="brand-img" onerror="this.remove()">
       <span class="brand-text">AI Photo Studio</span>
     </div>
-
     <div class="row">
-      <!-- Auth controls -->
-      <button id="btnGuest"   class="ghost">Continue as Guest</button>
-      <button id="btnEmail"   class="ghost">Sign up / Sign in</button>
-      <button id="btnLogout"  class="ghost" style="display:none">Sign out</button>
+      <!-- Top-right nav switches views -->
+      <button id="navToAuth" class="ghost">Sign in / Create account</button>
+      <button id="navToApp" class="ghost hide">Back to editor</button>
+      <button id="btnLogout" class="ghost hide">Sign out</button>
       <span id="authStatus" class="muted">Not signed in</span>
-
-      <!-- Plans: separate buttons -->
-      <span id="trialStatus" class="badge" style="display:none"></span>
-      <button class="pill" id="btnStartTrial">Start 7-day free trial</button>
-      <button class="pill" id="btnBuyPro">Buy Pro · £4.99/yr</button>
     </div>
   </header>
 
-  <div class="wrap" ondragover="event.preventDefault()" ondrop="Studio.handleDrop(event)">
+  <!-- Pro controls (visible on app view) -->
+  <div id="proBar" class="wrap hide">
     <div class="card">
-      <p class="status" id="status">Upload a photo to begin.</p>
-      <div class="actions">
-        <button class="btn primary" onclick="document.getElementById('mainInput').click()">Choose Photo</button>
-        <input id="mainInput" type="file" accept="image/*" style="display:none"
-               onchange="Studio.onUploadMain(this.files[0]); this.value=''" />
-        <input id="bgInput" type="file" accept="image/*" style="display:none"
-               onchange="Studio.onUploadBg(this.files[0]); this.value=''" />
-        <button id="btnRemove" class="btn" disabled onclick="Studio.removeBg()">Remove Background</button>
-        <button id="btnChange" class="btn" disabled onclick="Studio.changeBg()">Change Background</button>
-        <button class="btn" onclick="document.getElementById('bgInput').click()">Choose Background (from device)</button>
+      <div class="probar">
+        <span id="trialBadge" class="badge hide"></span>
+        <button id="btnStartTrial" class="pill">Start 7-day free trial</button>
+        <button id="btnBuyPro" class="pill">Buy Pro (Stripe)</button>
+        <button id="btnHDpng" class="btn primary" disabled>Download HD (PNG)</button>
+        <button id="btnHDjpg" class="btn primary" disabled>Download HD (JPEG)</button>
       </div>
-      <p class="hint">Drag & drop also works!</p>
-    </div>
-
-    <div class="stage card"><canvas id="stage" width="960" height="600"></canvas></div>
-
-    <div class="card actions">
-      <button class="btn" id="btnPrev">Download (Preview)</button>
-      <button id="btnHDpng" class="btn primary" disabled>Download HD (PNG) · Pro required</button>
-      <button id="btnHDjpg" class="btn primary" disabled>Download HD (JPEG) · Pro required</button>
     </div>
   </div>
 
-  <!-- Firebase (Compat for quick drop-in) -->
+  <!-- ===== AUTH PAGE (separate screen) ===== -->
+  <main id="viewAuth" class="auth-wrap">
+    <div class="card auth-card">
+      <h1 class="auth-title">Sign in to AI Photo Studio</h1>
+      <p class="auth-sub">Use email or your phone number. You can also continue as guest (no cloud features).</p>
+
+      <!-- EMAIL -->
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" type="email" class="input" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" type="password" class="input" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <div class="row">
+        <button id="btnEmailSignIn" class="btn primary">Sign in</button>
+        <button id="btnEmailSignUp" class="btn">Create account</button>
+      </div>
+
+      <div class="or">or</div>
+
+      <!-- PHONE -->
+      <div class="field">
+        <label for="phone">Phone number</label>
+        <input id="phone" type="tel" class="input" placeholder="+44 7xxx xxxxxx">
+      </div>
+      <div class="row">
+        <button id="btnSendCode" class="btn">Send code</button>
+        <button id="btnVerifyCode" class="btn" disabled>Verify code &amp; sign in</button>
+      </div>
+      <div id="recaptcha-container"></div>
+
+      <div style="text-align:center;margin-top:8px">
+        <button id="btnGuest" class="link">Continue as guest (limited)</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===== APP / EDITOR PAGE ===== -->
+  <main id="viewApp" class="hide">
+    <div class="wrap" ondragover="event.preventDefault()" ondrop="Studio.handleDrop(event)">
+      <div class="card">
+        <p class="status" id="status">Upload a photo to begin.</p>
+        <div class="actions">
+          <button class="btn primary" onclick="document.getElementById('mainInput').click()">Choose Photo</button>
+          <input id="mainInput" type="file" accept="image/*" style="display:none" onchange="Studio.onUploadMain(this.files[0]); this.value=''" />
+          <input id="bgInput" type="file" accept="image/*" style="display:none" onchange="Studio.onUploadBg(this.files[0]); this.value=''" />
+          <button id="btnRemove" class="btn" disabled onclick="Studio.removeBg()">Remove Background</button>
+          <button id="btnChange" class="btn" disabled onclick="Studio.changeBg()">Change Background</button>
+          <button class="btn" onclick="document.getElementById('bgInput').click()">Choose Background (from device)</button>
+        </div>
+        <p class="hint">Drag & drop also works!</p>
+      </div>
+
+      <div class="stage card"><canvas id="stage" width="960" height="600"></canvas></div>
+
+      <div class="card actions">
+        <button class="btn" id="btnPrev">Download (Preview)</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
   <script>
-    // ====== STRIPE Payment Link (live) ======
-    // Stripe "After payment" redirect should be: https://aiphotostudio.co.uk/?pro=1
+    // ====== CONFIG ======
     const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/eVq6oJ3wugiPcFJ7QGd3i02";
-    // ========================================
 
-    // ====== Firebase quick auth (email + anonymous) ======
     const firebaseConfig = {
       apiKey: "AIzaSyDsBDuaZ_rl7ro63Fv5gPh37EwSkfh-NqM",
       authDomain: "aiphotostudioapp.firebaseapp.com",
@@ -122,210 +177,216 @@
     const db = firebase.firestore();
     const storage = firebase.storage();
 
+    // ====== VIEW SWITCHING ======
+    const viewAuth = document.getElementById('viewAuth');
+    const viewApp = document.getElementById('viewApp');
+    const proBar = document.getElementById('proBar');
+
+    const navToAuth = document.getElementById('navToAuth');
+    const navToApp  = document.getElementById('navToApp');
+
+    function showAuth(){
+      viewAuth.classList.remove('hide');
+      viewApp.classList.add('hide');
+      proBar.classList.add('hide');
+      navToAuth.classList.add('hide');
+      navToApp.classList.remove('hide');
+      history.replaceState(null, "", "#/auth");
+    }
+    function showApp(){
+      viewApp.classList.remove('hide');
+      proBar.classList.remove('hide');
+      viewAuth.classList.add('hide');
+      navToApp.classList.add('hide');
+      navToAuth.classList.remove('hide');
+      history.replaceState(null, "", "#/");
+    }
+    navToAuth.onclick = showAuth;
+    navToApp.onclick = showApp;
+
+    // ====== AUTH UI ======
     const elStatus = document.getElementById('authStatus');
-    const btnGuest = document.getElementById('btnGuest');
-    const btnEmail = document.getElementById('btnEmail');
     const btnLogout = document.getElementById('btnLogout');
 
-    // Plan gating + UI refs
+    const emailEl = document.getElementById('email');
+    const pwdEl = document.getElementById('password');
+    const btnEmailSignIn = document.getElementById('btnEmailSignIn');
+    const btnEmailSignUp = document.getElementById('btnEmailSignUp');
+
+    const phoneEl = document.getElementById('phone');
+    const btnSendCode = document.getElementById('btnSendCode');
+    const btnVerifyCode = document.getElementById('btnVerifyCode');
+
+    const btnGuest = document.getElementById('btnGuest');
+
+    let confirmationResultGlobal = null;
+    let recaptcha = null;
+
+    function initRecaptcha(){
+      if (recaptcha) return;
+      recaptcha = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+        size: 'invisible'
+      });
+      recaptcha.render().catch(()=>{});
+    }
+
+    btnEmailSignIn.onclick = async () => {
+      const email = emailEl.value.trim(), pwd = pwdEl.value;
+      if (!email || !pwd) return alert('Enter email and password');
+      try {
+        await auth.signInWithEmailAndPassword(email, pwd);
+      } catch (e) {
+        alert(e.message);
+      }
+    };
+    btnEmailSignUp.onclick = async () => {
+      const email = emailEl.value.trim(), pwd = pwdEl.value;
+      if (!email || !pwd) return alert('Enter email and password');
+      try {
+        await auth.createUserWithEmailAndPassword(email, pwd);
+      } catch (e) {
+        alert(e.message);
+      }
+    };
+
+    btnSendCode.onclick = async () => {
+      const phone = phoneEl.value.trim();
+      if (!phone) return alert('Enter phone number');
+      try {
+        initRecaptcha();
+        confirmationResultGlobal = await auth.signInWithPhoneNumber(phone, recaptcha);
+        btnVerifyCode.disabled = false;
+        alert('Code sent. Check your SMS.');
+      } catch (e) {
+        alert('Phone sign-in failed: ' + e.message);
+      }
+    };
+    btnVerifyCode.onclick = async () => {
+      if (!confirmationResultGlobal) return;
+      const code = prompt('Enter the SMS code:');
+      if (!code) return;
+      try {
+        await confirmationResultGlobal.confirm(code);
+        alert('Signed in with phone!');
+      } catch (e) {
+        alert('Verification failed: ' + e.message);
+      }
+    };
+
+    btnGuest.onclick = () => auth.signInAnonymously().catch(e => alert(e.message));
+    btnLogout.onclick = () => auth.signOut();
+
+    // ====== PRO / TRIAL GATING ======
     let proEnabled = false;
-    const trialBadge  = document.getElementById('trialStatus');
     const btnStartTrial = document.getElementById('btnStartTrial');
-    const btnBuyPro   = document.getElementById('btnBuyPro');
+    const btnBuyPro = document.getElementById('btnBuyPro');
     const hdBtnPng = document.getElementById('btnHDpng');
     const hdBtnJpg = document.getElementById('btnHDjpg');
-    const prevBtn  = document.getElementById('btnPrev');
+    const trialBadge = document.getElementById('trialBadge');
 
     function toast(msg){ const el=document.createElement('div'); el.className='toast'; el.textContent=msg; document.body.appendChild(el); setTimeout(()=>el.remove(),2200); }
-
+    function setPlanUI(){
+      if (proEnabled){
+        hdBtnPng.disabled = hdBtnJpg.disabled = false;
+        btnStartTrial.disabled = true;
+      } else {
+        hdBtnPng.disabled = hdBtnJpg.disabled = true;
+        btnStartTrial.disabled = false;
+      }
+    }
     function setPro(on){
       proEnabled = !!on;
       if (on) localStorage.setItem('studio_pro','1'); else localStorage.removeItem('studio_pro');
       setPlanUI();
-      if (on) toast("✅ Pro activated");
+      if (on) toast("✅ Pro active");
     }
 
-    function daysLeftTo(ts){
-      const now = Date.now();
-      const end = ts instanceof Date ? ts.getTime() : (typeof ts === 'number' ? ts : (ts?.toDate?.()?.getTime?.() || 0));
-      if (!end) return 0;
-      const diff = Math.ceil((end - now) / (1000*60*60*24));
-      return Math.max(0, diff);
+    function daysLeft(endTs){
+      if (!endTs) return 0;
+      const ms = endTs.toMillis() - Date.now();
+      return Math.max(0, Math.ceil(ms / (1000*60*60*24)));
     }
 
-    function setPlanUI(){
-      if (proEnabled){
-        hdBtnPng.textContent = "Download HD (PNG)";
-        hdBtnJpg.textContent = "Download HD (JPEG)";
-        hdBtnPng.disabled = hdBtnJpg.disabled = false;
-      } else {
-        hdBtnPng.textContent = "Download HD (PNG) · Pro required";
-        hdBtnJpg.textContent = "Download HD (JPEG) · Pro required";
-        hdBtnPng.disabled = hdBtnJpg.disabled = true;
-      }
-    }
+    async function refreshTrialUI(user){
+      if (!user){ trialBadge.classList.add('hide'); setPro(false); return; }
+      try{
+        const snap = await db.collection('users').doc(user.uid).get();
+        const data = snap.exists ? snap.data() : {};
+        const now = Date.now();
 
-    // Load entitlements from Firestore user doc
-    async function loadUserEntitlements(user){
-      // default UI
-      trialBadge.style.display = 'none';
-      btnStartTrial.disabled = false;
-      btnStartTrial.textContent = "Start 7-day free trial";
+        // Pro if: explicit isPro OR trialEnd in future OR localStorage flag (legacy)
+        const trialOk = data?.trialEnd && data.trialEnd.toMillis() > now;
+        const isPro = !!data?.isPro || trialOk || localStorage.getItem('studio_pro')==='1';
 
-      if (!user) {
-        setPro(localStorage.getItem('studio_pro') === '1'); // local remembered pro (if any)
-        // Guests may NOT start trial
-        btnStartTrial.disabled = true;
-        btnStartTrial.title = "Sign in to start a free trial";
-        return;
-      }
+        setPro(isPro);
 
-      // Anonymous users cannot start trial
-      if (user.isAnonymous) {
-        btnStartTrial.disabled = true;
-        btnStartTrial.title = "Sign in with email to start a free trial";
-        setPro(localStorage.getItem('studio_pro') === '1');
-        return;
-      }
-
-      try {
-        const doc = await db.collection('users').doc(user.uid).get();
-        if (doc.exists) {
-          const data = doc.data() || {};
-          const trialEnd = data.trialEnd;
-          const isProFlag = !!data.isPro;
-
-          // If a server-side Pro flag later exists, it should override
-          let active = false;
-          let left = 0;
-
-          if (trialEnd) {
-            left = daysLeftTo(trialEnd);
-            active = left > 0;
-          }
-
-          // Activate if trial active or localStorage pro (manual toggle post-Stripe)
-          setPro(active || isProFlag || (localStorage.getItem('studio_pro') === '1'));
-
-          // Update trial UI
-          if (trialEnd) {
-            trialBadge.style.display = 'inline-block';
-            trialBadge.textContent = left > 0 ? `${left} day${left===1?'':'s'} left in trial` : 'Trial ended';
-          } else {
-            trialBadge.style.display = 'none';
-          }
-
-          // If trial already claimed (has trialStart), disable the button if ended
-          if (data.trialStart) {
-            if (left > 0) {
-              btnStartTrial.disabled = true;
-              btnStartTrial.textContent = "Trial active";
-            } else {
-              btnStartTrial.disabled = true;
-              btnStartTrial.textContent = "Trial ended";
-            }
-          }
+        if (trialOk){
+          const d = daysLeft(data.trialEnd);
+          trialBadge.textContent = `Trial: ${d} day${d===1?'':'s'} left`;
+          trialBadge.classList.remove('hide');
+        } else if (data?.trialEnd){
+          trialBadge.textContent = `Trial expired`;
+          trialBadge.classList.remove('hide');
         } else {
-          // No doc yet — allow trial start for this signed-in (non-anon) user
-          setPro(localStorage.getItem('studio_pro') === '1');
+          trialBadge.classList.add('hide');
         }
-      } catch (e) {
-        console.warn('Failed to load user entitlements', e);
-        setPro(localStorage.getItem('studio_pro') === '1');
+      }catch(e){
+        console.warn('Trial check failed', e);
       }
     }
 
-    // Free trial (non-anonymous only)
-    async function startFreeTrial() {
+    async function startFreeTrial(){
       const user = auth.currentUser;
-      if (!user) {
-        alert("Please sign in to start your free trial.");
-        return;
-      }
-      if (user.isAnonymous) {
-        alert("Free trial is only for signed-in (email) accounts.");
-        return;
-      }
+      if (!user) { alert('Please sign in first.'); showAuth(); return; }
+      if (user.isAnonymous){ alert('Create an account to start a trial.'); showAuth(); return; }
 
-      // Check if already started
-      const ref = db.collection("users").doc(user.uid);
+      // Create only if no active trial
+      const ref = db.collection('users').doc(user.uid);
       const snap = await ref.get();
-      if (snap.exists) {
-        const data = snap.data() || {};
-        if (data.trialStart && data.trialEnd) {
-          const left = daysLeftTo(data.trialEnd);
-          if (left > 0) {
-            alert(`Your trial is already active — ${left} day${left===1?'':'s'} left.`);
-            return;
-          } else {
-            alert("Your trial has ended.");
-            return;
-          }
-        }
+      const data = snap.exists ? snap.data() : {};
+
+      if (data?.trialEnd && data.trialEnd.toMillis() > Date.now()){
+        alert('You already have an active trial.');
+        return;
       }
 
       const now = new Date();
       const trialEnd = new Date(now.getTime() + 7*24*60*60*1000);
-
       await ref.set({
         trialStart: firebase.firestore.Timestamp.fromDate(now),
         trialEnd: firebase.firestore.Timestamp.fromDate(trialEnd),
         isPro: false
       }, { merge: true });
 
-      alert("✅ 7-day free trial started!");
-      await loadUserEntitlements(auth.currentUser); // refresh UI + proEnabled
+      await refreshTrialUI(user);
+      alert('✅ 7-day free trial started!');
     }
 
-    // Auth UI wiring
-    auth.onAuthStateChanged(async user => {
+    btnStartTrial.onclick = startFreeTrial;
+    btnBuyPro.onclick = () => { location.href = STRIPE_PAYMENT_LINK; };
+
+    // ====== AUTH STATE HANDLER ======
+    auth.onAuthStateChanged(async (user) => {
       if (user) {
-        elStatus.textContent = user.isAnonymous ? 'Guest mode' : `Signed in as ${user.email}`;
-        btnLogout.style.display = 'inline-block';
-        btnGuest.style.display = btnEmail.style.display = 'none';
+        elStatus.textContent = user.phoneNumber
+          ? `Signed in as ${user.phoneNumber}`
+          : user.isAnonymous
+            ? 'Guest mode'
+            : `Signed in as ${user.email}`;
+        btnLogout.classList.remove('hide');
+        navToAuth.classList.add('hide');
+        navToApp.classList.remove('hide');
+        showApp();
+        await refreshTrialUI(user);
       } else {
         elStatus.textContent = 'Not signed in';
-        btnGuest.style.display = btnEmail.style.display = 'inline-block';
-        btnLogout.style.display = 'none';
+        btnLogout.classList.add('hide');
+        showAuth();
+        setPro(false);
       }
-      await loadUserEntitlements(user);
     });
 
-    btnGuest.onclick = () => auth.signInAnonymously().catch(e => alert(e.message));
-    btnEmail.onclick = async () => {
-      const email = prompt('Email:'); if (!email) return;
-      const pwd = prompt('Password:'); if (!pwd) return;
-      try { await auth.signInWithEmailAndPassword(email, pwd); }
-      catch {
-        await auth.createUserWithEmailAndPassword(email, pwd).catch(e => alert(e.message));
-      }
-    };
-    btnLogout.onclick = async () => { await auth.signOut(); };
-
-    // Plans buttons
-    btnStartTrial.onclick = () => startFreeTrial();
-    btnBuyPro.onclick = () => {
-      if (!STRIPE_PAYMENT_LINK) { alert("Stripe link missing."); return; }
-      location.href = STRIPE_PAYMENT_LINK;   // go to Stripe Checkout
-    };
-
-    // Stripe return handler (?pro=1)
-    (function bootstrapPro(){
-      const sp = new URLSearchParams(location.search);
-      if (sp.get('pro') === '1') {
-        setPro(true);
-        if (history.replaceState) {
-          const clean = location.pathname + location.hash;
-          history.replaceState(null, "", clean);
-        }
-      } else if (localStorage.getItem('studio_pro') === '1') {
-        setPro(true);
-      } else {
-        setPlanUI();
-      }
-    })();
-
-    // ----- helpers -----
+    // ====== EDITOR (same logic as before) ======
     const $status = document.getElementById('status');
     const canvas = document.getElementById('stage');
     const ctx = canvas.getContext('2d',{willReadFrequently:true});
@@ -336,7 +397,6 @@
     function drawChecker(){ const s=20; for(let y=0;y<canvas.height;y+=s){ for(let x=0;x<canvas.width;x+=s){ ctx.fillStyle=((x/s+y/s)%2===0)?'#e5e7eb':'#fff'; ctx.fillRect(x,y,s,s); } } }
     function stampWatermark(){ if(proEnabled) return; ctx.save(); ctx.font="20px ui-sans-serif,system-ui"; ctx.fillStyle="rgba(0,0,0,.35)"; ctx.textAlign="right"; ctx.fillText("AI Photo Studio · FREE", canvas.width-20, canvas.height-20); ctx.restore(); }
 
-    // ----- Selfie fallback loader (only if U²-Net fails)
     let selfieLoader = null;
     function ensureSelfieSegmentation(){
       if (window.SelfieSegmentation) return Promise.resolve();
@@ -367,9 +427,9 @@
       return maskCanvas;
     }
 
-    // ----- App -----
     const btnRemove = document.getElementById('btnRemove');
     const btnChange = document.getElementById('btnChange');
+    const prevBtn  = document.getElementById('btnPrev');
 
     const Studio = (() => {
       let mainSrc = null;      // uploaded photo (data URL)
@@ -387,7 +447,6 @@
         btnChange.disabled = busy || !cutoutURL;
       }
 
-      // downscale for memory safety on iOS
       async function downscaleToMax(dataUrl, maxSide = 1400){
         const img = await loadImage(dataUrl);
         const max = Math.max(img.width, img.height);
@@ -517,12 +576,15 @@
     // Initial checkerboard
     drawChecker();
 
-    // Service worker (v12)
+    // Service worker (optional; keep if you have sw.js)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js?v=v12').catch(()=>{});
       });
     }
+
+    // Route to auth if hash matches
+    if (location.hash === '#/auth') showAuth(); else showApp();
   </script>
 </body>
 </html>
