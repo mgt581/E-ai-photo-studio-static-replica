@@ -1,26 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- ===========================
-       META / HEAD
-  ============================ -->
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>AI Photo Studio</title>
   <meta name="theme-color" content="#4f46e5">
 
-  <!-- ===========================
-       PWA / ICONS
-       Make sure these files exist at the repo root:
-       - /manifest.webmanifest
-       - /logo-192.png
-       - /logo-512.png
-       - /apple-touch-icon.png
-  ============================ -->
+  <!-- PWA / Icons -->
   <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="icon" type="image/png" sizes="192x192" href="/logo-192.png">
-  <link rel="icon" type="image/png" sizes="512x512" href="/logo-512.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=3">
+  <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png?v=3">
+  <link rel="icon" type="image/png" href="/apple-touch-icon.png?v=3">
   <meta name="apple-mobile-web-app-title" content="AI Photo Studio">
 
   <!-- iOS PWA niceties -->
@@ -28,25 +18,16 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-  <!-- ===========================
-       LIBS
-  ============================ -->
   <!-- FREE, on-device background removal -->
   <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@latest/dist/background-removal.min.js"></script>
 
-  <!-- ===========================
-       STYLES
-  ============================ -->
   <style>
     :root{--grad:linear-gradient(90deg,#6366f1,#8b5cf6)}
     body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#f9fafb;color:#111827}
     header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 24px;border-bottom:1px solid #e5e7eb}
-
-    /* Brand */
     .brand{display:flex;align-items:center;gap:10px}
     .brand-img{width:28px;height:28px;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.15)}
     .brand-text{font-size:20px;font-weight:800;letter-spacing:.2px}
-
     .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
     .pill{background:var(--grad);color:#fff;border:0;padding:8px 16px;border-radius:9999px;cursor:pointer;font-size:14px;font-weight:700}
     .ghost{background:#eef2ff;color:#4338ca;border:0;padding:8px 12px;border-radius:10px;font-weight:700}
@@ -62,15 +43,14 @@
     .actions{display:grid;gap:12px}
     .hint{font-size:13px;color:#6b7280;text-align:center}
     .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;background:#111827;color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.25);z-index:9999}
+    .planRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .badge{background:#eef2ff;color:#4338ca;border-radius:8px;padding:4px 8px;font-size:12px;font-weight:700}
   </style>
 </head>
 <body>
-  <!-- ===========================
-       HEADER
-  ============================ -->
   <header>
     <div class="brand">
-      <img src="/apple-touch-icon.png" alt="AI Photo Studio logo"
+      <img src="/apple-touch-icon.png?v=3" alt="AI Photo Studio logo"
            width="28" height="28" class="brand-img" onerror="this.remove()">
       <span class="brand-text">AI Photo Studio</span>
     </div>
@@ -82,38 +62,30 @@
       <button id="btnLogout"  class="ghost" style="display:none">Sign out</button>
       <span id="authStatus" class="muted">Not signed in</span>
 
-      <!-- Pro plan -->
-      <button class="pill" id="proToggle">Pro plan · £4.99/yr · 7-day trial</button>
+      <!-- Plans: separate buttons -->
+      <span id="trialStatus" class="badge" style="display:none"></span>
+      <button class="pill" id="btnStartTrial">Start 7-day free trial</button>
+      <button class="pill" id="btnBuyPro">Buy Pro · £4.99/yr</button>
     </div>
   </header>
 
-  <!-- ===========================
-       MAIN
-  ============================ -->
   <div class="wrap" ondragover="event.preventDefault()" ondrop="Studio.handleDrop(event)">
     <div class="card">
       <p class="status" id="status">Upload a photo to begin.</p>
-
       <div class="actions">
         <button class="btn primary" onclick="document.getElementById('mainInput').click()">Choose Photo</button>
-
         <input id="mainInput" type="file" accept="image/*" style="display:none"
                onchange="Studio.onUploadMain(this.files[0]); this.value=''" />
-
         <input id="bgInput" type="file" accept="image/*" style="display:none"
                onchange="Studio.onUploadBg(this.files[0]); this.value=''" />
-
         <button id="btnRemove" class="btn" disabled onclick="Studio.removeBg()">Remove Background</button>
         <button id="btnChange" class="btn" disabled onclick="Studio.changeBg()">Change Background</button>
         <button class="btn" onclick="document.getElementById('bgInput').click()">Choose Background (from device)</button>
       </div>
-
       <p class="hint">Drag & drop also works!</p>
     </div>
 
-    <div class="stage card">
-      <canvas id="stage" width="960" height="600"></canvas>
-    </div>
+    <div class="stage card"><canvas id="stage" width="960" height="600"></canvas></div>
 
     <div class="card actions">
       <button class="btn" id="btnPrev">Download (Preview)</button>
@@ -122,73 +94,49 @@
     </div>
   </div>
 
-  <!-- ===========================
-       FIREBASE (Compat)
-  ============================ -->
+  <!-- Firebase (Compat for quick drop-in) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
   <script>
-    // ===========================
-    // STRIPE (live)
+    // ====== STRIPE Payment Link (live) ======
     // Stripe "After payment" redirect should be: https://aiphotostudio.co.uk/?pro=1
-    // ===========================
     const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/eVq6oJ3wugiPcFJ7QGd3i02";
+    // ========================================
 
-    // ===========================
-    // FIREBASE CONFIG
-    // ===========================
+    // ====== Firebase quick auth (email + anonymous) ======
     const firebaseConfig = {
       apiKey: "AIzaSyDsBDuaZ_rl7ro63Fv5gPh37EwSkfh-NqM",
       authDomain: "aiphotostudioapp.firebaseapp.com",
       projectId: "aiphotostudioapp",
-      storageBucket: "aiphotostudioapp.appspot.com",   // NOTE: appspot.com to avoid CORS bucket domain mismatch
+      storageBucket: "aiphotostudioapp.appspot.com",
       messagingSenderId: "1056724519182",
       appId: "1:1056724519182:web:93410e1b71a292e531ef5f",
       measurementId: "G-YMB9JJHNBE"
     };
     firebase.initializeApp(firebaseConfig);
 
-    // Services
     const auth = firebase.auth();
     const db = firebase.firestore();
     const storage = firebase.storage();
 
-    // ===========================
-    // AUTH UI
-    // ===========================
     const elStatus = document.getElementById('authStatus');
     const btnGuest = document.getElementById('btnGuest');
     const btnEmail = document.getElementById('btnEmail');
     const btnLogout = document.getElementById('btnLogout');
 
-    btnGuest.onclick = () => auth.signInAnonymously().catch(e => alert(e.message));
-    btnEmail.onclick = async () => {
-      const email = prompt('Email:'); if (!email) return;
-      const pwd = prompt('Password:'); if (!pwd) return;
-      try { await auth.signInWithEmailAndPassword(email, pwd); }
-      catch { await auth.createUserWithEmailAndPassword(email, pwd).catch(e => alert(e.message)); }
-    };
-    btnLogout.onclick = () => auth.signOut();
-
-    // ===========================
-    // PRO GATING + FREE TRIAL
-    // ===========================
+    // Plan gating + UI refs
     let proEnabled = false;
-    const proBtn   = document.getElementById('proToggle');
+    const trialBadge  = document.getElementById('trialStatus');
+    const btnStartTrial = document.getElementById('btnStartTrial');
+    const btnBuyPro   = document.getElementById('btnBuyPro');
     const hdBtnPng = document.getElementById('btnHDpng');
     const hdBtnJpg = document.getElementById('btnHDjpg');
     const prevBtn  = document.getElementById('btnPrev');
 
-    function toast(msg){
-      const el = document.createElement('div');
-      el.className = 'toast';
-      el.textContent = msg;
-      document.body.appendChild(el);
-      setTimeout(()=>el.remove(), 2200);
-    }
+    function toast(msg){ const el=document.createElement('div'); el.className='toast'; el.textContent=msg; document.body.appendChild(el); setTimeout(()=>el.remove(),2200); }
 
     function setPro(on){
       proEnabled = !!on;
@@ -197,100 +145,140 @@
       if (on) toast("✅ Pro activated");
     }
 
-    function setPlanUI(labelOverride=null){
+    function daysLeftTo(ts){
+      const now = Date.now();
+      const end = ts instanceof Date ? ts.getTime() : (typeof ts === 'number' ? ts : (ts?.toDate?.()?.getTime?.() || 0));
+      if (!end) return 0;
+      const diff = Math.ceil((end - now) / (1000*60*60*24));
+      return Math.max(0, diff);
+    }
+
+    function setPlanUI(){
       if (proEnabled){
-        proBtn.textContent = labelOverride || "✅ Pro active — manage / renew";
         hdBtnPng.textContent = "Download HD (PNG)";
         hdBtnJpg.textContent = "Download HD (JPEG)";
         hdBtnPng.disabled = hdBtnJpg.disabled = false;
       } else {
-        proBtn.textContent = labelOverride || "Pro plan · £4.99/yr · 7-day trial";
         hdBtnPng.textContent = "Download HD (PNG) · Pro required";
         hdBtnJpg.textContent = "Download HD (JPEG) · Pro required";
         hdBtnPng.disabled = hdBtnJpg.disabled = true;
       }
     }
 
-    function daysLeft(from, to){
-      const ms = to - from;
-      const d = Math.ceil(ms / (1000*60*60*24));
-      return d < 0 ? 0 : d;
-    }
+    // Load entitlements from Firestore user doc
+    async function loadUserEntitlements(user){
+      // default UI
+      trialBadge.style.display = 'none';
+      btnStartTrial.disabled = false;
+      btnStartTrial.textContent = "Start 7-day free trial";
 
-    // Start 7-day free trial for the current user
-    async function startFreeTrial() {
-      const user = firebase.auth().currentUser;
       if (!user) {
-        alert("Sign in first!");
+        setPro(localStorage.getItem('studio_pro') === '1'); // local remembered pro (if any)
+        // Guests may NOT start trial
+        btnStartTrial.disabled = true;
+        btnStartTrial.title = "Sign in to start a free trial";
         return;
       }
-      const now = new Date();
-      const trialEnd = new Date();
-      trialEnd.setDate(now.getDate() + 7);
 
-      await db.collection("users").doc(user.uid).set({
+      // Anonymous users cannot start trial
+      if (user.isAnonymous) {
+        btnStartTrial.disabled = true;
+        btnStartTrial.title = "Sign in with email to start a free trial";
+        setPro(localStorage.getItem('studio_pro') === '1');
+        return;
+      }
+
+      try {
+        const doc = await db.collection('users').doc(user.uid).get();
+        if (doc.exists) {
+          const data = doc.data() || {};
+          const trialEnd = data.trialEnd;
+          const isProFlag = !!data.isPro;
+
+          // If a server-side Pro flag later exists, it should override
+          let active = false;
+          let left = 0;
+
+          if (trialEnd) {
+            left = daysLeftTo(trialEnd);
+            active = left > 0;
+          }
+
+          // Activate if trial active or localStorage pro (manual toggle post-Stripe)
+          setPro(active || isProFlag || (localStorage.getItem('studio_pro') === '1'));
+
+          // Update trial UI
+          if (trialEnd) {
+            trialBadge.style.display = 'inline-block';
+            trialBadge.textContent = left > 0 ? `${left} day${left===1?'':'s'} left in trial` : 'Trial ended';
+          } else {
+            trialBadge.style.display = 'none';
+          }
+
+          // If trial already claimed (has trialStart), disable the button if ended
+          if (data.trialStart) {
+            if (left > 0) {
+              btnStartTrial.disabled = true;
+              btnStartTrial.textContent = "Trial active";
+            } else {
+              btnStartTrial.disabled = true;
+              btnStartTrial.textContent = "Trial ended";
+            }
+          }
+        } else {
+          // No doc yet — allow trial start for this signed-in (non-anon) user
+          setPro(localStorage.getItem('studio_pro') === '1');
+        }
+      } catch (e) {
+        console.warn('Failed to load user entitlements', e);
+        setPro(localStorage.getItem('studio_pro') === '1');
+      }
+    }
+
+    // Free trial (non-anonymous only)
+    async function startFreeTrial() {
+      const user = auth.currentUser;
+      if (!user) {
+        alert("Please sign in to start your free trial.");
+        return;
+      }
+      if (user.isAnonymous) {
+        alert("Free trial is only for signed-in (email) accounts.");
+        return;
+      }
+
+      // Check if already started
+      const ref = db.collection("users").doc(user.uid);
+      const snap = await ref.get();
+      if (snap.exists) {
+        const data = snap.data() || {};
+        if (data.trialStart && data.trialEnd) {
+          const left = daysLeftTo(data.trialEnd);
+          if (left > 0) {
+            alert(`Your trial is already active — ${left} day${left===1?'':'s'} left.`);
+            return;
+          } else {
+            alert("Your trial has ended.");
+            return;
+          }
+        }
+      }
+
+      const now = new Date();
+      const trialEnd = new Date(now.getTime() + 7*24*60*60*1000);
+
+      await ref.set({
         trialStart: firebase.firestore.Timestamp.fromDate(now),
         trialEnd: firebase.firestore.Timestamp.fromDate(trialEnd),
         isPro: false
       }, { merge: true });
 
       alert("✅ 7-day free trial started!");
-      setPro(true);
-      setPlanUI(`✅ Trial active — ${daysLeft(now, trialEnd)} days left`);
+      await loadUserEntitlements(auth.currentUser); // refresh UI + proEnabled
     }
 
-    // Check /users/{uid} to auto-apply entitlements
-    async function applyUserEntitlements(user){
-      if (!user) {
-        elStatus.textContent = 'Not signed in';
-        setPro(false);
-        setPlanUI();
-        return;
-      }
-      elStatus.textContent = user.isAnonymous ? 'Guest mode' : `Signed in as ${user.email}`;
-
-      try {
-        const doc = await db.collection("users").doc(user.uid).get();
-        if (doc.exists) {
-          const data = doc.data() || {};
-          const isProFlag = !!data.isPro;
-          const now = new Date();
-          let trialOk = false;
-
-          if (data.trialEnd && data.trialEnd.toDate) {
-            const trialEndDate = data.trialEnd.toDate();
-            trialOk = trialEndDate > now;
-            if (trialOk) {
-              setPro(true);
-              setPlanUI(`✅ Trial active — ${daysLeft(now, trialEndDate)} days left`);
-              return;
-            }
-          }
-          if (isProFlag) {
-            setPro(true);
-            setPlanUI();
-            return;
-          }
-        }
-      } catch (e) {
-        console.warn("Entitlement check failed:", e);
-      }
-      // Default if no active trial / pro flag
-      setPro(localStorage.getItem('studio_pro') === '1');
-      setPlanUI();
-    }
-
-    proBtn.onclick = () => {
-      if (!proEnabled) {
-        // first-time → start trial instead of immediate Stripe redirect
-        startFreeTrial();
-      } else {
-        alert("You're already on Pro. (Manage portal coming soon.)");
-      }
-    };
-
-    auth.onAuthStateChanged(user => {
-      // Update small auth label
+    // Auth UI wiring
+    auth.onAuthStateChanged(async user => {
       if (user) {
         elStatus.textContent = user.isAnonymous ? 'Guest mode' : `Signed in as ${user.email}`;
         btnLogout.style.display = 'inline-block';
@@ -300,11 +288,28 @@
         btnGuest.style.display = btnEmail.style.display = 'inline-block';
         btnLogout.style.display = 'none';
       }
-      // Apply entitlements on every auth state change
-      applyUserEntitlements(user);
+      await loadUserEntitlements(user);
     });
 
-    // Activate Pro when Stripe redirects back with ?pro=1
+    btnGuest.onclick = () => auth.signInAnonymously().catch(e => alert(e.message));
+    btnEmail.onclick = async () => {
+      const email = prompt('Email:'); if (!email) return;
+      const pwd = prompt('Password:'); if (!pwd) return;
+      try { await auth.signInWithEmailAndPassword(email, pwd); }
+      catch {
+        await auth.createUserWithEmailAndPassword(email, pwd).catch(e => alert(e.message));
+      }
+    };
+    btnLogout.onclick = async () => { await auth.signOut(); };
+
+    // Plans buttons
+    btnStartTrial.onclick = () => startFreeTrial();
+    btnBuyPro.onclick = () => {
+      if (!STRIPE_PAYMENT_LINK) { alert("Stripe link missing."); return; }
+      location.href = STRIPE_PAYMENT_LINK;   // go to Stripe Checkout
+    };
+
+    // Stripe return handler (?pro=1)
     (function bootstrapPro(){
       const sp = new URLSearchParams(location.search);
       if (sp.get('pro') === '1') {
@@ -320,9 +325,7 @@
       }
     })();
 
-    // ===========================
-    // CANVAS HELPERS
-    // ===========================
+    // ----- helpers -----
     const $status = document.getElementById('status');
     const canvas = document.getElementById('stage');
     const ctx = canvas.getContext('2d',{willReadFrequently:true});
@@ -333,9 +336,7 @@
     function drawChecker(){ const s=20; for(let y=0;y<canvas.height;y+=s){ for(let x=0;x<canvas.width;x+=s){ ctx.fillStyle=((x/s+y/s)%2===0)?'#e5e7eb':'#fff'; ctx.fillRect(x,y,s,s); } } }
     function stampWatermark(){ if(proEnabled) return; ctx.save(); ctx.font="20px ui-sans-serif,system-ui"; ctx.fillStyle="rgba(0,0,0,.35)"; ctx.textAlign="right"; ctx.fillText("AI Photo Studio · FREE", canvas.width-20, canvas.height-20); ctx.restore(); }
 
-    // ===========================
-    // MEDIAPIPE SELFIE (fallback if U²-Net fails)
-    // ===========================
+    // ----- Selfie fallback loader (only if U²-Net fails)
     let selfieLoader = null;
     function ensureSelfieSegmentation(){
       if (window.SelfieSegmentation) return Promise.resolve();
@@ -366,9 +367,7 @@
       return maskCanvas;
     }
 
-    // ===========================
-    // APP (Studio)
-    // ===========================
+    // ----- App -----
     const btnRemove = document.getElementById('btnRemove');
     const btnChange = document.getElementById('btnChange');
 
@@ -492,15 +491,7 @@
       function download(type="png", hd=false){
         if(hd && !proEnabled){ alert("Pro required."); return; }
         const mime = type==="jpeg" ? "image/jpeg" : "image/png";
-        canvas.toBlob((b)=>{
-          if(!b) return;
-          const url=URL.createObjectURL(b);
-          const a=document.createElement('a');
-          a.href=url;
-          a.download=`photo-studio.${type==="jpeg"?"jpg":"png"}`;
-          a.click();
-          URL.revokeObjectURL(url);
-        }, mime, .95);
+        canvas.toBlob((b)=>{ if(!b) return; const url=URL.createObjectURL(b); const a=document.createElement('a'); a.href=url; a.download=`photo-studio.${type==="jpeg"?"jpg":"png"}`; a.click(); URL.revokeObjectURL(url); }, mime, .95);
       }
 
       function handleDrop(e){
@@ -518,9 +509,7 @@
       };
     })();
 
-    // ===========================
-    // BUTTON HOOKS & INITIALS
-    // ===========================
+    // Hook download buttons
     prevBtn.onclick  = ()=> Studio.downloadPreview();
     hdBtnPng.onclick = ()=> Studio.downloadHD("png");
     hdBtnJpg.onclick = ()=> Studio.downloadHD("jpeg");
@@ -528,29 +517,7 @@
     // Initial checkerboard
     drawChecker();
 
-    // ===========================
-    // FIRESTORE + STORAGE SANITY TEST
-    // (Will fail if rules block /tests — that's fine in prod)
-    // ===========================
-    (async () => {
-      try {
-        await db.collection("tests").add({ hello: "world", ts: new Date() });
-        console.log("✅ Firestore write worked");
-      } catch (e) {
-        console.error("❌ Firestore failed:", e);
-      }
-      try {
-        const testRef = storage.ref("test.txt");
-        await testRef.putString("Hello Storage!");
-        console.log("✅ Storage write worked");
-      } catch (e) {
-        console.error("❌ Storage failed:", e);
-      }
-    })();
-
-    // ===========================
-    // SERVICE WORKER
-    // ===========================
+    // Service worker (v12)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js?v=v12').catch(()=>{});
