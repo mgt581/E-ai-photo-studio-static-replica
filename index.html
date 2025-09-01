@@ -21,8 +21,7 @@
   <!-- FREE, on-device background removal -->
   <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@latest/dist/background-removal.min.js"></script>
 
-  <!-- OpenCV.js for inpainting (remove person) -->
-  <script async src="https://docs.opencv.org/4.x/opencv.js"></script>
+  <!-- NOTE: we now load OpenCV dynamically in ensureOpenCVReady() -->
 
   <style>
     :root{--grad:linear-gradient(90deg,#6366f1,#8b5cf6)}
@@ -473,7 +472,7 @@
         stage.toBlob((b)=>{ if(!b) return; const url=URL.createObjectURL(b); const a=document.createElement('a'); a.href=url; a.download=`photo-studio.${type==="jpeg"?"jpg":"png"}`; a.click(); URL.revokeObjectURL(url); }, mime, .95);
       }
 
-      // ===== Remove Person (Brush + Inpaint) =====
+      // ===== Remove Person (Brush + Inpaint) — FIXED =====
       function startBrush(){
         if (!mainSrc && !cutoutURL){ alert("Load an image first."); return; }
         brushing = true;
@@ -491,42 +490,53 @@
         setStatus("Brush canceled.");
       }
 
-      async function applyInpaint(){
-        try{
+      async function applyInpaint() {
+        try {
           setBusy(true);
           setStatus("Removing selected area…");
           await ensureOpenCVReady();
 
-          const srcImg = ctx.getImageData(0,0,stage.width,stage.height);
-          const maskImg = mctx.getImageData(0,0,maskCanvas.width,maskCanvas.height);
+          // 1) Canvas RGBA + mask
+          const srcRGBA = ctx.getImageData(0, 0, stage.width, stage.height);
+          const maskImg = mctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
 
-          const src = cv.matFromImageData(srcImg);
+          // 2) RGBA -> RGB Mat
+          const src4 = cv.matFromImageData(srcRGBA); // CV_8UC4
+          const src3 = new cv.Mat();
+          cv.cvtColor(src4, src3, cv.COLOR_RGBA2RGB);
+
+          // 3) Build binary mask from painted strokes and dilate slightly
           const mask = new cv.Mat.zeros(maskImg.height, maskImg.width, cv.CV_8UC1);
-
-          // Convert painted (red) strokes to a binary mask
-          for (let i=0;i<maskImg.data.length;i+=4){
-            const r = maskImg.data[i], a = maskImg.data[i+3];
+          for (let i = 0; i < maskImg.data.length; i += 4) {
+            const r = maskImg.data[i], a = maskImg.data[i + 3];
             if (a > 0 && r > 150) {
-              const idx = i/4, y = (idx / maskImg.width) | 0, x = idx % maskImg.width;
-              mask.ucharPtr(y,x)[0] = 255;
+              const idx = i / 4, y = (idx / maskImg.width) | 0, x = idx % maskImg.width;
+              mask.ucharPtr(y, x)[0] = 255;
             }
           }
+          const kernel = cv.Mat.ones(3, 3, cv.CV_8U);
+          const maskDilated = new cv.Mat();
+          cv.dilate(mask, maskDilated, kernel);
 
-          // Inpaint (TELEA): preserves surrounding texture → background stays natural
-          const dst = new cv.Mat();
-          cv.inpaint(src, mask, dst, 4, cv.INPAINT_TELEA);
+          // 4) Inpaint on RGB
+          const out3 = new cv.Mat();
+          cv.inpaint(src3, maskDilated, out3, 4, cv.INPAINT_TELEA);
 
-          const out = new ImageData(new Uint8ClampedArray(dst.data), stage.width, stage.height);
+          // 5) RGB -> RGBA back to canvas
+          const out4 = new cv.Mat();
+          cv.cvtColor(out3, out4, cv.COLOR_RGB2RGBA);
+          const out = new ImageData(new Uint8ClampedArray(out4.data), stage.width, stage.height);
           ctx.putImageData(out, 0, 0);
 
           // cleanup
-          src.delete(); mask.delete(); dst.delete();
+          src4.delete(); src3.delete(); mask.delete();
+          kernel.delete(); maskDilated.delete(); out3.delete(); out4.delete();
 
           cancelBrush();
-          stampWatermark(); // re-stamp watermark if not Pro
+          stampWatermark();
           setStatus("Person removed.");
-        } catch (e){
-          console.error(e);
+        } catch (e) {
+          console.error('Inpaint error:', e);
           alert("Removal failed. Try brushing a tighter area, then Apply again.");
           setStatus("Removal failed.");
         } finally {
@@ -534,9 +544,24 @@
         }
       }
 
-      async function ensureOpenCVReady(){
-        if (window.cv && cv.Mat) return;
-        await new Promise((resolve)=>{ const t=setInterval(()=>{ if (window.cv && cv.Mat){ clearInterval(t); resolve(); } }, 80); });
+      // Robust OpenCV loader
+      async function ensureOpenCVReady() {
+        if (window.cv && cv.Mat && !cv['isLoading']) return;
+        if (window.cv && cv['onRuntimeInitialized'] && !cv.Mat) {
+          await new Promise(res => { const prev = cv.onRuntimeInitialized; cv.onRuntimeInitialized = () => { prev && prev(); res(); }; });
+          return;
+        }
+        // Load OpenCV from a CDN with proper wasm headers
+        window.cv = { isLoading: true };
+        await new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = 'https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.7.0/dist/opencv.js';
+          s.async = true;
+          s.crossOrigin = 'anonymous';
+          s.onload = () => { cv.onRuntimeInitialized = () => { cv.isLoading = false; resolve(); }; };
+          s.onerror = () => reject(new Error('opencv-load-failed'));
+          document.head.appendChild(s);
+        });
       }
 
       // Mask brush events
