@@ -1,5 +1,5 @@
 // ---- BUMP THIS WHEN YOU DEPLOY ----
-const VERSION = 'v15';
+const VERSION = 'v17';
 const CACHE   = `photo-studio-${VERSION}`;
 
 const FILES_TO_CACHE = [
@@ -32,11 +32,17 @@ self.addEventListener('activate', (evt) => {
 });
 
 // Fetch strategy
-// - HTML/documents: network-first → fallback to cache → fallback to offline.html
-// - Other GETs: stale-while-revalidate
 self.addEventListener('fetch', (evt) => {
   const req = evt.request;
   if (req.method !== 'GET') return;
+
+  const url = req.url;
+
+  // 🔴 Do not cache OpenCV JS/WASM (avoid opaque/stale responses)
+  if (url.includes('cdn.jsdelivr.net') && url.includes('opencv')) {
+    evt.respondWith(fetch(req));
+    return;
+  }
 
   const isHTML =
     req.mode === 'navigate' ||
@@ -44,6 +50,7 @@ self.addEventListener('fetch', (evt) => {
     req.destination === 'document';
 
   if (isHTML) {
+    // Network-first → cache → offline.html
     evt.respondWith(
       fetch(req)
         .then((resp) => {
@@ -60,7 +67,7 @@ self.addEventListener('fetch', (evt) => {
     return;
   }
 
-  // Assets: SWR
+  // Other assets: stale-while-revalidate
   evt.respondWith(
     caches.match(req).then((cached) => {
       const fetchPromise = fetch(req)
