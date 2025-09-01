@@ -614,17 +614,18 @@
     drawChecker();
 
     // Enable brush button once an image loads
-    document.getElementById('mainInput').addEventListener('change', () => {
-      const brushBtn = document.getElementById('btnBrush');
-      if (brushBtn) brushBtn.disabled = false;
-    });
+document.getElementById('mainInput').addEventListener('change', () => {
+  const brushBtn = document.getElementById('btnBrush');
+  if (brushBtn) brushBtn.disabled = false;
+});
 
-    // Service worker (v17)
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js?v=v17').catch(() => {});
-  });
-}
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      const swUrl = `/sw.js?v=${Date.now()}`; // auto-bust cache
+      navigator.serviceWorker.register(swUrl).catch(() => {});
+    });
+  }
 </script>
 </body>
-</html> 
+</html>
