@@ -1,69 +1,78 @@
 // ---- BUMP THIS WHEN YOU DEPLOY ----
-const VERSION = 'v12';
+const VERSION = 'v13';
 const CACHE   = `photo-studio-${VERSION}`;
 
-// Add/adjust paths to match your project
+// Precache these files (adjust if you rename/move anything)
 const FILES_TO_CACHE = [
-  '/',                    // entry
+  '/',                     // entry
   '/index.html',
+  '/signin.html',
+  '/offline.html',
   '/manifest.webmanifest',
-  '/manifest.json',       // harmless if missing
+  '/manifest.json',        // harmless if missing
+  '/apple-touch-icon.png',
+  '/apple-touch-icon.png?v=3',
   '/logo-192.png',
-  '/logo-512.png',
-  '/apple-touch-icon.png',       // base path
-  '/apple-touch-icon.png?v=3'    // cache-busted icon used in <head>
+  '/logo-512.png'
 ];
 
 // Install: precache core files
-self.addEventListener('install', (evt) => {
-  evt.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(FILES_TO_CACHE)));
+self.addEventListener('install', evt => {
+  evt.waitUntil(
+    caches.open(CACHE).then(cache => cache.addAll(FILES_TO_CACHE))
+  );
   self.skipWaiting();
 });
 
-// Activate: clean old caches
-self.addEventListener('activate', (evt) => {
+// Activate: remove old caches
+self.addEventListener('activate', evt => {
   evt.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.map((k) => (k !== CACHE ? caches.delete(k) : null)))
+    caches.keys().then(keys =>
+      Promise.all(keys.map(k => (k !== CACHE ? caches.delete(k) : null)))
     )
   );
   self.clients.claim();
 });
 
-// Fetch strategy
-// - HTML/documents: network-first (so new index.html shows immediately)
-// - Other GETs: stale-while-revalidate (fast, then refresh in background)
-self.addEventListener('fetch', (evt) => {
+// Fetch:
+// - Navigations (HTML/documents): network-first, fallback to cache, then offline.html
+// - Other GET requests: stale-while-revalidate
+self.addEventListener('fetch', evt => {
   const req = evt.request;
   if (req.method !== 'GET') return;
 
-  const isHTML =
-    req.mode === 'navigate' ||
-    (req.headers.get('accept') || '').includes('text/html') ||
-    req.destination === 'document';
+  const accept = req.headers.get('accept') || '';
+  const isHTML = req.mode === 'navigate' ||
+                 accept.includes('text/html') ||
+                 req.destination === 'document';
 
   if (isHTML) {
     evt.respondWith(
       fetch(req)
-        .then((resp) => {
+        .then(resp => {
+          // Cache a copy of successful responses
           const copy = resp.clone();
-          caches.open(CACHE).then((cache) => cache.put(req, copy));
+          caches.open(CACHE).then(c => c.put(req, copy));
           return resp;
         })
-        .catch(() => caches.match(req).then((c) => c || caches.match('/index.html')))
+        .catch(async () => {
+          // Try cached page, else show offline.html
+          const cached = await caches.match(req);
+          return cached || (await caches.match('/offline.html'));
+        })
     );
     return;
   }
 
-  // Assets: SWR
+  // Assets/API: SWR
   evt.respondWith(
-    caches.match(req).then((cached) => {
+    caches.match(req).then(cached => {
       const fetchPromise = fetch(req)
-        .then((net) => {
-          if (net && net.status === 200) {
-            caches.open(CACHE).then((cache) => cache.put(req, net.clone()));
+        .then(netResp => {
+          if (netResp && netResp.status === 200 && netResp.type !== 'opaqueredirect') {
+            caches.open(CACHE).then(c => c.put(req, netResp.clone()));
           }
-          return net;
+          return netResp;
         })
         .catch(() => cached);
       return cached || fetchPromise;
