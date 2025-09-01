@@ -179,7 +179,6 @@
       if (proEnabled) return;
       const text = "AI Photo Studio — FREE";
       ctx.save();
-      // white rounded box behind text
       ctx.globalAlpha = 1;
       ctx.font = "bold 34px ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial";
       const w = ctx.measureText(text).width;
@@ -188,7 +187,6 @@
       const padX = 14, padY = 12, r = 10;
       const bx = x - padX, by = y - 34, bw = w + padX*2, bh = 44;
 
-      // rounded rect
       ctx.fillStyle = "rgba(255,255,255,0.88)";
       ctx.beginPath();
       ctx.moveTo(bx+r, by);
@@ -203,7 +201,6 @@
       ctx.closePath();
       ctx.fill();
 
-      // text
       ctx.fillStyle = "#111827";
       ctx.textAlign = "left";
       ctx.fillText(text, x, y);
@@ -514,9 +511,10 @@
               mask.ucharPtr(y, x)[0] = 255;
             }
           }
-          const kernel = cv.Mat.ones(3, 3, cv.CV_8U);
+          // small dilation to cover edges
+          const kernel = cv.Mat.ones(5, 5, cv.CV_8U);
           const maskDilated = new cv.Mat();
-          cv.dilate(mask, maskDilated, kernel);
+          cv.dilate(mask, maskDilated, kernel, new cv.Point(-1,-1), 1);
 
           // 4) Inpaint on RGB
           const out3 = new cv.Mat();
@@ -544,21 +542,33 @@
         }
       }
 
-      // Robust OpenCV loader
+      // Robust OpenCV loader (explicit WASM path)
       async function ensureOpenCVReady() {
         if (window.cv && cv.Mat && !cv['isLoading']) return;
+
+        // Already loading: wait for runtime to be ready
         if (window.cv && cv['onRuntimeInitialized'] && !cv.Mat) {
-          await new Promise(res => { const prev = cv.onRuntimeInitialized; cv.onRuntimeInitialized = () => { prev && prev(); res(); }; });
+          await new Promise(res => {
+            const prev = cv.onRuntimeInitialized;
+            cv.onRuntimeInitialized = () => { prev && prev(); res(); };
+          });
           return;
         }
-        // Load OpenCV from a CDN with proper wasm headers
+
+        // Start a fresh load
         window.cv = { isLoading: true };
         await new Promise((resolve, reject) => {
+          // Set the WASM file path BEFORE loading opencv.js
+          window.Module = window.Module || {};
+          window.Module['wasmBinaryFile'] = 'https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.7.0/dist/opencv_js.wasm';
+
           const s = document.createElement('script');
           s.src = 'https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.7.0/dist/opencv.js';
           s.async = true;
           s.crossOrigin = 'anonymous';
-          s.onload = () => { cv.onRuntimeInitialized = () => { cv.isLoading = false; resolve(); }; };
+          s.onload = () => {
+            cv.onRuntimeInitialized = () => { cv.isLoading = false; resolve(); };
+          };
           s.onerror = () => reject(new Error('opencv-load-failed'));
           document.head.appendChild(s);
         });
