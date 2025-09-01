@@ -1,18 +1,18 @@
 // ---- BUMP THIS WHEN YOU DEPLOY ----
-const VERSION = 'v13';
+const VERSION = 'v15';
 const CACHE   = `photo-studio-${VERSION}`;
 
-// Add/adjust paths to match your project
 const FILES_TO_CACHE = [
   '/',                    // entry
   '/index.html',
-  '/offline.html',        // ✅ offline fallback page
+  '/signin.html',
+  '/offline.html',
+  '/404.html',
   '/manifest.webmanifest',
-  '/manifest.json',       // harmless if missing
   '/logo-192.png',
   '/logo-512.png',
-  '/apple-touch-icon.png',       // base path
-  '/apple-touch-icon.png?v=3'    // cache-busted icon used in <head>
+  '/apple-touch-icon.png',
+  '/apple-touch-icon.png?v=3'
 ];
 
 // Install: precache core files
@@ -32,7 +32,7 @@ self.addEventListener('activate', (evt) => {
 });
 
 // Fetch strategy
-// - HTML/documents: network-first → fallback to offline.html
+// - HTML/documents: network-first → fallback to cache → fallback to offline.html
 // - Other GETs: stale-while-revalidate
 self.addEventListener('fetch', (evt) => {
   const req = evt.request;
@@ -51,12 +51,16 @@ self.addEventListener('fetch', (evt) => {
           caches.open(CACHE).then((cache) => cache.put(req, copy));
           return resp;
         })
-        .catch(() => caches.match(req).then((c) => c || caches.match('/offline.html')))
+        .catch(async () => {
+          return (await caches.match(req)) ||
+                 (await caches.match('/offline.html')) ||
+                 (await caches.match('/index.html'));
+        })
     );
     return;
   }
 
-  // Assets: stale-while-revalidate
+  // Assets: SWR
   evt.respondWith(
     caches.match(req).then((cached) => {
       const fetchPromise = fetch(req)
