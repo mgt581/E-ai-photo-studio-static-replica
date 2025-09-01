@@ -1,9 +1,9 @@
-// ---- BUMP THIS WHEN YOU DEPLOY ----
-const VERSION = 'v17';
+// ---- Auto-bumped VERSION ----
+const VERSION = `v${Date.now()}`; 
 const CACHE   = `photo-studio-${VERSION}`;
 
 const FILES_TO_CACHE = [
-  '/',                    // entry
+  '/',                    
   '/index.html',
   '/signin.html',
   '/offline.html',
@@ -38,7 +38,7 @@ self.addEventListener('fetch', (evt) => {
 
   const url = req.url;
 
-  // 🔴 Do not cache OpenCV JS/WASM (avoid opaque/stale responses)
+  // 🔴 Do not cache OpenCV JS/WASM
   if (url.includes('cdn.jsdelivr.net') && url.includes('opencv')) {
     evt.respondWith(fetch(req));
     return;
@@ -50,7 +50,6 @@ self.addEventListener('fetch', (evt) => {
     req.destination === 'document';
 
   if (isHTML) {
-    // Network-first → cache → offline.html
     evt.respondWith(
       fetch(req)
         .then((resp) => {
