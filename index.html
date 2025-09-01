@@ -579,14 +579,17 @@
     drawChecker();
 
     // Enable brush button once an image loads
-    document.getElementById('mainInput').addEventListener('change', ()=>{ document.getElementById('btnBrush').disabled = false; });
+    document.getElementById('mainInput').addEventListener('change', () => {
+      const brushBtn = document.getElementById('btnBrush');
+      if (brushBtn) brushBtn.disabled = false;
+    });
 
-    // Service worker (optional)
+    // Service worker (v15)
     if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js?v=v13').catch(()=>{});
-  });
- }
-</script>
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js?v=v15').catch(() => {});
+      });
+    }
+  </script>
 </body>
 </html>
