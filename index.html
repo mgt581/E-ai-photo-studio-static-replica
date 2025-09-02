@@ -21,18 +21,13 @@
   <!-- FREE, on-device background removal -->
   <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@latest/dist/background-removal.min.js"></script>
 
-  <!-- NOTE: we now load OpenCV dynamically in ensureOpenCVReady() -->
-
   <style>
     :root{--grad:linear-gradient(90deg,#6366f1,#8b5cf6)}
     body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#f9fafb;color:#111827}
     header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 24px;border-bottom:1px solid #e5e7eb}
-
-    /* Brand */
     .brand{display:flex;align-items:center;gap:10px}
     .brand-img{width:28px;height:28px;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.15)}
     .brand-text{font-size:20px;font-weight:800;letter-spacing:.2px}
-
     .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
     .pill{background:var(--grad);color:#fff;border:0;padding:8px 16px;border-radius:9999px;cursor:pointer;font-size:14px;font-weight:700}
     .ghost{background:#eef2ff;color:#4338ca;border:0;padding:8px 12px;border-radius:10px;font-weight:700;text-decoration:none;display:inline-block}
@@ -46,7 +41,6 @@
     .status{text-align:center;color:#6b7280;font-size:14px}
     .stage{border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;position:relative}
     canvas#stage{width:100%;height:auto;display:block;background:#f3f4f6}
-    /* Brush mask overlay */
     canvas#mask{position:absolute;left:0;top:0;width:100%;height:100%;display:none;cursor:crosshair}
     .actions{display:grid;gap:12px}
     .hint{font-size:13px;color:#6b7280;text-align:center}
@@ -58,8 +52,7 @@
 <body>
   <header>
     <div class="brand">
-      <img src="/apple-touch-icon.png?v=3" alt="AI Photo Studio logo"
-           width="28" height="28" class="brand-img" onerror="this.remove()">
+      <img src="/apple-touch-icon.png?v=3" alt="AI Photo Studio logo" width="28" height="28" class="brand-img" onerror="this.remove()">
       <span class="brand-text">AI Photo Studio</span>
     </div>
 
@@ -68,7 +61,6 @@
       <span id="authStatus" class="muted">Not signed in</span>
       <button id="btnLogout" class="ghost" style="display:none">Sign out</button>
 
-      <!-- Trial & Pro -->
       <span id="trialLeft" class="badge" style="display:none"></span>
       <button class="pill" id="btnTrial">Start 7-day Free Trial</button>
       <button class="pill" id="btnBuy">Buy Pro · £4.99/yr</button>
@@ -81,19 +73,17 @@
       <div class="actions">
         <div class="toolbar">
           <button class="btn primary" onclick="document.getElementById('mainInput').click()">Choose Photo</button>
-          <input id="mainInput" type="file" accept="image/*" style="display:none"
-                 onchange="Studio.onUploadMain(this.files[0]); this.value=''" />
-          <input id="bgInput" type="file" accept="image/*" style="display:none"
-                 onchange="Studio.onUploadBg(this.files[0]); this.value=''" />
+          <input id="mainInput" type="file" accept="image/*" style="display:none" onchange="Studio.onUploadMain(this.files[0]); this.value=''" />
+          <input id="bgInput" type="file" accept="image/*" style="display:none" onchange="Studio.onUploadBg(this.files[0]); this.value=''" />
           <button id="btnRemove" class="btn" disabled onclick="Studio.removeBg()">Remove Background</button>
           <button id="btnChange" class="btn" disabled onclick="Studio.changeBg()">Change Background</button>
           <button class="btn" onclick="document.getElementById('bgInput').click()">Choose Background</button>
 
-          <!-- NEW: Remove Person (Brush) -->
+          <!-- Remove Person -->
           <button id="btnBrush" class="btn" disabled onclick="Studio.startBrush()">Remove Person (Brush)</button>
           <button id="btnApply" class="btn warn" style="display:none" onclick="Studio.applyInpaint()">Apply Removal</button>
           <button id="btnCancel" class="btn" style="display:none" onclick="Studio.cancelBrush()">Cancel</button>
-          <!-- The HD+ (Beta) button will be injected dynamically next to these -->
+          <!-- HD+ button will be injected next to these -->
         </div>
         <p class="hint">Drag & drop also works!</p>
       </div>
@@ -120,10 +110,8 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
   <script>
-    // ===== Stripe =====
-    const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/eVq6oJ3wugiPcFJ7QGd3i02"; // redirect back with ?pro=1
+    const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/eVq6oJ3wugiPcFJ7QGd3i02";
 
-    // ===== Firebase =====
     const firebaseConfig = {
       apiKey: "AIzaSyDsBDuaZ_rl7ro63Fv5gPh37EwSkfh-NqM",
       authDomain: "aiphotostudioapp.firebaseapp.com",
@@ -139,18 +127,15 @@
     const db   = firebase.firestore();
     const storage = firebase.storage();
 
-    // ----- UI refs -----
     const elStatus = document.getElementById('authStatus');
     const btnLogout = document.getElementById('btnLogout');
     const btnTrial = document.getElementById('btnTrial');
     const btnBuy = document.getElementById('btnBuy');
     const elTrialLeft = document.getElementById('trialLeft');
 
-    // ----- Pro/Trial state -----
     let proEnabled = false;
     let trialEndMillis = null;
 
-    // ----- Canvas setup -----
     const $status = document.getElementById('status');
     const stage = document.getElementById('stage');
     const ctx = stage.getContext('2d', { willReadFrequently: true });
@@ -160,7 +145,6 @@
     const mctx = maskCanvas.getContext('2d');
     let brushing = false, brushDown = false, brushSize = 24;
 
-    // Buttons
     const hdBtnPng = document.getElementById('btnHDpng');
     const hdBtnJpg = document.getElementById('btnHDjpg');
     const prevBtn  = document.getElementById('btnPrev');
@@ -170,49 +154,31 @@
     const btnApply  = document.getElementById('btnApply');
     const btnCancel = document.getElementById('btnCancel');
 
-    // Helpers
     function toast(msg){ const el=document.createElement('div'); el.className='toast'; el.textContent=msg; document.body.appendChild(el); setTimeout(()=>el.remove(),2200); }
     function setStatus(t){ $status.textContent = t; }
     function drawChecker(){ const s=20; for(let y=0;y<stage.height;y+=s){ for(let x=0;x<stage.width;x+=s){ ctx.fillStyle=((x/s+y/s)%2===0)?'#e5e7eb':'#fff'; ctx.fillRect(x,y,s,s); } } }
 
-    // ===== Centered watermark (hard to crop out) =====
     function stampWatermark(){
       if (proEnabled) return;
       const text = "AI Photo Studio — FREE";
       ctx.save();
-      ctx.globalAlpha = 1;
       ctx.font = "bold 34px ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial";
       const w = ctx.measureText(text).width;
       const x = (stage.width - w) / 2;
       const y = stage.height / 2 + 12;
-      const padX = 14, padY = 12, r = 10;
-      const bx = x - padX, by = y - 34, bw = w + padX*2, bh = 44;
-
+      const padX = 14, r = 10, bx = x - padX, by = y - 34, bw = w + padX*2, bh = 44;
       ctx.fillStyle = "rgba(255,255,255,0.88)";
       ctx.beginPath();
-      ctx.moveTo(bx+r, by);
-      ctx.lineTo(bx+bw-r, by);
-      ctx.quadraticCurveTo(bx+bw, by, bx+bw, by+r);
-      ctx.lineTo(bx+bw, by+bh-r);
-      ctx.quadraticCurveTo(bx+bw, by+bh, bx+bw-r, by+bh);
-      ctx.lineTo(bx+r, by+bh);
-      ctx.quadraticCurveTo(bx, by+bh, bx, by+bh-r);
-      ctx.lineTo(bx, by+r);
-      ctx.quadraticCurveTo(bx, by, bx+r, by);
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.fillStyle = "#111827";
-      ctx.textAlign = "left";
-      ctx.fillText(text, x, y);
-      ctx.restore();
+      ctx.moveTo(bx+r, by); ctx.lineTo(bx+bw-r, by); ctx.quadraticCurveTo(bx+bw, by, bx+bw, by+r);
+      ctx.lineTo(bx+bw, by+bh-r); ctx.quadraticCurveTo(bx+bw, by+bh, bx+bw-r, by+bh);
+      ctx.lineTo(bx+r, by+bh); ctx.quadraticCurveTo(bx, by+bh, bx, by+bh-r);
+      ctx.lineTo(bx, by+r); ctx.quadraticCurveTo(bx, by, bx+r, by); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#111827"; ctx.fillText(text, x, y); ctx.restore();
     }
 
-    // Img helpers
     const readFileURL = (f)=>new Promise((res,rej)=>{ if(!f) return res(null); const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f); });
     const loadImage = (src)=>new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=src; });
 
-    // Selfie fallback for remove BG
     let selfieLoader = null;
     function ensureSelfieSegmentation(){
       if (window.SelfieSegmentation) return Promise.resolve();
@@ -220,8 +186,7 @@
       selfieLoader = new Promise((resolve,reject)=>{
         const s=document.createElement('script');
         s.src='https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1/selfie_segmentation.js';
-        s.onload=()=>resolve();
-        s.onerror=()=>reject(new Error('mediapipe-load-failed'));
+        s.onload=()=>resolve(); s.onerror=()=>reject(new Error('mediapipe-load-failed'));
         document.head.appendChild(s);
       });
       return selfieLoader;
@@ -230,20 +195,11 @@
       await ensureSelfieSegmentation();
       const ss = new SelfieSegmentation({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${f}` });
       ss.setOptions({ modelSelection: 1 });
-      const maskCanvas = document.createElement('canvas');
-      maskCanvas.width = img.width; maskCanvas.height = img.height;
-      await new Promise((resolve)=>{
-        ss.onResults((r)=>{
-          const m = maskCanvas.getContext('2d');
-          m.drawImage(r.segmentationMask, 0,0, img.width, img.height);
-          resolve();
-        });
-        ss.send({ image: img });
-      });
+      const maskCanvas = document.createElement('canvas'); maskCanvas.width = img.width; maskCanvas.height = img.height;
+      await new Promise((resolve)=>{ ss.onResults((r)=>{ const m = maskCanvas.getContext('2d'); m.drawImage(r.segmentationMask,0,0,img.width,img.height); resolve(); }); ss.send({ image: img }); });
       return maskCanvas;
     }
 
-    // Pro/Trial UI
     function updatePlanUI(){
       if (proEnabled){
         hdBtnPng.textContent = "Download HD (PNG)";
@@ -262,7 +218,6 @@
       if (on) toast("✅ Pro activated");
     }
 
-    // Auth
     auth.onAuthStateChanged(async user => {
       if (user) {
         const who = user.phoneNumber || user.email || (user.isAnonymous ? 'Guest mode' : 'Signed in');
@@ -280,14 +235,12 @@
     btnLogout.onclick = () => auth.signOut();
     btnBuy.onclick = () => { if (!STRIPE_PAYMENT_LINK) return alert("Stripe link missing."); location.href = STRIPE_PAYMENT_LINK; };
 
-    // Trial
     async function refreshUserPlan(){
       const user = auth.currentUser;
       if (!user || user.isAnonymous) { elTrialLeft.style.display = 'none'; return; }
       const ref = db.collection('users').doc(user.uid);
       const snap = await ref.get();
-      let isPro = false;
-      trialEndMillis = null;
+      let isPro = false; trialEndMillis = null;
 
       if (snap.exists){
         const d = snap.data();
@@ -296,24 +249,13 @@
       }
       if (!isPro && trialEndMillis){
         const leftMs = trialEndMillis - Date.now();
-        if (leftMs > 0){
-          const days = Math.ceil(leftMs / 86400000);
+        if (leftMs > 0){ const days = Math.ceil(leftMs / 86400000);
           elTrialLeft.textContent = `${days} day${days===1?'':'s'} left`;
           elTrialLeft.style.display = 'inline-block';
           setPro(true);
-        } else {
-          elTrialLeft.textContent = `Trial ended`;
-          elTrialLeft.style.display = 'inline-block';
-          setPro(false);
-        }
-      } else if (isPro){
-        elTrialLeft.textContent = `Pro active`;
-        elTrialLeft.style.display = 'inline-block';
-        setPro(true);
-      } else {
-        elTrialLeft.style.display = 'none';
-        setPro(false);
-      }
+        } else { elTrialLeft.textContent = `Trial ended`; elTrialLeft.style.display = 'inline-block'; setPro(false); }
+      } else if (isPro){ elTrialLeft.textContent = `Pro active`; elTrialLeft.style.display = 'inline-block'; setPro(true); }
+      else { elTrialLeft.style.display = 'none'; setPro(false); }
     }
 
     async function startFreeTrial(){
@@ -321,8 +263,7 @@
       if (!user){ return alert("Please sign in first."); }
       if (user.isAnonymous){ return alert("Create an account to start a trial."); }
       const ref = db.collection('users').doc(user.uid);
-      const now = new Date();
-      const trialEnd = new Date(); trialEnd.setDate(now.getDate() + 7);
+      const now = new Date(); const trialEnd = new Date(); trialEnd.setDate(now.getDate() + 7);
 
       const snap = await ref.get();
       if (snap.exists){
@@ -342,7 +283,6 @@
     }
     btnTrial.onclick = startFreeTrial;
 
-    // Handle Stripe redirect (?pro=1)
     (function bootstrapPro(){
       const sp = new URLSearchParams(location.search);
       if (sp.get('pro') === '1') {
@@ -355,7 +295,7 @@
       }
     })();
 
-    // ===== Minimal progress HUD (shared by HD+ loader/inference) =====
+    // ---- Progress HUD (for HD+ model download/inference) ----
     let _progEl = null;
     function showProgress(text, pct = 0) {
       if (!_progEl) {
@@ -366,15 +306,10 @@
           padding:10px 14px;border-radius:10px;box-shadow:0 8px 20px rgba(0,0,0,.3);
           font-weight:700;min-width:240px;text-align:center
         `;
-        const label = document.createElement('div'); label.id = 'p_lbl';
-        label.style.marginBottom = '6px';
-        const barWrap = document.createElement('div');
-        barWrap.style.cssText = 'height:6px;background:#374151;border-radius:9999px;overflow:hidden';
-        const bar = document.createElement('div'); bar.id='p_bar';
-        bar.style.cssText = 'height:100%;width:0%;background:#22c55e;transition:width .15s linear';
-        barWrap.appendChild(bar);
-        _progEl.append(label, barWrap);
-        document.body.appendChild(_progEl);
+        const label = document.createElement('div'); label.id = 'p_lbl'; label.style.marginBottom='6px';
+        const barWrap = document.createElement('div'); barWrap.style.cssText='height:6px;background:#374151;border-radius:9999px;overflow:hidden';
+        const bar = document.createElement('div'); bar.id='p_bar'; bar.style.cssText='height:100%;width:0%;background:#22c55e;transition:width .15s linear';
+        barWrap.appendChild(bar); _progEl.append(label, barWrap); document.body.appendChild(_progEl);
       }
       _progEl.querySelector('#p_lbl').textContent = text;
       _progEl.querySelector('#p_bar').style.width = `${Math.max(0, Math.min(100, pct))}%`;
@@ -384,10 +319,7 @@
 
     // ----- App core -----
     const Studio = (() => {
-      let mainSrc = null;   // uploaded photo (data URL)
-      let cutoutURL = null; // object URL for transparent PNG after bg removal
-      let bgSrc = null;     // background image (data URL)
-      let busy = false;
+      let mainSrc = null, cutoutURL = null, bgSrc = null, busy = false;
 
       function setBusy(b){
         busy = b;
@@ -405,15 +337,11 @@
         const img = await loadImage(dataUrl);
         const max = Math.max(img.width, img.height);
         if (max <= maxSide) return img;
-        const ratio = maxSide / max;
-        const w = Math.round(img.width * ratio);
-        const h = Math.round(img.height * ratio);
+        const ratio = maxSide / max, w = Math.round(img.width * ratio), h = Math.round(img.height * ratio);
         const c = document.createElement('canvas'); c.width = w; c.height = h;
-        const cx = c.getContext('2d');
-        cx.imageSmoothingEnabled = true; cx.imageSmoothingQuality = 'high';
+        const cx = c.getContext('2d'); cx.imageSmoothingEnabled = true; cx.imageSmoothingQuality = 'high';
         cx.drawImage(img, 0, 0, w, h);
-        const out = new Image();
-        out.src = c.toDataURL('image/png', 0.92);
+        const out = new Image(); out.src = c.toDataURL('image/png', 0.92);
         await (out.decode ? out.decode() : new Promise(r => out.onload = r));
         return out;
       }
@@ -425,9 +353,7 @@
           const s = Math.max(stage.width/b.width, stage.height/b.height);
           const bw=b.width*s, bh=b.height*s;
           ctx.drawImage(b,(stage.width-bw)/2,(stage.height-bh)/2,bw,bh);
-        } else {
-          drawChecker();
-        }
+        } else { drawChecker(); }
         const im = await loadImage(img);
         const sc = Math.min(stage.width/im.width, stage.height/im.height);
         const w = im.width*sc, h = im.height*sc;
@@ -455,21 +381,16 @@
         try{
           setStatus("Removing background… (on your device)");
           const safeImg = await downscaleToMax(mainSrc, 1400);
-
           let blob;
           try {
             blob = await removeBackground(safeImg, { model:"u2net", output:"image/png" });
           } catch {
             const maskC = await maskWithSelfie(safeImg);
-            const out = document.createElement('canvas');
-            out.width = safeImg.width; out.height = safeImg.height;
-            const ox = out.getContext('2d');
-            ox.drawImage(safeImg,0,0);
-            ox.globalCompositeOperation='destination-in';
-            ox.drawImage(maskC,0,0);
+            const out = document.createElement('canvas'); out.width = safeImg.width; out.height = safeImg.height;
+            const ox = out.getContext('2d'); ox.drawImage(safeImg,0,0);
+            ox.globalCompositeOperation='destination-in'; ox.drawImage(maskC,0,0);
             blob = await new Promise(r => out.toBlob(r,'image/png',0.95));
           }
-
           if (cutoutURL) URL.revokeObjectURL(cutoutURL);
           cutoutURL = URL.createObjectURL(blob);
           await draw({img: cutoutURL, bg: bgSrc});
@@ -477,9 +398,7 @@
         }catch(e){
           console.error(e); alert("Remove BG failed. Try a smaller image.");
           setStatus("Remove BG failed.");
-        }finally{
-          setBusy(false); updateButtons();
-        }
+        }finally{ setBusy(false); updateButtons(); }
       }
 
       async function changeBg(){
@@ -490,14 +409,13 @@
         finally{ setBusy(false); updateButtons(); }
       }
 
-      // Downloads
       function download(type="png", hd=false){
         if(hd && !proEnabled){ alert("Pro required."); return; }
         const mime = type==="jpeg" ? "image/jpeg" : "image/png";
         stage.toBlob((b)=>{ if(!b) return; const url=URL.createObjectURL(b); const a=document.createElement('a'); a.href=url; a.download=`photo-studio.${type==="jpeg"?"jpg":"png"}`; a.click(); URL.revokeObjectURL(url); }, mime, .95);
       }
 
-      // ===== Inject HD+ (Beta) button (no HTML edits) =====
+      // Inject HD+ button without touching HTML
       let btnHDPlus = null;
       (function injectHDPlusButton() {
         const bar = document.querySelector('.toolbar');
@@ -508,11 +426,9 @@
         btnHDPlus.textContent = 'Apply Removal (HD+ Beta)';
         btnHDPlus.style.display = 'none';
         btnHDPlus.onclick = () => Studio.applyInpaintHDPlus();
-        // insert before Cancel if present
         bar.insertBefore(btnHDPlus, document.getElementById('btnCancel') || null);
       })();
 
-      // ===== Remove Person (Brush + Inpaint) — baseline (OpenCV) =====
       function startBrush(){
         if (!mainSrc && !cutoutURL){ alert("Load an image first."); return; }
         brushing = true;
@@ -532,164 +448,28 @@
         setStatus("Brush canceled.");
       }
 
+      // ---- OpenCV HD inpaint (quality upgrade) ----
       async function applyInpaint() {
         try {
           setBusy(true);
           setStatus("Removing selected area…");
           await ensureOpenCVReady();
 
-          // 1) Canvas RGBA + mask
-          const srcRGBA = ctx.getImageData(0, 0, stage.width, stage.height);
-          const maskImg = mctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
-
-          // early sanity: enough paint?
-          let painted = 0; for (let i=0;i<maskImg.data.length;i+=4) if (maskImg.data[i+3]>0) painted++;
-          if (painted < 50) { alert("Paint directly over the person, then Apply again."); return; }
-
-          // 2) RGBA -> RGB Mat
-          const src4 = cv.matFromImageData(srcRGBA); // CV_8UC4
-          const src3 = new cv.Mat();
-          cv.cvtColor(src4, src3, cv.COLOR_RGBA2RGB);
-
-          // 3) Build binary mask from painted strokes and dilate slightly
-          const mask = new cv.Mat.zeros(maskImg.height, maskImg.width, cv.CV_8UC1);
-          for (let i = 0; i < maskImg.data.length; i += 4) {
-            const a = maskImg.data[i + 3];
-            if (a > 0) {
-              const idx = i / 4, y = (idx / maskImg.width) | 0, x = idx % maskImg.width;
-              mask.ucharPtr(y, x)[0] = 255;
-            }
-          }
-          const kernel = cv.Mat.ones(3, 3, cv.CV_8U);
-          const maskDilated = new cv.Mat();
-          cv.dilate(mask, maskDilated, kernel, new cv.Point(-1,-1), 1);
-
-          // 4) Inpaint on RGB
-          const out3 = new cv.Mat();
-          cv.inpaint(src3, maskDilated, out3, 3, cv.INPAINT_TELEA);
-
-          // 5) RGB -> RGBA back to canvas
-          const out4 = new cv.Mat();
-          cv.cvtColor(out3, out4, cv.COLOR_RGB2RGBA);
-          const out = new ImageData(new Uint8ClampedArray(out4.data), stage.width, stage.height);
-          ctx.putImageData(out, 0, 0);
-
-          // cleanup
-          src4.delete(); src3.delete(); mask.delete();
-          kernel.delete(); maskDilated.delete(); out3.delete(); out4.delete();
-
-          cancelBrush();
-          stampWatermark();
-          setStatus("Person removed.");
-        } catch (e) {
-          console.error('Inpaint error:', e);
-          alert("Removal failed. Try brushing a tighter area, then Apply again.");
-          setStatus("Removal failed.");
-        } finally {
-          setBusy(false);
-        }
-      }
-
-      // Robust OpenCV loader (explicit WASM path)
-      async function ensureOpenCVReady() {
-        if (window.cv && cv.Mat && !cv['isLoading']) return;
-
-        // Already loading: wait for runtime to be ready
-        if (window.cv && cv['onRuntimeInitialized'] && !cv.Mat) {
-          await new Promise(res => {
-            const prev = cv.onRuntimeInitialized;
-            cv.onRuntimeInitialized = () => { prev && prev(); res(); };
-          });
-          return;
-        }
-
-        // Start a fresh load
-        window.cv = { isLoading: true };
-        await new Promise((resolve, reject) => {
-          // Set the WASM file path BEFORE loading opencv.js
-          window.Module = window.Module || {};
-          window.Module['wasmBinaryFile'] = 'https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.7.0/dist/opencv_js.wasm';
-
-          const s = document.createElement('script');
-          s.src = 'https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.7.0/dist/opencv.js';
-          s.async = true;
-          s.crossOrigin = 'anonymous';
-          s.onload = () => {
-            cv.onRuntimeInitialized = () => { cv.isLoading = false; resolve(); };
-          };
-          s.onerror = () => reject(new Error('opencv-load-failed'));
-          document.head.appendChild(s);
-        });
-      }
-
-      // ===== HD+ (Beta) — In-browser Stable Diffusion Inpainting via Transformers.js =====
-      let _sdPipe = null;
-      async function ensureSDInpaintReady() {
-        if (_sdPipe) return;
-
-        // Load Transformers.js once
-        if (!window.transformers) {
-          showProgress('Loading AI runtime…', 5);
-          await new Promise((res, rej) => {
-            const s = document.createElement('script');
-            s.src = 'https://cdn.jsdelivr.net/npm/@xenova/transformers@3.0.0/dist/transformers.min.js';
-            s.async = true; s.crossOrigin = 'anonymous';
-            s.onload = res; s.onerror = () => rej(new Error('transformers-load-failed'));
-            document.head.appendChild(s);
-          });
-        }
-
-        const { pipeline, env } = window.transformers;
-        env.allowLocalModels = false;
-        env.useBrowserCache = true;
-        if ('gpu' in navigator) {
-          env.backends.onnx.wasm = undefined; // prefer WebGPU
-          env.backends.onnx.wasmNumThreads = 1;
-        }
-
-        let lastPct = 10;
-        showProgress('Downloading HD+ model…', lastPct);
-
-        _sdPipe = await pipeline('image-to-image', 'Xenova/stable-diffusion-inpainting', {
-          progress_callback: (evt) => {
-            if (evt.progress != null) {
-              lastPct = Math.max(lastPct, Math.round(evt.progress * 80) + 10); // 10→90%
-              updateProgress('Downloading HD+ model…', lastPct);
-            } else if (evt.status === 'ready') {
-              updateProgress('Initializing model…', 95);
-            }
-          }
-        });
-
-        updateProgress('HD+ model ready', 100);
-        setTimeout(hideProgress, 400);
-      }
-
-      async function applyInpaintHDPlus() {
-        try {
-          setBusy(true);
-          setStatus("HD+ (Beta): preparing…");
-          await ensureSDInpaintReady();
-          if (!_sdPipe) { return await applyInpaint(); }
-
           const baseSrc = mainSrc || cutoutURL;
           if (!baseSrc) { alert("Load an image first."); return; }
 
           const img = await loadImage(baseSrc);
           const stageW = stage.width, stageH = stage.height;
-
           const scale = Math.min(stageW / img.width, stageH / img.height);
           const drawW = Math.round(img.width * scale);
           const drawH = Math.round(img.height * scale);
           const drawX = Math.round((stageW - drawW) / 2);
           const drawY = Math.round((stageH - drawH) / 2);
 
-          // mask sanity
           const maskImg = mctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
-          let painted = 0; for (let i=0;i<maskImg.data.length;i+=4) if (maskImg.data[i+3]>0) painted++;
-          if (painted < 50) { alert("Paint over the person, then Apply HD+ again."); return; }
+          let painted = 0; for (let i=0;i<maskImg.data.length;i+=4) if (maskImg.data[i+3] > 0) painted++;
+          if (painted < 50) { alert("Paint directly over the person, then Apply again."); return; }
 
-          // HD canvas (cap 2048)
           const MAX_SIDE = 2048;
           const maxSide = Math.max(img.width, img.height);
           const rHD = maxSide > MAX_SIDE ? (MAX_SIDE / maxSide) : 1;
@@ -713,34 +493,161 @@
             mhd.globalCompositeOperation = 'source-over';
           } catch(_) {}
 
+          const srcHD_RGBA = oc.getImageData(0, 0, hdW, hdH);
+          const maskHD_RGBA = mhd.getImageData(0, 0, hdW, hdH);
+
+          const src4 = cv.matFromImageData(srcHD_RGBA);
+          const src3 = new cv.Mat();
+          cv.cvtColor(src4, src3, cv.COLOR_RGBA2RGB);
+
+          const mask = new cv.Mat.zeros(hdH, hdW, cv.CV_8UC1);
+          for (let i = 0; i < maskHD_RGBA.data.length; i += 4) {
+            if (maskHD_RGBA.data[i+3] > 0) {
+              const idx = i / 4, y = (idx / hdW) | 0, x = idx % hdW;
+              mask.ucharPtr(y, x)[0] = 255;
+            }
+          }
+          const kernel = cv.Mat.ones(3, 3, cv.CV_8U);
+          const maskDil = new cv.Mat();
+          cv.dilate(mask, maskDil, kernel, new cv.Point(-1,-1), 1);
+
+          const pass1 = new cv.Mat(), pass2 = new cv.Mat();
+          cv.inpaint(src3, maskDil, pass1, 3, cv.INPAINT_TELEA);
+          cv.inpaint(src3, maskDil, pass2, 6, cv.INPAINT_TELEA);
+          const blended = new cv.Mat();
+          cv.addWeighted(pass1, 0.6, pass2, 0.4, 0.0, blended);
+
+          const out4 = new cv.Mat();
+          cv.cvtColor(blended, out4, cv.COLOR_RGB2RGBA);
+          const outImg = new ImageData(new Uint8ClampedArray(out4.data), hdW, hdH);
+          oc.putImageData(outImg, 0, 0);
+
+          ctx.clearRect(0,0,stageW,stageH);
+          drawChecker();
+          ctx.drawImage(off, 0, 0, hdW, hdH, drawX, drawY, drawW, drawH);
+
+          src4.delete(); src3.delete(); mask.delete();
+          kernel.delete(); maskDil.delete(); pass1.delete(); pass2.delete();
+          blended.delete(); out4.delete();
+
+          cancelBrush();
+          stampWatermark();
+          setStatus("Person removed (HD).");
+        } catch (e) {
+          console.error('HD inpaint error:', e);
+          alert("Removal failed. Try brushing a tighter area, then Apply again.");
+          setStatus("Removal failed.");
+        } finally { setBusy(false); }
+      }
+
+      async function ensureOpenCVReady() {
+        if (window.cv && cv.Mat && !cv['isLoading']) return;
+        if (window.cv && cv['onRuntimeInitialized'] && !cv.Mat) {
+          await new Promise(res => { const prev = cv.onRuntimeInitialized; cv.onRuntimeInitialized = () => { prev && prev(); res(); }; });
+          return;
+        }
+        window.cv = { isLoading: true };
+        await new Promise((resolve, reject) => {
+          window.Module = window.Module || {};
+          window.Module['wasmBinaryFile'] = 'https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.7.0/dist/opencv_js.wasm';
+          const s = document.createElement('script');
+          s.src = 'https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.7.0/dist/opencv.js';
+          s.async = true; s.crossOrigin = 'anonymous';
+          s.onload = () => { cv.onRuntimeInitialized = () => { cv.isLoading = false; resolve(); }; };
+          s.onerror = () => reject(new Error('opencv-load-failed'));
+          document.head.appendChild(s);
+        });
+      }
+
+      // ---- HD+ (WebGPU/WASM via Transformers.js) ----
+      let _sdPipe = null;
+      async function ensureSDInpaintReady() {
+        if (_sdPipe) return;
+        if (!window.transformers) {
+          showProgress('Loading AI runtime…', 5);
+          await new Promise((res, rej) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/@xenova/transformers@3.0.0/dist/transformers.min.js';
+            s.async = true; s.crossOrigin = 'anonymous';
+            s.onload = res; s.onerror = () => rej(new Error('transformers-load-failed'));
+            document.head.appendChild(s);
+          });
+        }
+        const { pipeline, env } = window.transformers;
+        env.allowLocalModels = false; env.useBrowserCache = true;
+        if ('gpu' in navigator) { env.backends.onnx.wasm = undefined; env.backends.onnx.wasmNumThreads = 1; }
+
+        let lastPct = 10; showProgress('Downloading HD+ model…', lastPct);
+        _sdPipe = await pipeline('image-to-image', 'Xenova/stable-diffusion-inpainting', {
+          progress_callback: (evt) => {
+            if (evt.progress != null) {
+              lastPct = Math.max(lastPct, Math.round(evt.progress * 80) + 10);
+              updateProgress('Downloading HD+ model…', lastPct);
+            } else if (evt.status === 'ready') { updateProgress('Initializing model…', 95); }
+          }
+        });
+        updateProgress('HD+ model ready', 100); setTimeout(hideProgress, 400);
+      }
+
+      async function applyInpaintHDPlus() {
+        try {
+          setBusy(true);
+          setStatus("HD+ (Beta): preparing…");
+          await ensureSDInpaintReady();
+          if (!_sdPipe) { return await applyInpaint(); }
+
+          const baseSrc = mainSrc || cutoutURL;
+          if (!baseSrc) { alert("Load an image first."); return; }
+
+          const img = await loadImage(baseSrc);
+          const stageW = stage.width, stageH = stage.height;
+
+          const scale = Math.min(stageW / img.width, stageH / img.height);
+          const drawW = Math.round(img.width * scale);
+          const drawH = Math.round(img.height * scale);
+          const drawX = Math.round((stageW - drawW) / 2);
+          const drawY = Math.round((stageH - drawH) / 2);
+
+          const maskImg = mctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
+          let painted = 0; for (let i=0;i<maskImg.data.length;i+=4) if (maskImg.data[i+3]>0) painted++;
+          if (painted < 50) { alert("Paint over the person, then Apply HD+ again."); return; }
+
+          const MAX_SIDE = 2048;
+          const maxSide = Math.max(img.width, img.height);
+          const rHD = maxSide > MAX_SIDE ? (MAX_SIDE / maxSide) : 1;
+          const hdW = Math.max(1, Math.round(img.width * rHD));
+          const hdH = Math.max(1, Math.round(img.height * rHD));
+
+          const off = document.createElement('canvas'); off.width = hdW; off.height = hdH;
+          const oc = off.getContext('2d', { willReadFrequently:true });
+          oc.imageSmoothingEnabled = true; oc.imageSmoothingQuality = 'high';
+          oc.drawImage(img, 0, 0, hdW, hdH);
+
+          const maskHD = document.createElement('canvas'); maskHD.width = hdW; maskHD.height = hdH;
+          const mhd = maskHD.getContext('2d');
+          mhd.fillStyle = 'black'; mhd.fillRect(0,0,hdW,hdH);
+          mhd.drawImage(maskCanvas, drawX, drawY, drawW, drawH, 0, 0, hdW, hdH);
+          try {
+            mhd.globalCompositeOperation = 'source-in';
+            mhd.filter = 'blur(0.8px)'; mhd.drawImage(maskHD, 0, 0);
+            mhd.filter = 'none'; mhd.globalCompositeOperation = 'source-over';
+          } catch(_) {}
+
           const inputImage = await createImageBitmap(off);
           const maskImage  = await createImageBitmap(maskHD);
 
-          // Inference progress
-          let pct = 0;
-          showProgress('HD+ inpainting…', pct);
-
+          let pct = 0; showProgress('HD+ inpainting…', pct);
           const result = await _sdPipe(inputImage, {
             mask_image: maskImage,
             prompt: "clean natural background, realistic textures, seamless fill, high quality, photography",
             negative_prompt: "distortion, blur, artifacts, deformed, extra people, text",
-            strength: 1.0,
-            guidance_scale: 7.5,
-            num_inference_steps: 20,
-            progress_callback: (evt) => {
-              if (evt.progress != null) {
-                pct = Math.round(100 * evt.progress);
-                updateProgress('HD+ inpainting…', pct);
-              }
-            }
+            strength: 1.0, guidance_scale: 7.5, num_inference_steps: 20,
+            progress_callback: (evt) => { if (evt.progress != null) { pct = Math.round(100 * evt.progress); updateProgress('HD+ inpainting…', pct); } }
           });
 
-          updateProgress('Finalizing…', 100);
-          setTimeout(hideProgress, 400);
+          updateProgress('Finalizing…', 100); setTimeout(hideProgress, 400);
 
-          ctx.clearRect(0,0,stageW,stageH);
-          drawChecker();
-
+          ctx.clearRect(0,0,stageW,stageH); drawChecker();
           let outBitmap = result?.imageBitmap || (result?.images && result.images[0]) || null;
           if (!outBitmap && result?.toDataURL) {
             const tmp = new Image(); tmp.src = result.toDataURL();
@@ -750,9 +657,7 @@
           if (!outBitmap) { console.warn('Unexpected HD+ result; fallback to OpenCV.'); return await applyInpaint(); }
           ctx.drawImage(outBitmap, 0, 0, hdW, hdH, drawX, drawY, drawW, drawH);
 
-          cancelBrush();
-          stampWatermark();
-          setStatus("Person removed (HD+).");
+          cancelBrush(); stampWatermark(); setStatus("Person removed (HD+).");
         } catch (e) {
           console.error('HD+ inpaint error:', e);
           hideProgress();
@@ -760,12 +665,10 @@
             alert("HD+ removal failed. Try the standard Apply Removal or paint a tighter area.");
             setStatus("Removal failed.");
           }
-        } finally {
-          setBusy(false);
-        }
+        } finally { setBusy(false); }
       }
 
-      // Mask brush events
+      // Brush mask events
       function getPos(e){
         const r = maskCanvas.getBoundingClientRect();
         const x = ((e.touches? e.touches[0].clientX : e.clientX) - r.left) * (maskCanvas.width / r.width);
@@ -793,25 +696,21 @@
         downloadHD: (fmt)=>download(fmt, true),
         handleDrop,
         startBrush, cancelBrush, applyInpaint,
-        applyInpaintHDPlus // expose HD+ path
+        applyInpaintHDPlus
       };
     })();
 
-    // Hook download buttons
     prevBtn.onclick  = ()=> Studio.downloadPreview();
     hdBtnPng.onclick = ()=> Studio.downloadHD("png");
     hdBtnJpg.onclick = ()=> Studio.downloadHD("jpeg");
 
-    // Initial checkerboard
     drawChecker();
 
-    // Enable brush button once an image loads
     document.getElementById('mainInput').addEventListener('change', () => {
       const brushBtn = document.getElementById('btnBrush');
       if (brushBtn) brushBtn.disabled = false;
     });
 
-    // Service worker (auto-busted)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         const swUrl = `/sw.js?v=${Date.now()}`; // auto-bust cache
