@@ -93,6 +93,7 @@
           <button id="btnBrush" class="btn" disabled onclick="Studio.startBrush()">Remove Person (Brush)</button>
           <button id="btnApply" class="btn warn" style="display:none" onclick="Studio.applyInpaint()">Apply Removal</button>
           <button id="btnCancel" class="btn" style="display:none" onclick="Studio.cancelBrush()">Cancel</button>
+          <!-- The HD+ (Beta) button will be injected dynamically next to these -->
         </div>
         <p class="hint">Drag & drop also works!</p>
       </div>
@@ -354,6 +355,33 @@
       }
     })();
 
+    // ===== Minimal progress HUD (shared by HD+ loader/inference) =====
+    let _progEl = null;
+    function showProgress(text, pct = 0) {
+      if (!_progEl) {
+        _progEl = document.createElement('div');
+        _progEl.style.cssText = `
+          position:fixed;left:50%;transform:translateX(-50%);
+          bottom:16px;z-index:99999;background:#111827;color:#fff;
+          padding:10px 14px;border-radius:10px;box-shadow:0 8px 20px rgba(0,0,0,.3);
+          font-weight:700;min-width:240px;text-align:center
+        `;
+        const label = document.createElement('div'); label.id = 'p_lbl';
+        label.style.marginBottom = '6px';
+        const barWrap = document.createElement('div');
+        barWrap.style.cssText = 'height:6px;background:#374151;border-radius:9999px;overflow:hidden';
+        const bar = document.createElement('div'); bar.id='p_bar';
+        bar.style.cssText = 'height:100%;width:0%;background:#22c55e;transition:width .15s linear';
+        barWrap.appendChild(bar);
+        _progEl.append(label, barWrap);
+        document.body.appendChild(_progEl);
+      }
+      _progEl.querySelector('#p_lbl').textContent = text;
+      _progEl.querySelector('#p_bar').style.width = `${Math.max(0, Math.min(100, pct))}%`;
+    }
+    function updateProgress(text, pct){ if (_progEl) showProgress(text, pct); }
+    function hideProgress(){ if (_progEl){ _progEl.remove(); _progEl = null; } }
+
     // ----- App core -----
     const Studio = (() => {
       let mainSrc = null;   // uploaded photo (data URL)
@@ -469,20 +497,37 @@
         stage.toBlob((b)=>{ if(!b) return; const url=URL.createObjectURL(b); const a=document.createElement('a'); a.href=url; a.download=`photo-studio.${type==="jpeg"?"jpg":"png"}`; a.click(); URL.revokeObjectURL(url); }, mime, .95);
       }
 
-      // ===== Remove Person (Brush + Inpaint) — FIXED =====
+      // ===== Inject HD+ (Beta) button (no HTML edits) =====
+      let btnHDPlus = null;
+      (function injectHDPlusButton() {
+        const bar = document.querySelector('.toolbar');
+        if (!bar) return;
+        btnHDPlus = document.createElement('button');
+        btnHDPlus.id = 'btnHDPlus';
+        btnHDPlus.className = 'btn primary';
+        btnHDPlus.textContent = 'Apply Removal (HD+ Beta)';
+        btnHDPlus.style.display = 'none';
+        btnHDPlus.onclick = () => Studio.applyInpaintHDPlus();
+        // insert before Cancel if present
+        bar.insertBefore(btnHDPlus, document.getElementById('btnCancel') || null);
+      })();
+
+      // ===== Remove Person (Brush + Inpaint) — baseline (OpenCV) =====
       function startBrush(){
         if (!mainSrc && !cutoutURL){ alert("Load an image first."); return; }
         brushing = true;
         maskCanvas.style.display = 'block';
         btnApply.style.display = btnCancel.style.display = 'inline-block';
+        if (btnHDPlus) btnHDPlus.style.display = 'inline-block';
         mctx.clearRect(0,0,maskCanvas.width,maskCanvas.height);
         mctx.lineCap = 'round'; mctx.lineJoin = 'round'; mctx.strokeStyle = 'rgba(255,0,0,0.95)'; mctx.lineWidth = brushSize;
-        setStatus("Paint over the person to remove, then click Apply Removal.");
+        setStatus("Paint over the person to remove, then choose Apply or HD+ (Beta).");
       }
       function cancelBrush(){
         brushing = false; brushDown = false;
         maskCanvas.style.display = 'none';
         btnApply.style.display = btnCancel.style.display = 'none';
+        if (btnHDPlus) btnHDPlus.style.display = 'none';
         mctx.clearRect(0,0,maskCanvas.width,maskCanvas.height);
         setStatus("Brush canceled.");
       }
@@ -497,6 +542,10 @@
           const srcRGBA = ctx.getImageData(0, 0, stage.width, stage.height);
           const maskImg = mctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
 
+          // early sanity: enough paint?
+          let painted = 0; for (let i=0;i<maskImg.data.length;i+=4) if (maskImg.data[i+3]>0) painted++;
+          if (painted < 50) { alert("Paint directly over the person, then Apply again."); return; }
+
           // 2) RGBA -> RGB Mat
           const src4 = cv.matFromImageData(srcRGBA); // CV_8UC4
           const src3 = new cv.Mat();
@@ -505,20 +554,19 @@
           // 3) Build binary mask from painted strokes and dilate slightly
           const mask = new cv.Mat.zeros(maskImg.height, maskImg.width, cv.CV_8UC1);
           for (let i = 0; i < maskImg.data.length; i += 4) {
-            const r = maskImg.data[i], a = maskImg.data[i + 3];
-            if (a > 0 && r > 150) {
+            const a = maskImg.data[i + 3];
+            if (a > 0) {
               const idx = i / 4, y = (idx / maskImg.width) | 0, x = idx % maskImg.width;
               mask.ucharPtr(y, x)[0] = 255;
             }
           }
-          // small dilation to cover edges
-          const kernel = cv.Mat.ones(5, 5, cv.CV_8U);
+          const kernel = cv.Mat.ones(3, 3, cv.CV_8U);
           const maskDilated = new cv.Mat();
           cv.dilate(mask, maskDilated, kernel, new cv.Point(-1,-1), 1);
 
           // 4) Inpaint on RGB
           const out3 = new cv.Mat();
-          cv.inpaint(src3, maskDilated, out3, 4, cv.INPAINT_TELEA);
+          cv.inpaint(src3, maskDilated, out3, 3, cv.INPAINT_TELEA);
 
           // 5) RGB -> RGBA back to canvas
           const out4 = new cv.Mat();
@@ -574,6 +622,149 @@
         });
       }
 
+      // ===== HD+ (Beta) — In-browser Stable Diffusion Inpainting via Transformers.js =====
+      let _sdPipe = null;
+      async function ensureSDInpaintReady() {
+        if (_sdPipe) return;
+
+        // Load Transformers.js once
+        if (!window.transformers) {
+          showProgress('Loading AI runtime…', 5);
+          await new Promise((res, rej) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/@xenova/transformers@3.0.0/dist/transformers.min.js';
+            s.async = true; s.crossOrigin = 'anonymous';
+            s.onload = res; s.onerror = () => rej(new Error('transformers-load-failed'));
+            document.head.appendChild(s);
+          });
+        }
+
+        const { pipeline, env } = window.transformers;
+        env.allowLocalModels = false;
+        env.useBrowserCache = true;
+        if ('gpu' in navigator) {
+          env.backends.onnx.wasm = undefined; // prefer WebGPU
+          env.backends.onnx.wasmNumThreads = 1;
+        }
+
+        let lastPct = 10;
+        showProgress('Downloading HD+ model…', lastPct);
+
+        _sdPipe = await pipeline('image-to-image', 'Xenova/stable-diffusion-inpainting', {
+          progress_callback: (evt) => {
+            if (evt.progress != null) {
+              lastPct = Math.max(lastPct, Math.round(evt.progress * 80) + 10); // 10→90%
+              updateProgress('Downloading HD+ model…', lastPct);
+            } else if (evt.status === 'ready') {
+              updateProgress('Initializing model…', 95);
+            }
+          }
+        });
+
+        updateProgress('HD+ model ready', 100);
+        setTimeout(hideProgress, 400);
+      }
+
+      async function applyInpaintHDPlus() {
+        try {
+          setBusy(true);
+          setStatus("HD+ (Beta): preparing…");
+          await ensureSDInpaintReady();
+          if (!_sdPipe) { return await applyInpaint(); }
+
+          const baseSrc = mainSrc || cutoutURL;
+          if (!baseSrc) { alert("Load an image first."); return; }
+
+          const img = await loadImage(baseSrc);
+          const stageW = stage.width, stageH = stage.height;
+
+          const scale = Math.min(stageW / img.width, stageH / img.height);
+          const drawW = Math.round(img.width * scale);
+          const drawH = Math.round(img.height * scale);
+          const drawX = Math.round((stageW - drawW) / 2);
+          const drawY = Math.round((stageH - drawH) / 2);
+
+          // mask sanity
+          const maskImg = mctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
+          let painted = 0; for (let i=0;i<maskImg.data.length;i+=4) if (maskImg.data[i+3]>0) painted++;
+          if (painted < 50) { alert("Paint over the person, then Apply HD+ again."); return; }
+
+          // HD canvas (cap 2048)
+          const MAX_SIDE = 2048;
+          const maxSide = Math.max(img.width, img.height);
+          const rHD = maxSide > MAX_SIDE ? (MAX_SIDE / maxSide) : 1;
+          const hdW = Math.max(1, Math.round(img.width * rHD));
+          const hdH = Math.max(1, Math.round(img.height * rHD));
+
+          const off = document.createElement('canvas'); off.width = hdW; off.height = hdH;
+          const oc = off.getContext('2d', { willReadFrequently:true });
+          oc.imageSmoothingEnabled = true; oc.imageSmoothingQuality = 'high';
+          oc.drawImage(img, 0, 0, hdW, hdH);
+
+          const maskHD = document.createElement('canvas'); maskHD.width = hdW; maskHD.height = hdH;
+          const mhd = maskHD.getContext('2d');
+          mhd.fillStyle = 'black'; mhd.fillRect(0,0,hdW,hdH);
+          mhd.drawImage(maskCanvas, drawX, drawY, drawW, drawH, 0, 0, hdW, hdH);
+          try {
+            mhd.globalCompositeOperation = 'source-in';
+            mhd.filter = 'blur(0.8px)';
+            mhd.drawImage(maskHD, 0, 0);
+            mhd.filter = 'none';
+            mhd.globalCompositeOperation = 'source-over';
+          } catch(_) {}
+
+          const inputImage = await createImageBitmap(off);
+          const maskImage  = await createImageBitmap(maskHD);
+
+          // Inference progress
+          let pct = 0;
+          showProgress('HD+ inpainting…', pct);
+
+          const result = await _sdPipe(inputImage, {
+            mask_image: maskImage,
+            prompt: "clean natural background, realistic textures, seamless fill, high quality, photography",
+            negative_prompt: "distortion, blur, artifacts, deformed, extra people, text",
+            strength: 1.0,
+            guidance_scale: 7.5,
+            num_inference_steps: 20,
+            progress_callback: (evt) => {
+              if (evt.progress != null) {
+                pct = Math.round(100 * evt.progress);
+                updateProgress('HD+ inpainting…', pct);
+              }
+            }
+          });
+
+          updateProgress('Finalizing…', 100);
+          setTimeout(hideProgress, 400);
+
+          ctx.clearRect(0,0,stageW,stageH);
+          drawChecker();
+
+          let outBitmap = result?.imageBitmap || (result?.images && result.images[0]) || null;
+          if (!outBitmap && result?.toDataURL) {
+            const tmp = new Image(); tmp.src = result.toDataURL();
+            await (tmp.decode ? tmp.decode() : new Promise(r => tmp.onload = r));
+            outBitmap = tmp;
+          }
+          if (!outBitmap) { console.warn('Unexpected HD+ result; fallback to OpenCV.'); return await applyInpaint(); }
+          ctx.drawImage(outBitmap, 0, 0, hdW, hdH, drawX, drawY, drawW, drawH);
+
+          cancelBrush();
+          stampWatermark();
+          setStatus("Person removed (HD+).");
+        } catch (e) {
+          console.error('HD+ inpaint error:', e);
+          hideProgress();
+          try { await applyInpaint(); } catch(_) {
+            alert("HD+ removal failed. Try the standard Apply Removal or paint a tighter area.");
+            setStatus("Removal failed.");
+          }
+        } finally {
+          setBusy(false);
+        }
+      }
+
       // Mask brush events
       function getPos(e){
         const r = maskCanvas.getBoundingClientRect();
@@ -601,7 +792,8 @@
         downloadPreview: ()=>download("png", false),
         downloadHD: (fmt)=>download(fmt, true),
         handleDrop,
-        startBrush, cancelBrush, applyInpaint
+        startBrush, cancelBrush, applyInpaint,
+        applyInpaintHDPlus // expose HD+ path
       };
     })();
 
@@ -614,18 +806,18 @@
     drawChecker();
 
     // Enable brush button once an image loads
-document.getElementById('mainInput').addEventListener('change', () => {
-  const brushBtn = document.getElementById('btnBrush');
-  if (brushBtn) brushBtn.disabled = false;
-});
-
-
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      const swUrl = `/sw.js?v=${Date.now()}`; // auto-bust cache
-      navigator.serviceWorker.register(swUrl).catch(() => {});
+    document.getElementById('mainInput').addEventListener('change', () => {
+      const brushBtn = document.getElementById('btnBrush');
+      if (brushBtn) brushBtn.disabled = false;
     });
-  }
-</script>
+
+    // Service worker (auto-busted)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        const swUrl = `/sw.js?v=${Date.now()}`; // auto-bust cache
+        navigator.serviceWorker.register(swUrl).catch(() => {});
+      });
+    }
+  </script>
 </body>
 </html>
