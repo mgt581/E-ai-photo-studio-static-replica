@@ -40,6 +40,14 @@ self.addEventListener('fetch', (evt) => {
 
   // 🔴 Do not cache OpenCV JS/WASM
   if (url.includes('cdn.jsdelivr.net') && url.includes('opencv')) {
+    console.log("[SW] bypassing OpenCV:", url);
+    evt.respondWith(fetch(req));
+    return;
+  }
+
+  // 🔴 Do not cache Transformers.js or its model files
+  if (url.includes('cdn.jsdelivr.net') && url.includes('@xenova/transformers')) {
+    console.log("[SW] bypassing Transformers:", url);
     evt.respondWith(fetch(req));
     return;
   }
