@@ -448,13 +448,12 @@
         setStatus("Brush canceled.");
       }
 
-      // ---- OpenCV HD inpaint (quality upgrade) with auto-fallback ----
+      // ---- OpenCV HD inpaint (quality upgrade) ----
       async function applyInpaint() {
         try {
           setBusy(true);
           setStatus("Removing selected area…");
           await ensureOpenCVReady();
-          if (!(window.cv && cv.Mat)) throw new Error("opencv-not-ready");
 
           const baseSrc = mainSrc || cutoutURL;
           if (!baseSrc) { alert("Load an image first."); return; }
@@ -467,12 +466,10 @@
           const drawX = Math.round((stageW - drawW) / 2);
           const drawY = Math.round((stageH - drawH) / 2);
 
-          // mask sanity
           const maskImg = mctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
           let painted = 0; for (let i=0;i<maskImg.data.length;i+=4) if (maskImg.data[i+3] > 0) painted++;
           if (painted < 50) { alert("Paint directly over the person, then Apply again."); return; }
 
-          // Build HD offscreen (cap long side to 2048)
           const MAX_SIDE = 2048;
           const maxSide = Math.max(img.width, img.height);
           const rHD = maxSide > MAX_SIDE ? (MAX_SIDE / maxSide) : 1;
@@ -484,7 +481,6 @@
           oc.imageSmoothingEnabled = true; oc.imageSmoothingQuality = 'high';
           oc.drawImage(img, 0, 0, hdW, hdH);
 
-          // Map stage mask → HD mask
           const maskHD = document.createElement('canvas'); maskHD.width = hdW; maskHD.height = hdH;
           const mhd = maskHD.getContext('2d');
           mhd.fillStyle = 'black'; mhd.fillRect(0,0,hdW,hdH);
@@ -515,14 +511,12 @@
           const maskDil = new cv.Mat();
           cv.dilate(mask, maskDil, kernel, new cv.Point(-1,-1), 1);
 
-          // Two-pass inpaint & blend for nicer texture
           const pass1 = new cv.Mat(), pass2 = new cv.Mat();
           cv.inpaint(src3, maskDil, pass1, 3, cv.INPAINT_TELEA);
           cv.inpaint(src3, maskDil, pass2, 6, cv.INPAINT_TELEA);
           const blended = new cv.Mat();
           cv.addWeighted(pass1, 0.6, pass2, 0.4, 0.0, blended);
 
-          // Back to RGBA and draw back to stage (same placement)
           const out4 = new cv.Mat();
           cv.cvtColor(blended, out4, cv.COLOR_RGB2RGBA);
           const outImg = new ImageData(new Uint8ClampedArray(out4.data), hdW, hdH);
@@ -532,7 +526,6 @@
           drawChecker();
           ctx.drawImage(off, 0, 0, hdW, hdH, drawX, drawY, drawW, drawH);
 
-          // cleanup
           src4.delete(); src3.delete(); mask.delete();
           kernel.delete(); maskDil.delete(); pass1.delete(); pass2.delete();
           blended.delete(); out4.delete();
@@ -541,54 +534,10 @@
           stampWatermark();
           setStatus("Person removed (HD).");
         } catch (e) {
-          console.warn("OpenCV failed, falling back:", e && e.message);
+          console.error('HD inpaint error:', e);
+          toast("Using basic fallback fill (OpenCV not available)");
           await applyInpaintFallback();
         } finally { setBusy(false); }
-      }
-
-      // ---- Pure-canvas fallback (always works) ----
-      async function applyInpaintFallback() {
-        setStatus("Removing selected area (fallback)...");
-        const W = stage.width, H = stage.height;
-        const src  = ctx.getImageData(0, 0, W, H);
-        const mask = mctx.getImageData(0, 0, W, H);
-
-        let r=0,g=0,b=0,n=0;
-        const idx = (x,y)=> (y*W + x)*4;
-
-        // sample average edge colors around the painted region
-        for (let y=1; y<H-1; y++){
-          for (let x=1; x<W-1; x++){
-            const i = idx(x,y);
-            if (mask.data[i+3]>0){
-              for (const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
-                const j = idx(x+dx,y+dy);
-                if (mask.data[j+3]===0){ r+=src.data[j]; g+=src.data[j+1]; b+=src.data[j+2]; n++; }
-              }
-            }
-          }
-        }
-        if (n===0) { r=g=b=220; n=1; }
-        const R=Math.round(r/n), G=Math.round(g/n), B=Math.round(b/n);
-
-        // fill masked area with feathered color
-        const out = new Uint8ClampedArray(src.data);
-        for (let y=0; y<H; y++){
-          for (let x=0; x<W; x++){
-            const i = idx(x,y);
-            const a = mask.data[i+3]/255;
-            if (a>0){
-              out[i]   = Math.round(src.data[i]  *(1-a) + R*a);
-              out[i+1] = Math.round(src.data[i+1]*(1-a) + G*a);
-              out[i+2] = Math.round(src.data[i+2]*(1-a) + B*a);
-              out[i+3] = 255;
-            }
-          }
-        }
-        ctx.putImageData(new ImageData(out, W, H), 0, 0);
-        cancelBrush();
-        stampWatermark();
-        setStatus("Person removed (fallback).");
       }
 
       async function ensureOpenCVReady() {
@@ -751,6 +700,72 @@
       };
     })();
 
+    // ---------- Improved fallback (diffusion) ----------
+    async function applyInpaintFallback() {
+      setStatus("Removing selected area (fallback)...");
+      const W = stage.width, H = stage.height;
+      const src  = ctx.getImageData(0, 0, W, H);
+      const mask = mctx.getImageData(0, 0, W, H);
+
+      const K = new Int8Array(W * H); // -1 = masked, >=0 known/filled
+      const idx = (x,y)=> (y*W + x);
+      for (let y=0; y<H; y++) {
+        for (let x=0; x<W; x++) {
+          const i = idx(x,y)*4;
+          K[idx(x,y)] = mask.data[i+3] > 0 ? -1 : 1;
+        }
+      }
+
+      const out = new Uint8ClampedArray(src.data);
+      // seed from boundary
+      for (let y=1; y<H-1; y++){
+        for (let x=1; x<W-1; x++){
+          const p = idx(x,y);
+          if (K[p] === -1) {
+            let r=0,g=0,b=0,n=0;
+            for (const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+              const q = idx(x+dx,y+dy);
+              if (K[q] >= 0) {
+                const j = q*4;
+                r+=src.data[j]; g+=src.data[j+1]; b+=src.data[j+2]; n++;
+              }
+            }
+            const i = p*4;
+            if (n>0){ out[i]=r/n; out[i+1]=g/n; out[i+2]=b/n; out[i+3]=255; K[p]=0; }
+          }
+        }
+      }
+
+      // diffuse inward
+      const passes = 40;
+      for (let t=0; t<passes; t++){
+        for (let y=1; y<H-1; y++){
+          for (let x=1; x<W-1; x++){
+            const p = idx(x,y);
+            if (K[p] === -1 || K[p] === 0) {
+              let r=0,g=0,b=0,n=0;
+              for (const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+                const j = idx(x+dx,y+dy)*4;
+                r+=out[j]; g+=out[j+1]; b+=out[j+2]; n++;
+              }
+              const i = p*4;
+              out[i]   = (out[i]   + r/n) * 0.5;
+              out[i+1] = (out[i+1] + g/n) * 0.5;
+              out[i+2] = (out[i+2] + b/n) * 0.5;
+              out[i+3] = 255;
+              K[p] = 0;
+            }
+          }
+        }
+      }
+
+      ctx.putImageData(new ImageData(out, W, H), 0, 0);
+      cancelBrush();
+      stampWatermark();
+      setStatus("Person removed (fallback).");
+    }
+    // ---------------------------------------------------
+
     prevBtn.onclick  = ()=> Studio.downloadPreview();
     hdBtnPng.onclick = ()=> Studio.downloadHD("png");
     hdBtnJpg.onclick = ()=> Studio.downloadHD("jpeg");
@@ -762,9 +777,10 @@
       if (brushBtn) brushBtn.disabled = false;
     });
 
+    // SW with cache-bust
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        const swUrl = `/sw.js?v=${Date.now()}`; // auto-bust cache
+        const swUrl = `/sw.js?v=${Date.now()}`;
         navigator.serviceWorker.register(swUrl).catch(() => {});
       });
     }
