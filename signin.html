@@ -6,186 +6,143 @@
   <title>Sign in · AI Photo Studio</title>
   <meta name="theme-color" content="#4f46e5" />
 
-  <!-- Icons (match main site) -->
+  <!-- Icons -->
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="icon" type="image/png" href="/apple-touch-icon.png">
 
   <style>
-    :root{
-      --bg:#0b1020; --card:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --border:#1f2a44;
-      --ring:0 16px 40px rgba(59,130,246,.25);
-      --grad:linear-gradient(90deg,#6366f1,#8b5cf6);
-      --btn:#0b1227; --btnText:#e5e7eb;
-      --accent:#4f46e5;
+    :root {
+      --grad: linear-gradient(90deg,#6366f1,#8b5cf6);
+      --card: rgba(13,20,42,0.75);
+      --border: rgba(148,163,184,.25);
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+    body {
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background:#050816;
+      color:#e5e7eb;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      min-height:100vh;
       background:
         radial-gradient(1000px 700px at 0% 0%, #1d2340 0%, transparent 60%),
         radial-gradient(1000px 700px at 100% 0%, #141b34 0%, transparent 60%),
-        radial-gradient(1000px 700px at 50% 120%, #0a1226 0%, transparent 60%),
-        #050816;
-      color:var(--text);
+        radial-gradient(1000px 700px at 50% 120%, #0a1226 0%, transparent 60%);
     }
-    a{color:#93c5fd;text-decoration:none}
-    .topbar{position:fixed; left:0; right:0; top:0; display:flex; justify-content:space-between; padding:10px 16px;}
-    .link{color:#a5b4fc}
-
-    .wrap{min-height:100%; display:grid; place-items:center; padding:32px}
-    .card{
-      width:100%; max-width:520px;
-      background:rgba(13,20,42,0.75);
-      border:1px solid rgba(148,163,184,.18);
-      border-radius:18px; padding:22px 20px;
-      box-shadow:0 10px 40px rgba(2,6,23,.35), inset 0 0 0 1px rgba(255,255,255,0.04);
-      backdrop-filter: blur(16px);
+    .card {
+      width:100%;
+      max-width:420px;
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:24px;
+      box-shadow:0 8px 30px rgba(0,0,0,.35);
     }
-    .brand{display:flex;align-items:center;gap:10px;margin-bottom:6px}
-    .badge{
-      width:38px;height:38px;border-radius:12px;display:grid;place-items:center;
-      background:linear-gradient(135deg,#7c3aed,#3b82f6);
-      box-shadow:0 10px 30px rgba(79,70,229,.35);
+    h1 {
+      font-size:22px;
+      font-weight:800;
+      margin:0 0 16px;
+      text-align:center;
     }
-    .title{margin:6px 0 2px;font-size:22px;font-weight:800;letter-spacing:.2px}
-    .sub{margin:0 0 14px;color:var(--muted);font-size:14px}
-
-    .row{display:grid;gap:10px;margin-top:14px}
-    .btn{
-      height:46px; border-radius:12px; border:1px solid rgba(148,163,184,.25);
-      background:var(--btn); color:var(--btnText); font-weight:700; cursor:pointer;
-      display:flex; align-items:center; justify-content:center; gap:10px;
+    .row { display:grid; gap:10px; margin:16px 0; }
+    .btn {
+      height:46px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:#0b1227;
+      color:#fff;
+      font-weight:600;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
     }
-    .btn:hover{border-color:#64748b; background:#0d152f}
-    .btn.primary{background:var(--grad); border:none; color:white; box-shadow:var(--ring)}
-    .btn.icon-left svg{margin-right:6px}
-    .btn:disabled{opacity:.6; cursor:not-allowed}
-
-    .spacer{text-align:center; color:#94a3b8; font-size:12px; margin:10px 0; position:relative}
-    .spacer::before,.spacer::after{
-      content:""; height:1px; background:rgba(148,163,184,.25); position:absolute; top:50%; width:38%;
+    .btn.primary { background:var(--grad); border:none; color:#fff; }
+    .input {
+      height:44px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:#0b1227;
+      color:#fff;
+      padding:0 12px;
+      width:100%;
     }
-    .spacer::before{left:0} .spacer::after{right:0}
-
-    .field{display:grid; gap:6px}
-    .label{font-size:12px; color:#a5b4fc}
-    .input{
-      height:44px; border-radius:12px; border:1px solid rgba(148,163,184,.25);
-      background:#0b1227; color:#e5e7eb; padding:0 12px; outline:none;
+    .label { font-size:12px; color:#a5b4fc; margin-bottom:4px; }
+    .error { color:#fecaca; font-size:13px; margin-top:4px; display:none; }
+    .spacer {
+      text-align:center;
+      font-size:12px;
+      color:#94a3b8;
+      margin:12px 0;
+      position:relative;
     }
-    .input:focus{border-color:#818cf8; box-shadow:0 0 0 3px rgba(99,102,241,0.25)}
-    .inline{display:flex; gap:10px}
-    .muted{color:#94a3b8; font-size:12px}
-    .error{color:#fecaca; font-size:13px; margin-top:4px}
-
-    #recaptcha-container{display:grid; place-items:center; padding:8px 0}
+    .spacer::before, .spacer::after {
+      content:""; height:1px; background:var(--border);
+      position:absolute; top:50%; width:40%;
+    }
+    .spacer::before { left:0; } .spacer::after { right:0; }
   </style>
 </head>
 <body>
-  <div class="topbar">
-    <div><a class="link" href="/">← Back to app</a></div>
-  </div>
+  <div class="card">
+    <h1>Sign in to AI Photo Studio</h1>
 
-  <div class="wrap">
-    <div class="card">
-      <div class="brand">
-        <div class="badge" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M4 13l6-9 4 6 6-4-6 14-4-7H4z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <div>
-          <div class="title">Sign in to AI Photo Studio</div>
-          <p class="sub">Choose a sign-in method below. You’ll be redirected back to the editor.</p>
-        </div>
+    <!-- Google -->
+    <button id="btnGoogle" class="btn">
+      <svg width="18" height="18" viewBox="0 0 48 48" fill="none">
+        <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.676 31.91 29.223 35 24 35c-7.18 0-13-5.82-13-13S16.82 9 24 9c3.313 0 6.313 1.253 8.59 3.31l5.657-5.657C35.577 3.042 29.987 1 24 1 10.745 1 0 11.745 0 25s10.745 24 24 24 24-10.745 24-24c0-1.627-.167-3.216-.389-4.917z"/>
+        <path fill="#FF3D00" d="M6.306 14.691L12.97 19.6C14.826 15.154 19.06 12 24 12c3.313 0 6.313 1.253 8.59 3.31l5.657-5.657C35.577 3.042 29.987 1 24 1 15.317 1 7.86 5.773 4.003 12.691z"/>
+        <path fill="#4CAF50" d="M24 49c5.162 0 9.868-1.977 13.43-5.197l-6.197-5.236C29.012 39.542 26.64 40.5 24 40.5c-5.176 0-9.582-3.497-11.164-8.204l-6.47 4.986C9.224 44.775 16.067 49 24 49z"/>
+        <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-1.411 3.316-4.679 5.917-8.303 5.917-2.64 0-5.012-.958-6.827-2.434l-6.47 4.985C16.067 44.775 22.91 49 30 49c11.598 0 19.5-7.902 19.5-19.5 0-1.627-.167-3.216-.389-4.917z"/>
+      </svg>
+      Continue with Google
+    </button>
+
+    <div class="spacer">or</div>
+
+    <!-- Email -->
+    <div class="row">
+      <div>
+        <div class="label">Email</div>
+        <input id="email" class="input" type="email" placeholder="you@example.com">
       </div>
-
-      <!-- Google -->
-      <button id="btnGoogle" class="btn icon-left" aria-label="Continue with Google">
-        <!-- Google “G” -->
-        <svg width="18" height="18" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-          <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.676 31.91 29.223 35 24 35c-7.18 0-13-5.82-13-13S16.82 9 24 9c3.313 0 6.313 1.253 8.59 3.31l5.657-5.657C35.577 3.042 29.987 1 24 1 10.745 1 0 11.745 0 25s10.745 24 24 24 24-10.745 24-24c0-1.627-.167-3.216-.389-4.917z"/>
-          <path fill="#FF3D00" d="M6.306 14.691L12.97 19.6C14.826 15.154 19.06 12 24 12c3.313 0 6.313 1.253 8.59 3.31l5.657-5.657C35.577 3.042 29.987 1 24 1 15.317 1 7.86 5.773 4.003 12.691z"/>
-          <path fill="#4CAF50" d="M24 49c5.162 0 9.868-1.977 13.43-5.197l-6.197-5.236C29.012 39.542 26.64 40.5 24 40.5c-5.176 0-9.582-3.497-11.164-8.204l-6.47 4.986C16.067 44.775 22.91 49 24 49z"/>
-          <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-1.411 3.316-4.679 5.917-8.303 5.917-2.64 0-5.012-.958-6.827-2.434l-6.47 4.985C16.067 44.775 22.91 49 30 49c11.598 0 19.5-7.902 19.5-19.5 0-1.627-.167-3.216-.389-4.917z"/>
-        </svg>
-        Continue with Google
-      </button>
-
-      <div class="spacer">or</div>
-
-      <!-- Email / password -->
-      <div class="row" id="emailBox">
-        <div class="field">
-          <label class="label" for="email">Email</label>
-          <input id="email" class="input" type="email" placeholder="you@example.com" autocomplete="email" />
-        </div>
-        <div class="field">
-          <label class="label" for="password">Password</label>
-          <input id="password" class="input" type="password" placeholder="••••••••" autocomplete="current-password" />
-        </div>
-        <div class="inline">
-          <button id="btnEmailSignIn" class="btn" aria-label="Sign in with email">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M4 6h16v12H4z" stroke="#a5b4fc" stroke-width="2"/><path d="M4 6l8 7 8-7" stroke="#a5b4fc" stroke-width="2" fill="none"/>
-            </svg>
-            Sign in
-          </button>
-          <button id="btnEmailSignUp" class="btn" aria-label="Create account">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <circle cx="12" cy="8" r="3" stroke="#a5b4fc" stroke-width="2"/>
-              <path d="M6 20c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="#a5b4fc" stroke-width="2"/>
-            </svg>
-            Create account
-          </button>
-        </div>
-        <div id="emailError" class="error" style="display:none"></div>
+      <div>
+        <div class="label">Password</div>
+        <input id="password" class="input" type="password" placeholder="••••••••">
       </div>
-
-      <div class="spacer">or</div>
-
-      <!-- Phone -->
-      <div class="row" id="phoneBox">
-        <div class="field">
-          <label class="label" for="phone">Phone number</label>
-          <input id="phone" class="input" type="tel" placeholder="+44 7123 456789" autocomplete="tel" />
-        </div>
-        <div id="recaptcha-container"></div>
-        <div class="inline">
-          <button id="btnSendCode" class="btn" aria-label="Send SMS verification">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M5 2h6l2 3v14H5z" stroke="#a5b4fc" stroke-width="2"/>
-              <circle cx="10" cy="18" r="1" fill="#a5b4fc"/>
-            </svg>
-            Send code
-          </button>
-          <button id="btnVerifyCode" class="btn primary" style="display:none" aria-label="Verify code and sign in">
-            Verify & Sign in
-          </button>
-        </div>
-        <div id="codeRow" class="field" style="display:none">
-          <label class="label" for="code">Verification code</label>
-          <input id="code" class="input" type="text" inputmode="numeric" placeholder="6-digit code" />
-        </div>
-        <div id="phoneError" class="error" style="display:none"></div>
-      </div>
-
-      <div class="spacer">or</div>
-
-      <!-- Guest (Anonymous) -->
-      <button id="btnGuest" class="btn" aria-label="Continue as guest (limited)">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <circle cx="12" cy="8" r="3" stroke="#a5b4fc" stroke-width="2"/>
-          <path d="M6 20c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="#a5b4fc" stroke-width="2"/>
-        </svg>
-        Continue as Guest (limited)
-      </button>
-
-      <p class="muted" style="text-align:center;margin-top:10px">
-        By continuing, you agree to the Terms and acknowledge the Privacy Policy.
-      </p>
+      <button id="btnEmailSignIn" class="btn">Sign in with Email</button>
+      <button id="btnEmailSignUp" class="btn">Create Account</button>
+      <div id="emailError" class="error"></div>
     </div>
+
+    <div class="spacer">or</div>
+
+    <!-- Phone -->
+    <div class="row">
+      <div>
+        <div class="label">Phone</div>
+        <input id="phone" class="input" type="tel" placeholder="+44 7123 456789">
+      </div>
+      <div id="recaptcha-container"></div>
+      <button id="btnSendCode" class="btn">Send Code</button>
+      <div id="codeRow" style="display:none">
+        <div class="label">Verification Code</div>
+        <input id="code" class="input" type="text" placeholder="6-digit code">
+        <button id="btnVerifyCode" class="btn primary" style="margin-top:8px">Verify & Sign in</button>
+      </div>
+      <div id="phoneError" class="error"></div>
+    </div>
+
+    <div class="spacer">or</div>
+
+    <!-- Guest -->
+    <button id="btnGuest" class="btn">Continue as Guest (limited)</button>
+
+    <p style="font-size:12px; color:#9ca3af; margin-top:12px; text-align:center">
+      By continuing, you agree to the Terms and Privacy Policy.
+    </p>
   </div>
 
   <!-- Firebase (Compat) -->
@@ -194,121 +151,65 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <script>
-    // ---- Firebase init (must match your index.html project) ----
     const firebaseConfig = {
-      apiKey: "AIzaSyDsBDuaZ_rl7ro63Fv5gPh37EwSkfh-NqM",
+      apiKey: "AIzaSyBaIs-6MmFGhCSY-VGvAQLLn4H6_lYjwRA",
       authDomain: "aiphotostudioapp.firebaseapp.com",
       projectId: "aiphotostudioapp",
       storageBucket: "aiphotostudioapp.appspot.com",
       messagingSenderId: "1056724519182",
-      appId: "1:1056724519182:web:93410e1b71a292e531ef5f",
-      measurementId: "G-YMB9JJHNBE"
+      appId: "1:1056724519182:web:4b753ddbca1dc50c31ef5f",
+      measurementId: "G-0QWJGBLXVW"
     };
-    firebase.initializeApp(firebaseConfig);
-
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
     const auth = firebase.auth();
-    const db   = firebase.firestore();
-    auth.languageCode = 'en';
 
-    // If already signed in → go home
+    // Already signed in → redirect
     auth.onAuthStateChanged(user => { if (user) location.replace('/'); });
 
-    const $ = (id) => document.getElementById(id);
-    const show = (el, on=true) => el && (el.style.display = on ? '' : 'none');
+    const $ = id => document.getElementById(id);
 
-    // Friendly error messages
-    function niceErr(e){
-      const m = (e && (e.message||e.code)||'').toString();
-      if (m.includes('auth/unauthorized-domain')) return 'This domain is not authorized for Google sign-in. Add your domain in Firebase Auth → Settings → Authorized domains.';
-      if (m.includes('auth/network-request-failed')) return 'Network error. Check your connection or disable Private Relay/VPN/ad-blockers.';
-      if (m.includes('auth/popup-closed-by-user')) return 'Popup closed before completing sign-in.';
-      if (m.includes('auth/invalid-phone-number')) return 'Invalid phone number format. Use +44… international format.';
-      if (m.includes('auth/too-many-requests')) return 'Too many attempts. Please wait a minute and try again.';
-      return m || 'Something went wrong.';
-    }
-
-    // ---- Google Sign-in (Redirect on iOS, Popup elsewhere) ----
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    // Google (redirect works on iOS)
     $('btnGoogle').onclick = async () => {
+      const provider = new firebase.auth.GoogleAuthProvider();
       try {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        provider.setCustomParameters({ prompt: 'select_account' });
-        if (isIOS) {
-          await auth.signInWithRedirect(provider);
-        } else {
-          await auth.signInWithPopup(provider);
-        }
-      } catch (e) {
-        alert('Google sign-in failed: ' + niceErr(e));
-      }
+        await auth.signInWithRedirect(provider);
+      } catch (e) { alert(e.message); }
     };
 
-    // ---- Email / Password ----
-    async function emailSignIn(){
-      show($('emailError'), false);
-      const email = $('email').value.trim();
-      const pass  = $('password').value;
-      if (!email || !pass) { $('emailError').textContent = 'Enter email and password.'; show($('emailError'), true); return; }
-      try { await auth.signInWithEmailAndPassword(email, pass); }
-      catch (e) { $('emailError').textContent = niceErr(e); show($('emailError'), true); }
-    }
-    async function emailSignUp(){
-      show($('emailError'), false);
-      const email = $('email').value.trim();
-      const pass  = $('password').value;
-      if (!email || !pass) { $('emailError').textContent = 'Enter email and password.'; show($('emailError'), true); return; }
+    // Email
+    $('btnEmailSignIn').onclick = async () => {
       try {
-        const cred = await auth.createUserWithEmailAndPassword(email, pass);
+        await auth.signInWithEmailAndPassword($('email').value, $('password').value);
+      } catch (e) { $('emailError').textContent = e.message; $('emailError').style.display='block'; }
+    };
+    $('btnEmailSignUp').onclick = async () => {
+      try {
+        const cred = await auth.createUserWithEmailAndPassword($('email').value, $('password').value);
         try { await cred.user.sendEmailVerification(); } catch {}
-      } catch (e) { $('emailError').textContent = niceErr(e); show($('emailError'), true); }
-    }
-    $('btnEmailSignIn').onclick = emailSignIn;
-    $('btnEmailSignUp').onclick = emailSignUp;
+      } catch (e) { $('emailError').textContent = e.message; $('emailError').style.display='block'; }
+    };
 
-    // ---- Phone Sign-in (visible reCAPTCHA) ----
+    // Phone
     let confirmationResult = null;
-    let recaptcha = null;
-
-    function ensureRecaptcha(){
-      if (recaptcha) return recaptcha;
-      recaptcha = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-        size: 'normal', theme: 'dark',
-        'expired-callback': () => { try{ recaptcha.reset(); }catch{} }
-      });
-      recaptcha.render();
-      return recaptcha;
-    }
+    const recaptcha = new firebase.auth.RecaptchaVerifier('recaptcha-container', { size:'normal' });
+    recaptcha.render();
 
     $('btnSendCode').onclick = async () => {
-      show($('phoneError'), false);
-      const phone = $('phone').value.trim();
-      if (!phone) { $('phoneError').textContent = 'Enter a phone number including country code.'; show($('phoneError'), true); return; }
       try {
-        ensureRecaptcha();
-        confirmationResult = await auth.signInWithPhoneNumber(phone, recaptcha);
-        show($('codeRow'), true);
-        show($('btnVerifyCode'), true);
-      } catch (e) {
-        $('phoneError').textContent = niceErr(e);
-        show($('phoneError'), true);
-        try { recaptcha && recaptcha.reset(); } catch {}
-      }
+        confirmationResult = await auth.signInWithPhoneNumber($('phone').value, recaptcha);
+        $('codeRow').style.display = 'block';
+      } catch (e) { $('phoneError').textContent = e.message; $('phoneError').style.display='block'; }
     };
-
     $('btnVerifyCode').onclick = async () => {
-      show($('phoneError'), false);
-      if (!confirmationResult) return;
-      const code = $('code').value.trim();
-      if (!code) { $('phoneError').textContent = 'Enter the SMS code you received.'; show($('phoneError'), true); return; }
-      try { await confirmationResult.confirm(code); }
-      catch (e) { $('phoneError').textContent = niceErr(e); show($('phoneError'), true); }
+      try {
+        await confirmationResult.confirm($('code').value);
+      } catch (e) { $('phoneError').textContent = e.message; $('phoneError').style.display='block'; }
     };
 
-    // ---- Guest (Anonymous) ----
-    $('btnGuest').onclick = async () => {
-      try { await auth.signInAnonymously(); }
-      catch (e) { alert('Guest sign-in failed: ' + niceErr(e)); }
-    };
+    // Guest
+    $('btnGuest').onclick = () => auth.signInAnonymously();
   </script>
 </body>
 </html>
