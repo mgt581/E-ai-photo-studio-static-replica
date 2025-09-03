@@ -80,7 +80,6 @@
     .error{color:#fecaca; font-size:13px; margin-top:4px}
 
     #recaptcha-container{display:grid; place-items:center; padding:8px 0}
-    .note{font-size:12px; color:#9ca3af; margin-top:8px; text-align:center}
   </style>
 </head>
 <body>
@@ -108,7 +107,7 @@
         <svg width="18" height="18" viewBox="0 0 48 48" fill="none" aria-hidden="true">
           <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.676 31.91 29.223 35 24 35c-7.18 0-13-5.82-13-13S16.82 9 24 9c3.313 0 6.313 1.253 8.59 3.31l5.657-5.657C35.577 3.042 29.987 1 24 1 10.745 1 0 11.745 0 25s10.745 24 24 24 24-10.745 24-24c0-1.627-.167-3.216-.389-4.917z"/>
           <path fill="#FF3D00" d="M6.306 14.691L12.97 19.6C14.826 15.154 19.06 12 24 12c3.313 0 6.313 1.253 8.59 3.31l5.657-5.657C35.577 3.042 29.987 1 24 1 15.317 1 7.86 5.773 4.003 12.691z"/>
-          <path fill="#4CAF50" d="M24 49c5.162 0 9.868-1.977 13.43-5.197l-6.197-5.236C29.012 39.542 26.64 40.5 24 40.5c-5.176 0-9.582-3.497-11.164-8.204l-6.47 4.986C9.224 44.775 16.067 49 24 49z"/>
+          <path fill="#4CAF50" d="M24 49c5.162 0 9.868-1.977 13.43-5.197l-6.197-5.236C29.012 39.542 26.64 40.5 24 40.5c-5.176 0-9.582-3.497-11.164-8.204l-6.47 4.986C16.067 44.775 22.91 49 24 49z"/>
           <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-1.411 3.316-4.679 5.917-8.303 5.917-2.64 0-5.012-.958-6.827-2.434l-6.47 4.985C16.067 44.775 22.91 49 30 49c11.598 0 19.5-7.902 19.5-19.5 0-1.627-.167-3.216-.389-4.917z"/>
         </svg>
         Continue with Google
@@ -128,14 +127,12 @@
         </div>
         <div class="inline">
           <button id="btnEmailSignIn" class="btn" aria-label="Sign in with email">
-            <!-- Mail icon -->
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M4 6h16v12H4z" stroke="#a5b4fc" stroke-width="2"/><path d="M4 6l8 7 8-7" stroke="#a5b4fc" stroke-width="2" fill="none"/>
             </svg>
             Sign in
           </button>
           <button id="btnEmailSignUp" class="btn" aria-label="Create account">
-            <!-- Plus/User icon -->
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <circle cx="12" cy="8" r="3" stroke="#a5b4fc" stroke-width="2"/>
               <path d="M6 20c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="#a5b4fc" stroke-width="2"/>
@@ -157,7 +154,6 @@
         <div id="recaptcha-container"></div>
         <div class="inline">
           <button id="btnSendCode" class="btn" aria-label="Send SMS verification">
-            <!-- Phone icon -->
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M5 2h6l2 3v14H5z" stroke="#a5b4fc" stroke-width="2"/>
               <circle cx="10" cy="18" r="1" fill="#a5b4fc"/>
@@ -173,14 +169,12 @@
           <input id="code" class="input" type="text" inputmode="numeric" placeholder="6-digit code" />
         </div>
         <div id="phoneError" class="error" style="display:none"></div>
-        <div class="note">Tip: Add test numbers in Firebase → Auth → Sign-in method → Phone to bypass SMS quotas while developing.</div>
       </div>
 
       <div class="spacer">or</div>
 
       <!-- Guest (Anonymous) -->
       <button id="btnGuest" class="btn" aria-label="Continue as guest (limited)">
-        <!-- User icon -->
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <circle cx="12" cy="8" r="3" stroke="#a5b4fc" stroke-width="2"/>
           <path d="M6 20c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="#a5b4fc" stroke-width="2"/>
@@ -188,7 +182,9 @@
         Continue as Guest (limited)
       </button>
 
-      <p class="note">By continuing, you agree to the Terms and acknowledge the Privacy Policy.</p>
+      <p class="muted" style="text-align:center;margin-top:10px">
+        By continuing, you agree to the Terms and acknowledge the Privacy Policy.
+      </p>
     </div>
   </div>
 
@@ -212,61 +208,59 @@
 
     const auth = firebase.auth();
     const db   = firebase.firestore();
-
-    // Optional: set the language for SMS/Email templates
     auth.languageCode = 'en';
 
     // If already signed in → go home
-    auth.onAuthStateChanged(user => {
-      if (user) location.replace('/');
-    });
+    auth.onAuthStateChanged(user => { if (user) location.replace('/'); });
 
     const $ = (id) => document.getElementById(id);
     const show = (el, on=true) => el && (el.style.display = on ? '' : 'none');
 
-    // ---- Google Sign-in ----
+    // Friendly error messages
+    function niceErr(e){
+      const m = (e && (e.message||e.code)||'').toString();
+      if (m.includes('auth/unauthorized-domain')) return 'This domain is not authorized for Google sign-in. Add your domain in Firebase Auth → Settings → Authorized domains.';
+      if (m.includes('auth/network-request-failed')) return 'Network error. Check your connection or disable Private Relay/VPN/ad-blockers.';
+      if (m.includes('auth/popup-closed-by-user')) return 'Popup closed before completing sign-in.';
+      if (m.includes('auth/invalid-phone-number')) return 'Invalid phone number format. Use +44… international format.';
+      if (m.includes('auth/too-many-requests')) return 'Too many attempts. Please wait a minute and try again.';
+      return m || 'Something went wrong.';
+    }
+
+    // ---- Google Sign-in (Redirect on iOS, Popup elsewhere) ----
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     $('btnGoogle').onclick = async () => {
       try {
         const provider = new firebase.auth.GoogleAuthProvider();
-        await auth.signInWithPopup(provider);
+        provider.setCustomParameters({ prompt: 'select_account' });
+        if (isIOS) {
+          await auth.signInWithRedirect(provider);
+        } else {
+          await auth.signInWithPopup(provider);
+        }
       } catch (e) {
-        alert('Google sign-in failed: ' + e.message);
+        alert('Google sign-in failed: ' + niceErr(e));
       }
     };
 
     // ---- Email / Password ----
     async function emailSignIn(){
-      $('emailError').style.display = 'none';
+      show($('emailError'), false);
       const email = $('email').value.trim();
       const pass  = $('password').value;
-      if (!email || !pass) {
-        $('emailError').textContent = 'Enter email and password.';
-        $('emailError').style.display='block';
-        return;
-      }
-      try {
-        await auth.signInWithEmailAndPassword(email, pass);
-      } catch (e) {
-        $('emailError').textContent = e.message;
-        $('emailError').style.display = 'block';
-      }
+      if (!email || !pass) { $('emailError').textContent = 'Enter email and password.'; show($('emailError'), true); return; }
+      try { await auth.signInWithEmailAndPassword(email, pass); }
+      catch (e) { $('emailError').textContent = niceErr(e); show($('emailError'), true); }
     }
     async function emailSignUp(){
-      $('emailError').style.display = 'none';
+      show($('emailError'), false);
       const email = $('email').value.trim();
       const pass  = $('password').value;
-      if (!email || !pass) {
-        $('emailError').textContent = 'Enter email and password.';
-        $('emailError').style.display='block';
-        return;
-      }
+      if (!email || !pass) { $('emailError').textContent = 'Enter email and password.'; show($('emailError'), true); return; }
       try {
         const cred = await auth.createUserWithEmailAndPassword(email, pass);
         try { await cred.user.sendEmailVerification(); } catch {}
-      } catch (e) {
-        $('emailError').textContent = e.message;
-        $('emailError').style.display = 'block';
-      }
+      } catch (e) { $('emailError').textContent = niceErr(e); show($('emailError'), true); }
     }
     $('btnEmailSignIn').onclick = emailSignIn;
     $('btnEmailSignUp').onclick = emailSignUp;
@@ -278,55 +272,42 @@
     function ensureRecaptcha(){
       if (recaptcha) return recaptcha;
       recaptcha = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-        size: 'normal',
-        'expired-callback': () => { try{recaptcha.reset();}catch{} }
+        size: 'normal', theme: 'dark',
+        'expired-callback': () => { try{ recaptcha.reset(); }catch{} }
       });
       recaptcha.render();
       return recaptcha;
     }
 
     $('btnSendCode').onclick = async () => {
-      $('phoneError').style.display = 'none';
+      show($('phoneError'), false);
       const phone = $('phone').value.trim();
-      if (!phone) {
-        $('phoneError').textContent = 'Enter a phone number including country code.';
-        $('phoneError').style.display='block'; return;
-      }
+      if (!phone) { $('phoneError').textContent = 'Enter a phone number including country code.'; show($('phoneError'), true); return; }
       try {
         ensureRecaptcha();
         confirmationResult = await auth.signInWithPhoneNumber(phone, recaptcha);
         show($('codeRow'), true);
         show($('btnVerifyCode'), true);
       } catch (e) {
-        $('phoneError').textContent = e.message;
-        $('phoneError').style.display = 'block';
+        $('phoneError').textContent = niceErr(e);
+        show($('phoneError'), true);
         try { recaptcha && recaptcha.reset(); } catch {}
       }
     };
 
     $('btnVerifyCode').onclick = async () => {
-      $('phoneError').style.display = 'none';
+      show($('phoneError'), false);
       if (!confirmationResult) return;
       const code = $('code').value.trim();
-      if (!code) {
-        $('phoneError').textContent = 'Enter the SMS code you received.';
-        $('phoneError').style.display='block'; return;
-      }
-      try {
-        await confirmationResult.confirm(code);
-      } catch (e) {
-        $('phoneError').textContent = e.message;
-        $('phoneError').style.display = 'block';
-      }
+      if (!code) { $('phoneError').textContent = 'Enter the SMS code you received.'; show($('phoneError'), true); return; }
+      try { await confirmationResult.confirm(code); }
+      catch (e) { $('phoneError').textContent = niceErr(e); show($('phoneError'), true); }
     };
 
     // ---- Guest (Anonymous) ----
     $('btnGuest').onclick = async () => {
-      try {
-        await auth.signInAnonymously();
-      } catch (e) {
-        alert('Guest sign-in failed: ' + e.message);
-      }
+      try { await auth.signInAnonymously(); }
+      catch (e) { alert('Guest sign-in failed: ' + niceErr(e)); }
     };
   </script>
 </body>
