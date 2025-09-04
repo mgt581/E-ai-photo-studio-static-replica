@@ -5,81 +5,51 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Sign in · AI Photo Studio</title>
   <meta name="theme-color" content="#4f46e5" />
-
-  <!-- Icons (match main site) -->
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="icon" type="image/png" href="/apple-touch-icon.png">
 
   <style>
-    :root{
-      --bg:#0b1020; --card:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --border:#1f2a44;
-      --ring:0 16px 40px rgba(59,130,246,.25);
-      --grad:linear-gradient(90deg,#6366f1,#8b5cf6);
-      --btn:#0b1227; --btnText:#e5e7eb;
-      --accent:#4f46e5;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+    :root{ --bg:#0b1020; --card:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --border:#1f2a44;
+      --ring:0 16px 40px rgba(59,130,246,.25); --grad:linear-gradient(90deg,#6366f1,#8b5cf6);
+      --btn:#0b1227; --btnText:#e5e7eb; --accent:#4f46e5; }
+    *{box-sizing:border-box} html,body{height:100%}
+    body{margin:0; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;
       background:
         radial-gradient(1000px 700px at 0% 0%, #1d2340 0%, transparent 60%),
         radial-gradient(1000px 700px at 100% 0%, #141b34 0%, transparent 60%),
-        radial-gradient(1000px 700px at 50% 120%, #0a1226 0%, transparent 60%),
-        #050816;
-      color:var(--text);
-    }
+        radial-gradient(1000px 700px at 50% 120%, #0a1226 0%, transparent 60%), #050816;
+      color:var(--text);}
     a{color:#93c5fd;text-decoration:none}
-    .topbar{position:fixed; left:0; right:0; top:0; display:flex; justify-content:space-between; padding:10px 16px;}
+    .topbar{position:fixed;left:0;right:0;top:0;display:flex;justify-content:space-between;padding:10px 16px;}
     .link{color:#a5b4fc}
-
-    .wrap{min-height:100%; display:grid; place-items:center; padding:32px}
-    .card{
-      width:100%; max-width:520px;
-      background:rgba(13,20,42,0.75);
-      border:1px solid rgba(148,163,184,.18);
-      border-radius:18px; padding:22px 20px;
-      box-shadow:0 10px 40px rgba(2,6,23,.35), inset 0 0 0 1px rgba(255,255,255,0.04);
-      backdrop-filter: blur(16px);
-    }
+    .wrap{min-height:100%;display:grid;place-items:center;padding:32px}
+    .card{width:100%;max-width:520px;background:rgba(13,20,42,.75);border:1px solid rgba(148,163,184,.18);
+      border-radius:18px;padding:22px 20px;box-shadow:0 10px 40px rgba(2,6,23,.35),inset 0 0 0 1px rgba(255,255,255,.04);
+      backdrop-filter:blur(16px)}
     .brand{display:flex;align-items:center;gap:10px;margin-bottom:6px}
-    .badge{
-      width:38px;height:38px;border-radius:12px;display:grid;place-items:center;
-      background:linear-gradient(135deg,#7c3aed,#3b82f6);
-      box-shadow:0 10px 30px rgba(79,70,229,.35);
-    }
+    .badge{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;
+      background:linear-gradient(135deg,#7c3aed,#3b82f6);box-shadow:0 10px 30px rgba(79,70,229,.35)}
     .title{margin:6px 0 2px;font-size:22px;font-weight:800;letter-spacing:.2px}
     .sub{margin:0 0 14px;color:var(--muted);font-size:14px}
-
     .row{display:grid;gap:10px;margin-top:14px}
-    .btn{
-      height:46px; border-radius:12px; border:1px solid rgba(148,163,184,.25);
-      background:var(--btn); color:var(--btnText); font-weight:700; cursor:pointer;
-      display:flex; align-items:center; justify-content:center; gap:10px;
-    }
-    .btn:hover{border-color:#64748b; background:#0d152f}
-    .btn.primary{background:var(--grad); border:none; color:white; box-shadow:var(--ring)}
-    .btn:disabled{opacity:.6; cursor:not-allowed}
-    .btn:focus { outline: none; box-shadow: 0 0 0 3px rgba(99,102,241,0.45); }
-
-    .spacer{text-align:center; color:#94a3b8; font-size:12px; margin:10px 0; position:relative}
-    .spacer::before,.spacer::after{
-      content:""; height:1px; background:rgba(148,163,184,.25); position:absolute; top:50%; width:38%;
-    }
-    .spacer::before{left:0} .spacer::after{right:0}
-
-    .field{display:grid; gap:6px}
-    .label{font-size:12px; color:#a5b4fc}
-    .input{
-      height:44px; border-radius:12px; border:1px solid rgba(148,163,184,.25);
-      background:#0b1227; color:#e5e7eb; padding:0 12px; outline:none;
-    }
-    .input:focus{border-color:#818cf8; box-shadow:0 0 0 3px rgba(99,102,241,0.25)}
-    .inline{display:flex; gap:10px}
-    .muted{color:#94a3b8; font-size:12px}
-    .error{color:#fecaca; font-size:13px; margin-top:4px}
-    #recaptcha-container{display:grid; place-items:center; padding:8px 0}
-    .note{font-size:12px; color:#9ca3af; margin-top:8px; text-align:center}
+    .btn{height:46px;border-radius:12px;border:1px solid rgba(148,163,184,.25);background:var(--btn);
+      color:var(--btnText);font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px}
+    .btn:hover{border-color:#64748b;background:#0d152f}
+    .btn.primary{background:var(--grad);border:none;color:white;box-shadow:var(--ring)}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .btn:focus{outline:none;box-shadow:0 0 0 3px rgba(99,102,241,.45)}
+    .spacer{text-align:center;color:#94a3b8;font-size:12px;margin:10px 0;position:relative}
+    .spacer::before,.spacer::after{content:"";height:1px;background:rgba(148,163,184,.25);position:absolute;top:50%;width:38%}
+    .spacer::before{left:0}.spacer::after{right:0}
+    .field{display:grid;gap:6px}
+    .label{font-size:12px;color:#a5b4fc}
+    .input{height:44px;border-radius:12px;border:1px solid rgba(148,163,184,.25);background:#0b1227;color:#e5e7eb;padding:0 12px;outline:none}
+    .input:focus{border-color:#818cf8;box-shadow:0 0 0 3px rgba(99,102,241,.25)}
+    .inline{display:flex;gap:10px}
+    .muted{color:#94a3b8;font-size:12px}
+    .error{color:#fecaca;font-size:13px;margin-top:4px}
+    #recaptcha-container{display:grid;place-items:center;padding:8px 0}
+    .note{font-size:12px;color:#9ca3af;margin-top:8px;text-align:center}
   </style>
 </head>
 <body>
@@ -190,13 +160,13 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import {
-      getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence,
+      getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence, inMemoryPersistence,
       GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
-      signInWithEmailAndPassword, createUserWithEmailAndPassword,
+      signInWithEmailAndPassword, createUserWithEmailAndPassword, sendEmailVerification,
       RecaptchaVerifier, signInWithPhoneNumber, signInAnonymously
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-    // ---- Firebase init (must match your project) ----
+    // ---- Firebase init ----
     const firebaseConfig = {
       apiKey: "AIzaSyDsBDuaZ_rl7ro63Fv5gPh37EwSkfh-NqM",
       authDomain: "aiphotostudioapp.firebaseapp.com",
@@ -209,49 +179,51 @@
     const app  = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     auth.languageCode = 'en';
-    await setPersistence(auth, browserLocalPersistence);
 
-    // Continue param (optional)
+    // Persistence with Safari Private fallback
+    setPersistence(auth, browserLocalPersistence).catch(() => setPersistence(auth, inMemoryPersistence));
+
+    // continue param (optional)
     const params = new URLSearchParams(location.search);
     const next = params.get('continue');
-    const SAFE_PATHS = new Set(['/', '/index.html']); // extend as needed
+    const SAFE_PATHS = new Set(['/', '/index.html']);
     const safeNext = () => (next && next.startsWith('/') && SAFE_PATHS.has(next)) ? next : '/';
 
-    // If already signed in → go home (first load guard)
-    let initialResolved = false;
-    onAuthStateChanged(auth, user => {
-      if (initialResolved) return;
-      initialResolved = true;
+    // redirect if already authed
+    let initial = false;
+    onAuthStateChanged(auth, (user) => {
+      if (initial) return;
+      initial = true;
       if (user) location.replace(safeNext());
     });
 
-    // Helpers
+    // helpers
     const $ = (id) => document.getElementById(id);
-    const show = (el, on = true) => el && (el.style.display = on ? '' : 'none');
-    function setLoading(btn, isLoading, text = 'Please wait…') {
+    const show = (el, on=true) => el && (el.style.display = on ? '' : 'none');
+    const setLoading = (btn, on, text='Please wait…') => {
       if (!btn) return;
       btn.dataset.label = btn.dataset.label || btn.textContent;
-      btn.disabled = isLoading;
-      btn.setAttribute('aria-busy', isLoading ? 'true' : 'false');
-      btn.textContent = isLoading ? text : btn.dataset.label;
-    }
-    function showError(el, msg) {
+      btn.disabled = on;
+      btn.setAttribute('aria-busy', on ? 'true' : 'false');
+      btn.textContent = on ? text : btn.dataset.label;
+    };
+    const showError = (el, msg) => {
       el.textContent = msg || '';
       el.style.display = msg ? 'block' : 'none';
       if (msg) el.focus?.();
-    }
-    const errMap = {
-      'auth/invalid-email': 'That email looks invalid.',
-      'auth/user-not-found': 'No account found. Create one instead?',
-      'auth/wrong-password': 'Incorrect password.',
-      'auth/email-already-in-use': 'Email already has an account. Try signing in.',
-      'auth/too-many-requests': 'Too many attempts. Please try again later.',
-      'auth/popup-blocked': 'Popup was blocked. We’ll try a redirect flow.',
-      'auth/popup-closed-by-user': 'Popup closed before completing sign-in.'
     };
-    const friendly = (e) => errMap[e?.code] || e?.message || 'Something went wrong.';
+    const ERR = {
+      'auth/invalid-email':'That email looks invalid.',
+      'auth/user-not-found':'No account found. Create one instead?',
+      'auth/wrong-password':'Incorrect password.',
+      'auth/email-already-in-use':'Email already has an account. Try signing in.',
+      'auth/too-many-requests':'Too many attempts. Please try again later.',
+      'auth/popup-blocked':'Popup was blocked. We’ll try a redirect.',
+      'auth/popup-closed-by-user':'Popup closed before completing sign-in.',
+    };
+    const friendly = e => ERR[e?.code] || e?.message || 'Something went wrong.';
 
-    // ---- Google Sign-in (popup with redirect fallback) ----
+    // Google
     $('btnGoogle').onclick = async () => {
       const btn = $('btnGoogle');
       setLoading(btn, true, 'Opening Google…');
@@ -260,11 +232,8 @@
         await signInWithPopup(auth, provider);
       } catch (e) {
         if (e?.code === 'auth/popup-blocked') {
-          try {
-            await signInWithRedirect(auth, provider);
-          } catch (e2) {
-            alert('Google sign-in failed: ' + friendly(e2));
-          }
+          try { await signInWithRedirect(auth, provider); }
+          catch (e2) { alert('Google sign-in failed: ' + friendly(e2)); }
         } else {
           alert('Google sign-in failed: ' + friendly(e));
         }
@@ -272,36 +241,30 @@
         setLoading(btn, false);
       }
     };
+    getRedirectResult(auth).catch(()=>{});
 
-    // If we came back from a redirect, this resolves here
-    getRedirectResult(auth).catch(() => { /* ignore */ });
-
-    // ---- Email / Password ----
+    // Email / Password
     async function emailSignIn(){
       showError($('emailError'), '');
-      $('password').setAttribute('autocomplete', 'current-password');
+      $('password').setAttribute('autocomplete','current-password');
       const email = $('email').value.trim();
       const pass  = $('password').value;
-      if (!email || !pass) return showError($('emailError'), 'Enter email and password.');
+      if (!email || !pass) return showError($('emailError'),'Enter email and password.');
       setLoading($('btnEmailSignIn'), true, 'Signing in…');
-      try {
-        await signInWithEmailAndPassword(auth, email, pass);
-      } catch (e) {
-        showError($('emailError'), friendly(e));
-      } finally {
-        setLoading($('btnEmailSignIn'), false);
-      }
+      try { await signInWithEmailAndPassword(auth, email, pass); }
+      catch (e) { showError($('emailError'), friendly(e)); }
+      finally { setLoading($('btnEmailSignIn'), false); }
     }
     async function emailSignUp(){
       showError($('emailError'), '');
-      $('password').setAttribute('autocomplete', 'new-password');
+      $('password').setAttribute('autocomplete','new-password');
       const email = $('email').value.trim();
       const pass  = $('password').value;
-      if (!email || !pass) return showError($('emailError'), 'Enter email and password.');
+      if (!email || !pass) return showError($('emailError'),'Enter email and password.');
       setLoading($('btnEmailSignUp'), true, 'Creating account…');
       try {
         const cred = await createUserWithEmailAndPassword(auth, email, pass);
-        try { await cred.user?.sendEmailVerification?.(); } catch {}
+        try { await sendEmailVerification(cred.user); } catch {}
       } catch (e) {
         showError($('emailError'), friendly(e));
       } finally {
@@ -311,7 +274,7 @@
     $('btnEmailSignIn').onclick = emailSignIn;
     $('btnEmailSignUp').onclick = emailSignUp;
 
-    // ---- Phone Sign-in (visible reCAPTCHA) ----
+    // Phone + reCAPTCHA
     let confirmationResult = null;
     let recaptcha = null;
     let recaptchaWidgetId = null;
@@ -319,13 +282,9 @@
     function ensureRecaptcha(){
       if (recaptcha) return recaptcha;
       recaptcha = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'normal',
+        size:'normal',
         'expired-callback': () => {
-          try {
-            if (recaptchaWidgetId != null && window.grecaptcha) {
-              window.grecaptcha.reset(recaptchaWidgetId);
-            }
-          } catch {}
+          try { if (recaptchaWidgetId!=null && window.grecaptcha) window.grecaptcha.reset(recaptchaWidgetId); } catch {}
         }
       });
       recaptcha.render().then(id => { recaptchaWidgetId = id; });
@@ -335,9 +294,8 @@
     $('btnSendCode').onclick = async () => {
       showError($('phoneError'), '');
       const phone = $('phone').value.trim();
-      if (!phone.startsWith('+') || phone.length < 8) {
-        return showError($('phoneError'), 'Enter a valid phone number in E.164 format (e.g., +447123456789).');
-      }
+      if (!phone.startsWith('+') || phone.length < 8)
+        return showError($('phoneError'),'Enter a valid phone number in E.164 format (e.g., +447123456789).');
       const btn = $('btnSendCode');
       setLoading(btn, true, 'Sending code…');
       try {
@@ -347,11 +305,7 @@
         show($('btnVerifyCode'), true);
       } catch (e) {
         showError($('phoneError'), friendly(e));
-        try {
-          if (recaptchaWidgetId != null && window.grecaptcha) {
-            window.grecaptcha.reset(recaptchaWidgetId);
-          }
-        } catch {}
+        try { if (recaptchaWidgetId!=null && window.grecaptcha) window.grecaptcha.reset(recaptchaWidgetId); } catch {}
       } finally {
         setLoading(btn, false);
       }
@@ -364,26 +318,18 @@
       if (!code) return showError($('phoneError'), 'Enter the SMS code you received.');
       const btn = $('btnVerifyCode');
       setLoading(btn, true, 'Verifying…');
-      try {
-        await confirmationResult.confirm(code);
-      } catch (e) {
-        showError($('phoneError'), friendly(e));
-      } finally {
-        setLoading(btn, false);
-      }
+      try { await confirmationResult.confirm(code); }
+      catch (e) { showError($('phoneError'), friendly(e)); }
+      finally { setLoading(btn, false); }
     };
 
-    // ---- Guest (Anonymous) ----
+    // Guest
     $('btnGuest').onclick = async () => {
       const btn = $('btnGuest');
       setLoading(btn, true, 'Continuing…');
-      try {
-        await signInAnonymously(auth);
-      } catch (e) {
-        alert('Guest sign-in failed: ' + friendly(e));
-      } finally {
-        setLoading(btn, false);
-      }
+      try { await signInAnonymously(auth); }
+      catch (e) { alert('Guest sign-in failed: ' + friendly(e)); }
+      finally { setLoading(btn, false); }
     };
   </script>
 </body>
