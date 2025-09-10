@@ -6,7 +6,7 @@
   <title>Sign in · AI Photo Studio</title>
   <meta name="theme-color" content="#ffffff" />
   <style>
-    body{margin:0;font-family:system-ui,-apple-system,Roboto,Arial,sans-serif;background:#f9fafb;display:flex;justify-content:center;align-items:center;height:100vh}
+    body{margin:0;font-family:system-ui,-apple-system,Roboto,Arial,sans-serif;background:#f9fafb;display:flex;justify-content:center;align-items:center;min-height:100vh}
     .card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:32px;width:100%;max-width:400px;box-shadow:0 8px 24px rgba(0,0,0,.05);text-align:center}
     .logo{width:50px;height:50px;margin:0 auto 12px}
     h1{margin:0;font-size:22px;font-weight:700;color:#111827}
@@ -18,10 +18,12 @@
     .field input{width:100%;height:44px;border:1px solid #d1d5db;border-radius:8px;padding:0 12px;font-size:14px}
     .actions{display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:14px}
     .actions a{color:#4f46e5;text-decoration:none}
-    .btn-primary{width:100%;height:46px;border:none;border-radius:8px;background:#111827;color:#fff;font-weight:600;cursor:pointer;margin-bottom:14px}
+    .btn{width:100%;height:46px;border:none;border-radius:8px;background:#111827;color:#fff;font-weight:600;cursor:pointer;margin-bottom:14px}
+    .btn.secondary{background:#eef2ff;color:#4338ca}
     .footer{font-size:13px;color:#6b7280}
     .footer a{color:#4f46e5;text-decoration:none}
     .error{color:#dc2626;font-size:13px;margin-top:6px;display:none}
+    .hide{display:none}
   </style>
 </head>
 <body>
@@ -30,29 +32,38 @@
     <h1>Welcome back</h1>
     <p class="sub">Please enter your details to sign in</p>
 
-    <!-- Social sign-in -->
-    <div class="social">
-      <button id="btnGoogle" class="sbtn">Google</button>
+    <!-- Sign-in form -->
+    <div id="formBox">
+      <div class="social">
+        <button id="btnGoogle" class="sbtn">Google</button>
+      </div>
+
+      <div class="field">
+        <label for="email">Your Email Address</label>
+        <input id="email" type="email" placeholder="you@example.com" autocomplete="email" />
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+      <div class="actions">
+        <label><input type="checkbox" id="remember" /> Remember me</label>
+        <a href="#" id="forgotPassword">Forgot password?</a>
+      </div>
+      <button id="btnEmailSignIn" class="btn">Sign in</button>
+      <div id="emailError" class="error"></div>
+
+      <div class="footer">
+        Don’t have an account? <a href="#" id="btnEmailSignUp">Sign up</a>
+      </div>
     </div>
 
-    <!-- Email/Password -->
-    <div class="field">
-      <label for="email">Your Email Address</label>
-      <input id="email" type="email" placeholder="you@example.com" autocomplete="email" />
-    </div>
-    <div class="field">
-      <label for="password">Password</label>
-      <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" />
-    </div>
-    <div class="actions">
-      <label><input type="checkbox" id="remember" /> Remember me</label>
-      <a href="#" id="forgotPassword">Forgot password?</a>
-    </div>
-    <button id="btnEmailSignIn" class="btn-primary">Sign in</button>
-    <div id="emailError" class="error"></div>
-
-    <div class="footer">
-      Don’t have an account? <a href="#" id="btnEmailSignUp">Sign up</a>
+    <!-- After-login box (shows once signed in) -->
+    <div id="afterLogin" class="hide">
+      <p class="sub" id="who"></p>
+      <button id="btnStartTrial" class="btn secondary">Start 7-day Free Trial</button>
+      <button id="btnGoApp" class="btn">Continue to the app</button>
+      <div id="note" class="footer" style="margin-top:8px;"></div>
     </div>
   </div>
 
@@ -62,7 +73,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <script>
-    // --- Firebase config ---
+    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyDsBDuaZ_rl7ro63Fv5gPh37EwSkfh-NqM",
       authDomain: "aiphotostudioapp.firebaseapp.com",
@@ -76,47 +87,10 @@
     const auth = firebase.auth();
     const db   = firebase.firestore();
 
-    // Redirect if already signed in
-    auth.onAuthStateChanged(user => { if (user) location.replace('/'); });
-
     const $ = id => document.getElementById(id);
-    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    const show = (el, on=true)=> el && (el.classList.toggle('hide', !on));
 
-    // Upsert /users/{uid} with profile + trial on first login
-    async function upsertUserProfile(user, giveTrial=false){
-      if (!user) return;
-      const ref = db.collection('users').doc(user.uid);
-      const snap = await ref.get();
-
-      // Prepare fields
-      const base = {
-        displayName: user.displayName || "",
-        email: user.email || "",
-        photoURL: user.photoURL || "",
-      };
-
-      if (!snap.exists) {
-        // First time we see this user → create profile + trial
-        const now = new Date();
-        const ends = new Date(now.getTime() + SEVEN_DAYS_MS);
-        await ref.set({
-          ...base,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          tier: "free",
-          trial: {
-            startsAt: firebase.firestore.Timestamp.fromDate(now),
-            endsAt: firebase.firestore.Timestamp.fromDate(ends)
-          }
-        }, { merge: true });
-      } else {
-        // Ensure profile fields exist; don't override trial/tier here
-        await ref.set(base, { merge: true });
-      }
-    }
-
-    function goHome(){ location.replace('/'); }
-
-    // Handle Google sign-in
+    // ---------- Sign-in handlers ----------
     $('btnGoogle').onclick = async () => {
       try {
         const provider = new firebase.auth.GoogleAuthProvider();
@@ -124,76 +98,121 @@
           await auth.signInWithRedirect(provider);
         } else {
           const cred = await auth.signInWithPopup(provider);
-          await upsertUserProfile(cred.user, true);
-          goHome();
+          await saveUserDoc(cred.user);     // create profile (free, no trial)
         }
       } catch (e) {
         alert('Google sign-in failed: ' + e.message);
       }
     };
 
-    // Handle redirect result (mobile)
-    window.addEventListener('load', async () => {
-      try {
-        const res = await auth.getRedirectResult();
-        if (res && res.user) {
-          await upsertUserProfile(res.user, true);
-          goHome();
-        }
-      } catch (e) {
-        // ignore if no pending redirect
-      }
-    });
-
-    // Email sign-in
     $('btnEmailSignIn').onclick = async () => {
-      $('emailError').style.display = 'none';
+      $('emailError').style.display='none';
       const email = $('email').value.trim();
       const pass  = $('password').value;
       if (!email || !pass) {
-        $('emailError').textContent = 'Enter email and password.';
-        $('emailError').style.display = 'block'; return;
+        $('emailError').textContent='Enter email and password.';
+        $('emailError').style.display='block';
+        return;
       }
       try {
-        const cred = await auth.signInWithEmailAndPassword(email, pass);
-        await upsertUserProfile(cred.user, false); // create doc if missing
-        goHome();
-      } catch(e) {
+        await auth.signInWithEmailAndPassword(email, pass);
+      } catch (e) {
         $('emailError').textContent = e.message;
-        $('emailError').style.display = 'block';
+        $('emailError').style.display='block';
       }
     };
 
-    // Email sign-up
     $('btnEmailSignUp').onclick = async (e) => {
       e.preventDefault();
-      $('emailError').style.display = 'none';
+      $('emailError').style.display='none';
       const email = $('email').value.trim();
       const pass  = $('password').value;
       if (!email || !pass) {
-        $('emailError').textContent = 'Enter email and password.';
-        $('emailError').style.display = 'block'; return;
+        $('emailError').textContent='Enter email and password.';
+        $('emailError').style.display='block';
+        return;
       }
       try {
         const cred = await auth.createUserWithEmailAndPassword(email, pass);
-        await upsertUserProfile(cred.user, true); // includes trial
+        await saveUserDoc(cred.user);       // create profile (free, no trial)
         try { await cred.user.sendEmailVerification(); } catch {}
-        goHome();
-      } catch(e) {
+      } catch (e) {
         $('emailError').textContent = e.message;
-        $('emailError').style.display = 'block';
+        $('emailError').style.display='block';
       }
     };
 
-    // Reset password
     $('forgotPassword').onclick = async (e) => {
       e.preventDefault();
       const email = $('email').value.trim();
-      if (!email) { alert('Enter your email first'); return; }
+      if (!email) return alert('Enter your email first');
       try {
         await auth.sendPasswordResetEmail(email);
         alert('Password reset email sent.');
-      } catch(err) { alert(err.message); }
+      } catch (err) { alert(err.message); }
+    };
+
+    // ---------- Firestore profile (FREE by default) ----------
+    async function saveUserDoc(user){
+      if (!user) return;
+      const ref = db.collection('users').doc(user.uid);
+      await ref.set({
+        displayName: user.displayName || "",
+        email: user.email || "",
+        photoURL: user.photoURL || "",
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        tier: "free"            // <- no trial until they click Start Trial
+      }, { merge: true });
+    }
+
+    // ---------- Show "Start Trial" after you’re signed in ----------
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        show($('formBox'), true);
+        show($('afterLogin'), false);
+        return;
+      }
+
+      // ensure profile exists
+      await saveUserDoc(user);
+
+      // Read plan to decide UI
+      const snap = await db.collection('users').doc(user.uid).get();
+      const d = snap.exists ? (snap.data() || {}) : {};
+      const isPro   = !!d.isPro || d.tier === 'pro';
+      const onTrial = !!(d.trial?.endsAt && d.trial?.startsAt && d.tier === 'trial');
+
+      $('who').textContent = `Signed in as ${user.email || user.phoneNumber || 'user'}`;
+      $('note').textContent = (isPro || onTrial)
+        ? 'You already have Pro or an active trial.'
+        : 'You can start a trial now, or continue to the app.';
+
+      show($('formBox'), false);
+      show($('afterLogin'), true);
+      $('btnStartTrial').disabled = (isPro || onTrial);
+    });
+
+    $('btnGoApp').onclick = () => location.replace('/');
+
+    // Start trial only when the user clicks
+    $('btnStartTrial').onclick = async () => {
+      const user = auth.currentUser;
+      if (!user) return alert('Please sign in first');
+
+      const ref = db.collection('users').doc(user.uid);
+      const now  = new Date();
+      const ends = new Date(); ends.setDate(now.getDate() + 7);
+
+      await ref.set({
+        tier: "trial",
+        trial: {
+          startsAt: firebase.firestore.Timestamp.fromDate(now),
+          endsAt:   firebase.firestore.Timestamp.fromDate(ends)
+        }
+      }, { merge: true });
+
+      alert('✅ Your 7-day trial is active!');
+      location.replace('/');
     };
   </script>
 </body>
