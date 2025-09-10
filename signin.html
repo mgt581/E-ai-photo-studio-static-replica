@@ -142,6 +142,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
   <script>
+    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyDsBDuaZ_rl7ro63Fv5gPh37EwSkfh-NqM",
       authDomain: "aiphotostudioapp.firebaseapp.com",
@@ -154,42 +155,60 @@
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
 
-    // If already signed in, go home
+    // redirect if already signed in
     auth.onAuthStateChanged(user => { if (user) location.replace('/'); });
 
     const $ = id => document.getElementById(id);
 
-    // Google sign-in
+    // Google sign-in (with redirect for mobile support)
     $('btnGoogle').onclick = async () => {
       try {
-        await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-      } catch (e) { alert('Google sign-in failed: ' + e.message); }
+        const provider = new firebase.auth.GoogleAuthProvider();
+        if (/Mobi|Android/i.test(navigator.userAgent)) {
+          await auth.signInWithRedirect(provider);
+        } else {
+          await auth.signInWithPopup(provider);
+        }
+      } catch (e) {
+        alert('Google sign-in failed: ' + e.message);
+      }
     };
 
     // Email sign-in
     $('btnEmailSignIn').onclick = async () => {
-      $('emailError').style.display='none';
+      $('emailError').style.display = 'none';
       const email = $('email').value.trim();
       const pass  = $('password').value;
       if (!email || !pass) {
-        $('emailError').textContent='Enter email and password.'; $('emailError').style.display='block'; return;
+        $('emailError').textContent = 'Enter email and password.';
+        $('emailError').style.display = 'block';
+        return;
       }
       try {
         await auth.signInWithEmailAndPassword(email, pass);
       } catch(e) {
-        $('emailError').textContent=e.message; $('emailError').style.display='block';
+        $('emailError').textContent = e.message;
+        $('emailError').style.display = 'block';
       }
     };
 
     // Email sign-up
-    $('btnEmailSignUp').onclick = async () => {
+    $('btnEmailSignUp').onclick = async (e) => {
+      e.preventDefault();
+      $('emailError').style.display = 'none';
       const email = $('email').value.trim();
       const pass  = $('password').value;
+      if (!email || !pass) {
+        $('emailError').textContent = 'Enter email and password.';
+        $('emailError').style.display = 'block';
+        return;
+      }
       try {
         const cred = await auth.createUserWithEmailAndPassword(email, pass);
         try { await cred.user.sendEmailVerification(); } catch {}
       } catch(e) {
-        $('emailError').textContent=e.message; $('emailError').style.display='block';
+        $('emailError').textContent = e.message;
+        $('emailError').style.display = 'block';
       }
     };
 
