@@ -4,169 +4,144 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Sign in · AI Photo Studio</title>
-  <meta name="theme-color" content="#4f46e5" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-  <link rel="icon" type="image/png" href="/apple-touch-icon.png">
+  <meta name="theme-color" content="#ffffff" />
 
   <style>
-    :root{ --bg:#0b1020; --card:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --border:#1f2a44;
-      --ring:0 16px 40px rgba(59,130,246,.25); --grad:linear-gradient(90deg,#6366f1,#8b5cf6);
-      --btn:#0b1227; --btnText:#e5e7eb; --accent:#4f46e5; }
-    *{box-sizing:border-box} html,body{height:100%}
-    body{margin:0; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;
-      background:
-        radial-gradient(1000px 700px at 0% 0%, #1d2340 0%, transparent 60%),
-        radial-gradient(1000px 700px at 100% 0%, #141b34 0%, transparent 60%),
-        radial-gradient(1000px 700px at 50% 120%, #0a1226 0%, transparent 60%), #050816;
-      color:var(--text);}
-    a{color:#93c5fd;text-decoration:none}
-    .topbar{position:fixed;left:0;right:0;top:0;display:flex;justify-content:space-between;padding:10px 16px;}
-    .link{color:#a5b4fc}
-    .wrap{min-height:100%;display:grid;place-items:center;padding:32px}
-    .card{width:100%;max-width:520px;background:rgba(13,20,42,.75);border:1px solid rgba(148,163,184,.18);
-      border-radius:18px;padding:22px 20px;box-shadow:0 10px 40px rgba(2,6,23,.35),inset 0 0 0 1px rgba(255,255,255,.04);
-      backdrop-filter:blur(16px)}
-    .brand{display:flex;align-items:center;gap:10px;margin-bottom:6px}
-    .badge{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;
-      background:linear-gradient(135deg,#7c3aed,#3b82f6);box-shadow:0 10px 30px rgba(79,70,229,.35)}
-    .title{margin:6px 0 2px;font-size:22px;font-weight:800;letter-spacing:.2px}
-    .sub{margin:0 0 14px;color:var(--muted);font-size:14px}
-    .row{display:grid;gap:10px;margin-top:14px}
-    .btn{height:46px;border-radius:12px;border:1px solid rgba(148,163,184,.25);background:var(--btn);
-      color:var(--btnText);font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px}
-    .btn:hover{border-color:#64748b;background:#0d152f}
-    .btn.primary{background:var(--grad);border:none;color:white;box-shadow:var(--ring)}
-    .btn:disabled{opacity:.6;cursor:not-allowed}
-    .btn:focus{outline:none;box-shadow:0 0 0 3px rgba(99,102,241,.45)}
-    .spacer{text-align:center;color:#94a3b8;font-size:12px;margin:10px 0;position:relative}
-    .spacer::before,.spacer::after{content:"";height:1px;background:rgba(148,163,184,.25);position:absolute;top:50%;width:38%}
-    .spacer::before{left:0}.spacer::after{right:0}
-    .field{display:grid;gap:6px}
-    .label{font-size:12px;color:#a5b4fc}
-    .input{height:44px;border-radius:12px;border:1px solid rgba(148,163,184,.25);background:#0b1227;color:#e5e7eb;padding:0 12px;outline:none}
-    .input:focus{border-color:#818cf8;box-shadow:0 0 0 3px rgba(99,102,241,.25)}
-    .inline{display:flex;gap:10px}
-    .muted{color:#94a3b8;font-size:12px}
-    .error{color:#fecaca;font-size:13px;margin-top:4px}
-    #recaptcha-container{display:grid;place-items:center;padding:8px 0}
-    .note{font-size:12px;color:#9ca3af;margin-top:8px;text-align:center}
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Roboto, Arial, sans-serif;
+      background: #f9fafb;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 32px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.05);
+      text-align: center;
+    }
+    .logo {
+      width: 50px;
+      height: 50px;
+      margin: 0 auto 12px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+      color: #111827;
+    }
+    p.sub {
+      margin: 4px 0 20px;
+      font-size: 14px;
+      color: #6b7280;
+    }
+    .social {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .sbtn {
+      flex: 1;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .field {
+      text-align: left;
+      margin-bottom: 14px;
+    }
+    .field label {
+      display: block;
+      font-size: 13px;
+      color: #374151;
+      margin-bottom: 4px;
+    }
+    .field input {
+      width: 100%;
+      height: 44px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 0 12px;
+      font-size: 14px;
+    }
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      margin-bottom: 14px;
+    }
+    .actions a { color: #4f46e5; text-decoration: none; }
+    .btn-primary {
+      width: 100%;
+      height: 46px;
+      border: none;
+      border-radius: 8px;
+      background: #111827;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 14px;
+    }
+    .footer {
+      font-size: 13px;
+      color: #6b7280;
+    }
+    .footer a { color: #4f46e5; text-decoration: none; }
+    .error { color: #dc2626; font-size: 13px; margin-top: 6px; display:none; }
   </style>
 </head>
 <body>
-  <div class="topbar">
-    <div><a class="link" href="/">← Back to app</a></div>
-  </div>
+  <div class="card">
+    <img src="/apple-touch-icon.png" class="logo" alt="Logo" />
+    <h1>Welcome back</h1>
+    <p class="sub">Please enter your details to sign in</p>
 
-  <div class="wrap">
-    <div class="card">
-      <div class="brand">
-        <div class="badge" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M4 13l6-9 4 6 6-4-6 14-4-7H4z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <div>
-          <div class="title">Sign in to AI Photo Studio</div>
-          <p class="sub">Choose a sign-in method below. You’ll be redirected back to the editor.</p>
-        </div>
-      </div>
+    <!-- Social sign-in -->
+    <div class="social">
+      <button id="btnGoogle" class="sbtn">Google</button>
+    </div>
 
-      <!-- Google -->
-      <button id="btnGoogle" class="btn" aria-label="Continue with Google">
-        <svg width="18" height="18" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-          <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.676 31.91 29.223 35 24 35c-7.18 0-13-5.82-13-13S16.82 9 24 9c3.313 0 6.313 1.253 8.59 3.31l5.657-5.657C35.577 3.042 29.987 1 24 1 10.745 1 0 11.745 0 25s10.745 24 24 24 24-10.745 24-24c0-1.627-.167-3.216-.389-4.917z"/>
-          <path fill="#FF3D00" d="M6.306 14.691L12.97 19.6C14.826 15.154 19.06 12 24 12c3.313 0 6.313 1.253 8.59 3.31l5.657-5.657C35.577 3.042 29.987 1 24 1 15.317 1 7.86 5.773 4.003 12.691z"/>
-          <path fill="#4CAF50" d="M24 49c5.162 0 9.868-1.977 13.43-5.197l-6.197-5.236C29.012 39.542 26.64 40.5 24 40.5c-5.176 0-9.582-3.497-11.164-8.204l-6.47 4.986C9.224 44.775 16.067 49 24 49z"/>
-          <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-1.411 3.316-4.679 5.917-8.303 5.917-2.64 0-5.012-.958-6.827-2.434l-6.47 4.985C16.067 44.775 22.91 49 30 49c11.598 0 19.5-7.902 19.5-19.5 0-1.627-.167-3.216-.389-4.917z"/>
-        </svg>
-        Continue with Google
-      </button>
+    <!-- Email/Password -->
+    <div class="field">
+      <label for="email">Your Email Address</label>
+      <input id="email" type="email" placeholder="you@example.com" autocomplete="email" />
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" />
+    </div>
+    <div class="actions">
+      <label><input type="checkbox" id="remember" /> Remember me</label>
+      <a href="#" id="forgotPassword">Forgot password?</a>
+    </div>
+    <button id="btnEmailSignIn" class="btn-primary">Sign in</button>
+    <div id="emailError" class="error"></div>
 
-      <div class="spacer">or</div>
-
-      <!-- Email / password -->
-      <div class="row" id="emailBox">
-        <div class="field">
-          <label class="label" for="email">Email</label>
-          <input id="email" class="input" type="email" placeholder="you@example.com" autocomplete="email" />
-        </div>
-        <div class="field">
-          <label class="label" for="password">Password</label>
-          <input id="password" class="input" type="password" placeholder="••••••••" autocomplete="current-password" />
-        </div>
-        <div class="inline">
-          <button id="btnEmailSignIn" class="btn" type="button" aria-label="Sign in with email">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M4 6h16v12H4z" stroke="#a5b4fc" stroke-width="2"/><path d="M4 6l8 7 8-7" stroke="#a5b4fc" stroke-width="2" fill="none"/>
-            </svg>
-            Sign in
-          </button>
-          <button id="btnEmailSignUp" class="btn" type="button" aria-label="Create account">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <circle cx="12" cy="8" r="3" stroke="#a5b4fc" stroke-width="2"/>
-              <path d="M6 20c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="#a5b4fc" stroke-width="2"/>
-            </svg>
-            Create account
-          </button>
-        </div>
-        <div id="emailError" class="error" role="alert" aria-live="assertive" tabindex="-1" style="display:none"></div>
-      </div>
-
-      <div class="spacer">or</div>
-
-      <!-- Phone -->
-      <div class="row" id="phoneBox">
-        <div class="field">
-          <label class="label" for="phone">Phone number</label>
-          <input id="phone" class="input" type="tel" placeholder="+44 7123 456789" autocomplete="tel" />
-        </div>
-        <div id="recaptcha-container"></div>
-        <div class="inline">
-          <button id="btnSendCode" class="btn" type="button" aria-label="Send SMS verification">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M5 2h6l2 3v14H5z" stroke="#a5b4fc" stroke-width="2"/>
-              <circle cx="10" cy="18" r="1" fill="#a5b4fc"/>
-            </svg>
-            Send code
-          </button>
-          <button id="btnVerifyCode" class="btn primary" type="button" style="display:none" aria-label="Verify code and sign in">
-            Verify & Sign in
-          </button>
-        </div>
-        <div id="codeRow" class="field" style="display:none">
-          <label class="label" for="code">Verification code</label>
-          <input id="code" class="input" type="text" inputmode="numeric" placeholder="6-digit code" />
-        </div>
-        <div id="phoneError" class="error" role="alert" aria-live="assertive" tabindex="-1" style="display:none"></div>
-        <div class="note">Tip: Add test numbers in Firebase → Auth → Sign-in method → Phone to bypass SMS quotas while developing.</div>
-      </div>
-
-      <div class="spacer">or</div>
-
-      <!-- Guest (Anonymous) -->
-      <button id="btnGuest" class="btn" type="button" aria-label="Continue as guest (limited)">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <circle cx="12" cy="8" r="3" stroke="#a5b4fc" stroke-width="2"/>
-          <path d="M6 20c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="#a5b4fc" stroke-width="2"/>
-        </svg>
-        Continue as Guest (limited)
-      </button>
-
-      <p class="note">By continuing, you agree to the Terms and acknowledge the Privacy Policy.</p>
+    <div class="footer">
+      Don’t have an account? <a href="#" id="btnEmailSignUp">Sign up</a>
     </div>
   </div>
 
-  <!-- Firebase v9 modular (no compat) -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import {
-      getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence, inMemoryPersistence,
-      GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
-      signInWithEmailAndPassword, createUserWithEmailAndPassword, sendEmailVerification,
-      RecaptchaVerifier, signInWithPhoneNumber, signInAnonymously
-    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+  <!-- Firebase Compat -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
-    // ---- Firebase init ----
+  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDsBDuaZ_rl7ro63Fv5gPh37EwSkfh-NqM",
       authDomain: "aiphotostudioapp.firebaseapp.com",
@@ -176,160 +151,57 @@
       appId: "1:1056724519182:web:93410e1b71a292e531ef5f",
       measurementId: "G-YMB9JJHNBE"
     };
-    const app  = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    auth.languageCode = 'en';
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
 
-    // Persistence with Safari Private fallback
-    setPersistence(auth, browserLocalPersistence).catch(() => setPersistence(auth, inMemoryPersistence));
+    // If already signed in, go home
+    auth.onAuthStateChanged(user => { if (user) location.replace('/'); });
 
-    // continue param (optional)
-    const params = new URLSearchParams(location.search);
-    const next = params.get('continue');
-    const SAFE_PATHS = new Set(['/', '/index.html']);
-    const safeNext = () => (next && next.startsWith('/') && SAFE_PATHS.has(next)) ? next : '/';
+    const $ = id => document.getElementById(id);
 
-    // redirect if already authed
-    let initial = false;
-    onAuthStateChanged(auth, (user) => {
-      if (initial) return;
-      initial = true;
-      if (user) location.replace(safeNext());
-    });
-
-    // helpers
-    const $ = (id) => document.getElementById(id);
-    const show = (el, on=true) => el && (el.style.display = on ? '' : 'none');
-    const setLoading = (btn, on, text='Please wait…') => {
-      if (!btn) return;
-      btn.dataset.label = btn.dataset.label || btn.textContent;
-      btn.disabled = on;
-      btn.setAttribute('aria-busy', on ? 'true' : 'false');
-      btn.textContent = on ? text : btn.dataset.label;
-    };
-    const showError = (el, msg) => {
-      el.textContent = msg || '';
-      el.style.display = msg ? 'block' : 'none';
-      if (msg) el.focus?.();
-    };
-    const ERR = {
-      'auth/invalid-email':'That email looks invalid.',
-      'auth/user-not-found':'No account found. Create one instead?',
-      'auth/wrong-password':'Incorrect password.',
-      'auth/email-already-in-use':'Email already has an account. Try signing in.',
-      'auth/too-many-requests':'Too many attempts. Please try again later.',
-      'auth/popup-blocked':'Popup was blocked. We’ll try a redirect.',
-      'auth/popup-closed-by-user':'Popup closed before completing sign-in.',
-    };
-    const friendly = e => ERR[e?.code] || e?.message || 'Something went wrong.';
-
-    // Google
+    // Google sign-in
     $('btnGoogle').onclick = async () => {
-      const btn = $('btnGoogle');
-      setLoading(btn, true, 'Opening Google…');
-      const provider = new GoogleAuthProvider();
       try {
-        await signInWithPopup(auth, provider);
-      } catch (e) {
-        if (e?.code === 'auth/popup-blocked') {
-          try { await signInWithRedirect(auth, provider); }
-          catch (e2) { alert('Google sign-in failed: ' + friendly(e2)); }
-        } else {
-          alert('Google sign-in failed: ' + friendly(e));
-        }
-      } finally {
-        setLoading(btn, false);
-      }
+        await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+      } catch (e) { alert('Google sign-in failed: ' + e.message); }
     };
-    getRedirectResult(auth).catch(()=>{});
 
-    // Email / Password
-    async function emailSignIn(){
-      showError($('emailError'), '');
-      $('password').setAttribute('autocomplete','current-password');
+    // Email sign-in
+    $('btnEmailSignIn').onclick = async () => {
+      $('emailError').style.display='none';
       const email = $('email').value.trim();
       const pass  = $('password').value;
-      if (!email || !pass) return showError($('emailError'),'Enter email and password.');
-      setLoading($('btnEmailSignIn'), true, 'Signing in…');
-      try { await signInWithEmailAndPassword(auth, email, pass); }
-      catch (e) { showError($('emailError'), friendly(e)); }
-      finally { setLoading($('btnEmailSignIn'), false); }
-    }
-    async function emailSignUp(){
-      showError($('emailError'), '');
-      $('password').setAttribute('autocomplete','new-password');
+      if (!email || !pass) {
+        $('emailError').textContent='Enter email and password.'; $('emailError').style.display='block'; return;
+      }
+      try {
+        await auth.signInWithEmailAndPassword(email, pass);
+      } catch(e) {
+        $('emailError').textContent=e.message; $('emailError').style.display='block';
+      }
+    };
+
+    // Email sign-up
+    $('btnEmailSignUp').onclick = async () => {
       const email = $('email').value.trim();
       const pass  = $('password').value;
-      if (!email || !pass) return showError($('emailError'),'Enter email and password.');
-      setLoading($('btnEmailSignUp'), true, 'Creating account…');
       try {
-        const cred = await createUserWithEmailAndPassword(auth, email, pass);
-        try { await sendEmailVerification(cred.user); } catch {}
-      } catch (e) {
-        showError($('emailError'), friendly(e));
-      } finally {
-        setLoading($('btnEmailSignUp'), false);
-      }
-    }
-    $('btnEmailSignIn').onclick = emailSignIn;
-    $('btnEmailSignUp').onclick = emailSignUp;
-
-    // Phone + reCAPTCHA
-    let confirmationResult = null;
-    let recaptcha = null;
-    let recaptchaWidgetId = null;
-
-    function ensureRecaptcha(){
-      if (recaptcha) return recaptcha;
-      recaptcha = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size:'normal',
-        'expired-callback': () => {
-          try { if (recaptchaWidgetId!=null && window.grecaptcha) window.grecaptcha.reset(recaptchaWidgetId); } catch {}
-        }
-      });
-      recaptcha.render().then(id => { recaptchaWidgetId = id; });
-      return recaptcha;
-    }
-
-    $('btnSendCode').onclick = async () => {
-      showError($('phoneError'), '');
-      const phone = $('phone').value.trim();
-      if (!phone.startsWith('+') || phone.length < 8)
-        return showError($('phoneError'),'Enter a valid phone number in E.164 format (e.g., +447123456789).');
-      const btn = $('btnSendCode');
-      setLoading(btn, true, 'Sending code…');
-      try {
-        ensureRecaptcha();
-        confirmationResult = await signInWithPhoneNumber(auth, phone, recaptcha);
-        show($('codeRow'), true);
-        show($('btnVerifyCode'), true);
-      } catch (e) {
-        showError($('phoneError'), friendly(e));
-        try { if (recaptchaWidgetId!=null && window.grecaptcha) window.grecaptcha.reset(recaptchaWidgetId); } catch {}
-      } finally {
-        setLoading(btn, false);
+        const cred = await auth.createUserWithEmailAndPassword(email, pass);
+        try { await cred.user.sendEmailVerification(); } catch {}
+      } catch(e) {
+        $('emailError').textContent=e.message; $('emailError').style.display='block';
       }
     };
 
-    $('btnVerifyCode').onclick = async () => {
-      showError($('phoneError'), '');
-      if (!confirmationResult) return;
-      const code = $('code').value.trim();
-      if (!code) return showError($('phoneError'), 'Enter the SMS code you received.');
-      const btn = $('btnVerifyCode');
-      setLoading(btn, true, 'Verifying…');
-      try { await confirmationResult.confirm(code); }
-      catch (e) { showError($('phoneError'), friendly(e)); }
-      finally { setLoading(btn, false); }
-    };
-
-    // Guest
-    $('btnGuest').onclick = async () => {
-      const btn = $('btnGuest');
-      setLoading(btn, true, 'Continuing…');
-      try { await signInAnonymously(auth); }
-      catch (e) { alert('Guest sign-in failed: ' + friendly(e)); }
-      finally { setLoading(btn, false); }
+    // Reset password
+    $('forgotPassword').onclick = async (e) => {
+      e.preventDefault();
+      const email = $('email').value.trim();
+      if (!email) { alert('Enter your email first'); return; }
+      try {
+        await auth.sendPasswordResetEmail(email);
+        alert('Password reset email sent.');
+      } catch(err) { alert(err.message); }
     };
   </script>
 </body>
