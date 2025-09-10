@@ -37,7 +37,9 @@
     .btn{height:44px;padding:0 16px;border-radius:10px;border:0;cursor:pointer;font-size:15px;font-weight:700;background:#e5e7eb;color:#111827}
     .btn.primary{background:var(--grad);color:#fff}
     .btn.warn{background:#fee2e2;color:#991b1b}
-    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .btn:disabled{opacity:.65;cursor:not-allowed}
+    /* Make “primary” buttons look GREY when disabled so they don’t look active */
+    .btn.primary:disabled{background:#e5e7eb;color:#111827}
     .status{text-align:center;color:#6b7280;font-size:14px}
     .stage{border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;position:relative}
     canvas#stage{width:100%;height:auto;display:block;background:#f3f4f6}
@@ -108,6 +110,8 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+  <!-- Optional: Functions (for server-side entitlement check) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
 
   <script>
     const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/eVq6oJ3wugiPcFJ7QGd3i02";
@@ -126,6 +130,7 @@
     const auth = firebase.auth();
     const db   = firebase.firestore();
     const storage = firebase.storage();
+    const functions = firebase.functions ? firebase.functions() : null;
 
     const elStatus = document.getElementById('authStatus');
     const btnLogout = document.getElementById('btnLogout');
@@ -213,9 +218,8 @@
     }
     function setPro(on){
       proEnabled = !!on;
-      if (on) localStorage.setItem('studio_pro','1'); else localStorage.removeItem('studio_pro');
       updatePlanUI();
-      if (on) toast("✅ Pro activated");
+      if (on) toast("✅ Pro features available");
     }
 
     auth.onAuthStateChanged(async user => {
@@ -228,53 +232,84 @@
         elStatus.textContent = 'Not signed in';
         btnLogout.style.display = 'none';
         elTrialLeft.style.display = 'none';
-        if (localStorage.getItem('studio_pro') === '1') setPro(true); else setPro(false);
+        setPro(false); // never auto-enable while signed-out
       }
     });
 
     btnLogout.onclick = () => auth.signOut();
     btnBuy.onclick = () => { if (!STRIPE_PAYMENT_LINK) return alert("Stripe link missing."); location.href = STRIPE_PAYMENT_LINK; };
 
+    // ---------- UPDATED plan check (supports new: tier + trial.endsAt) ----------
     async function refreshUserPlan(){
       const user = auth.currentUser;
-      if (!user || user.isAnonymous) { elTrialLeft.style.display = 'none'; return; }
-      const ref = db.collection('users').doc(user.uid);
-      const snap = await ref.get();
-      let isPro = false; trialEndMillis = null;
+      if (!user || user.isAnonymous) { elTrialLeft.style.display = 'none'; setPro(false); return; }
+
+      const snap = await db.collection('users').doc(user.uid).get();
+      let isPro = false;
+      let trialEndMillis = null;
 
       if (snap.exists){
-        const d = snap.data();
-        if (d.isPro) isPro = true;
-        if (d.trialEnd && d.trialEnd.toMillis) trialEndMillis = d.trialEnd.toMillis();
+        const d = snap.data() || {};
+        // Pro (new/old)
+        isPro = !!d.isPro || d.tier === 'pro';
+        // Trial end (new/old)
+        if (d.trial?.endsAt?.toMillis) {
+          trialEndMillis = d.trial.endsAt.toMillis();
+        } else if (d.trialEnd?.toMillis) {
+          trialEndMillis = d.trialEnd.toMillis();
+        }
       }
-      if (!isPro && trialEndMillis){
+
+      if (isPro){
+        elTrialLeft.textContent = 'Pro active';
+        elTrialLeft.style.display = 'inline-block';
+        setPro(true);
+        return;
+      }
+
+      if (trialEndMillis){
         const leftMs = trialEndMillis - Date.now();
-        if (leftMs > 0){ const days = Math.ceil(leftMs / 86400000);
+        if (leftMs > 0){
+          const days = Math.ceil(leftMs / 86400000);
           elTrialLeft.textContent = `${days} day${days===1?'':'s'} left`;
           elTrialLeft.style.display = 'inline-block';
-          setPro(true);
-        } else { elTrialLeft.textContent = `Trial ended`; elTrialLeft.style.display = 'inline-block'; setPro(false); }
-      } else if (isPro){ elTrialLeft.textContent = `Pro active`; elTrialLeft.style.display = 'inline-block'; setPro(true); }
-      else { elTrialLeft.style.display = 'none'; setPro(false); }
+          setPro(true); // enable features during trial
+        } else {
+          elTrialLeft.textContent = 'Trial ended';
+          elTrialLeft.style.display = 'inline-block';
+          setPro(false);
+        }
+      } else {
+        elTrialLeft.style.display = 'none';
+        setPro(false);
+      }
     }
 
+    // ---------- Start trial (writes NEW schema) ----------
     async function startFreeTrial(){
       const user = auth.currentUser;
       if (!user){ return alert("Please sign in first."); }
       if (user.isAnonymous){ return alert("Create an account to start a trial."); }
+
       const ref = db.collection('users').doc(user.uid);
-      const now = new Date(); const trialEnd = new Date(); trialEnd.setDate(now.getDate() + 7);
+      const now  = new Date();
+      const end  = new Date(now.getTime() + 7*24*60*60*1000);
 
       const snap = await ref.get();
       if (snap.exists){
-        const d = snap.data();
-        if (d.trialStart && d.trialEnd && d.trialEnd.toMillis() > Date.now()){
+        const d = snap.data() || {};
+        const activeEnds = d.trial?.endsAt?.toMillis?.() || d.trialEnd?.toMillis?.();
+        if (activeEnds && activeEnds > Date.now()){
           return alert("You already have an active trial.");
         }
       }
+
       await ref.set({
-        trialStart: firebase.firestore.Timestamp.fromDate(now),
-        trialEnd: firebase.firestore.Timestamp.fromDate(trialEnd),
+        tier: "trial",
+        trial: {
+          startsAt: firebase.firestore.Timestamp.fromDate(now),
+          endsAt:   firebase.firestore.Timestamp.fromDate(end)
+        },
         isPro: false
       }, { merge: true });
 
@@ -282,18 +317,6 @@
       await refreshUserPlan();
     }
     btnTrial.onclick = startFreeTrial;
-
-    (function bootstrapPro(){
-      const sp = new URLSearchParams(location.search);
-      if (sp.get('pro') === '1') {
-        setPro(true);
-        if (history.replaceState) history.replaceState(null, "", location.pathname + location.hash);
-      } else if (localStorage.getItem('studio_pro') === '1') {
-        setPro(true);
-      } else {
-        updatePlanUI();
-      }
-    })();
 
     // ---- Progress HUD (for HD+ model download/inference) ----
     let _progEl = null;
@@ -375,6 +398,19 @@
         if (cutoutURL){ await draw({img: cutoutURL, bg: bgSrc}); setStatus("Background selected."); }
       }
 
+      // SERVER-SIDE ENTITLEMENT CHECK (optional)
+      async function ensureHdAllowed(){
+        if (!functions) return proEnabled; // fallback to client flag if Functions not loaded
+        try{
+          const call = functions.httpsCallable('canDownloadHD');
+          const res = await call({});
+          return !!(res && res.data && res.data.allowed);
+        }catch(e){
+          console.warn('canDownloadHD failed, falling back to client flag:', e);
+          return proEnabled;
+        }
+      }
+
       async function removeBg(){
         if(!mainSrc) return alert("Upload a photo first.");
         setBusy(true);
@@ -409,8 +445,11 @@
         finally{ setBusy(false); updateButtons(); }
       }
 
-      function download(type="png", hd=false){
-        if(hd && !proEnabled){ alert("Pro required."); return; }
+      async function download(type="png", hd=false){
+        if(hd){
+          const allowed = await ensureHdAllowed();
+          if(!allowed){ alert("HD download requires an active Trial or Pro."); return; }
+        }
         const mime = type==="jpeg" ? "image/jpeg" : "image/png";
         stage.toBlob((b)=>{ if(!b) return; const url=URL.createObjectURL(b); const a=document.createElement('a'); a.href=url; a.download=`photo-studio.${type==="jpeg"?"jpg":"png"}`; a.click(); URL.revokeObjectURL(url); }, mime, .95);
       }
