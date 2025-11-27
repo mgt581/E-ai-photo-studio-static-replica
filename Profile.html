@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Account · AI Photo Studio</title>
+  <meta name="theme-color" content="#4f46e5">
+
+  <style>
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#f9fafb;color:#111827}
+    header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 24px;border-bottom:1px solid #e5e7eb}
+    .brand{display:flex;align-items:center;gap:10px}
+    .brand-img{width:28px;height:28px;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+    .brand-text{font-size:20px;font-weight:800}
+    .ghost{background:#eef2ff;color:#4338ca;border:0;padding:8px 12px;border-radius:10px;font-weight:700;text-decoration:none;display:inline-block}
+    .wrap{max-width:600px;margin:0 auto;padding:24px}
+    .card{background:#fff;border-radius:12px;border:1px solid #e5e7eb;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:16px}
+    h1{font-size:22px;margin:0 0 8px}
+    .label{font-size:13px;color:#6b7280;margin-bottom:4px}
+    .value{font-size:15px;font-weight:600;margin-bottom:10px}
+    .pill{display:inline-block;background:#eef2ff;color:#4338ca;border-radius:9999px;padding:4px 10px;font-size:12px;font-weight:600;margin-right:6px}
+    .btn{height:44px;padding:0 16px;border-radius:10px;border:none;font-weight:600;cursor:pointer}
+    .btn.primary{background:#4f46e5;color:#fff}
+    .btn.outline{background:#fff;color:#111827;border:1px solid #d1d5db}
+    .muted{color:#6b7280;font-size:14px}
+  </style>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDsBDuaZ_rl7ro63Fv5gPh37EwSkfh-NqM",
+      authDomain: "aiphotostudioapp.firebaseapp.com",
+      projectId: "aiphotostudioapp",
+      storageBucket: "aiphotostudioapp.appspot.com",
+      messagingSenderId: "1056724519182",
+      appId: "1:1056724519182:web:93410e1b71a292e531ef5f",
+      measurementId: "G-YMB9JJHNBE"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db   = firebase.firestore();
+  </script>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <img src="/apple-touch-icon.png?v=3" class="brand-img" />
+      <span class="brand-text">AI Photo Studio</span>
+    </div>
+    <div>
+      <a href="/" class="ghost">Editor</a>
+      <a href="/gallery.html" class="ghost">Gallery</a>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="card" id="notSigned" style="display:none;">
+      <h1>Sign in required</h1>
+      <p class="muted">You’re not signed in. Use the button below to log in or create an account.</p>
+      <button class="btn primary" onclick="location.href='/signin.html'">Go to sign in</button>
+    </div>
+
+    <div class="card" id="accountCard" style="display:none;">
+      <h1>Your account</h1>
+
+      <div class="label">Signed in as</div>
+      <div class="value" id="who"></div>
+
+      <div class="label">Plan status</div>
+      <div class="value">
+        <span id="planBadge" class="pill">Free</span>
+        <span id="trialInfo" class="muted"></span>
+      </div>
+
+      <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+        <button id="btnStartTrial" class="btn primary">Start 7-day Free Trial</button>
+        <button id="btnSignOut" class="btn outline">Sign out</button>
+      </div>
+
+      <p class="muted" style="margin-top:12px;">
+        Subscription billing is handled via Stripe / app store. 
+        Updating “Pro / Trial” here does not cancel external billing automatically.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const whoEl       = document.getElementById('who');
+    const planBadge   = document.getElementById('planBadge');
+    const trialInfo   = document.getElementById('trialInfo');
+    const cardAccount = document.getElementById('accountCard');
+    const cardNot     = document.getElementById('notSigned');
+    const btnStartTrial = document.getElementById('btnStartTrial');
+    const btnSignOut    = document.getElementById('btnSignOut');
+
+    auth.onAuthStateChanged(async user => {
+      if (!user){
+        cardNot.style.display     = 'block';
+        cardAccount.style.display = 'none';
+        return;
+      }
+
+      cardNot.style.display     = 'none';
+      cardAccount.style.display = 'block';
+
+      whoEl.textContent = user.email || user.phoneNumber || '(no email on file)';
+
+      const doc = await db.collection('users').doc(user.uid).get();
+      const d   = doc.exists ? (doc.data() || {}) : {};
+
+      let label = 'Free';
+      let trialText = '';
+      let disableStart = false;
+
+      const isPro   = !!d.isPro || d.tier === 'pro';
+      const tier    = d.tier || 'free';
+
+      if (isPro){
+        label = 'Pro';
+        disableStart = true;
+      } else if (tier === 'trial'){
+        label = 'Trial';
+        disableStart = true;
+
+        let endMs = null;
+        if (d.trial?.endsAt?.toMillis) {
+          endMs = d.trial.endsAt.toMillis();
+        } else if (d.trialEnd?.toMillis) {
+          endMs = d.trialEnd.toMillis();
+        }
+        if (endMs){
+          const left = endMs - Date.now();
+          if (left > 0){
+            const days = Math.ceil(left / 86400000);
+            trialText = `${days} day${days===1?'':'s'} of trial remaining.`;
+          } else {
+            trialText = 'Trial ended.';
+            disableStart = false;
+          }
+        }
+      }
+
+      planBadge.textContent = label;
+      trialInfo.textContent = trialText;
+      btnStartTrial.disabled = disableStart;
+    });
+
+    btnSignOut.onclick = () => auth.signOut().then(()=>location.href='/');
+
+    btnStartTrial.onclick = async () => {
+      const user = auth.currentUser;
+      if (!user) return alert('Please sign in first.');
+
+      const ref = db.collection('users').doc(user.uid);
+      const now = new Date();
+      const end = new Date(now.getTime() + 7*24*60*60*1000);
+
+      const snap = await ref.get();
+      if (snap.exists){
+        const d = snap.data() || {};
+        const activeEnds = d.trial?.endsAt?.toMillis?.() || d.trialEnd?.toMillis?.();
+        if (activeEnds && activeEnds > Date.now()){
+          alert('You already have an active trial.');
+          return;
+        }
+      }
+
+      await ref.set({
+        tier: 'trial',
+        trial: {
+          startsAt: firebase.firestore.Timestamp.fromDate(now),
+          endsAt:   firebase.firestore.Timestamp.fromDate(end)
+        },
+        isPro: false
+      }, { merge:true });
+
+      alert('✅ 7-day trial started. Pro features are now active while it lasts.');
+      location.reload();
+    };
+  </script>
+</body>
+</html>
