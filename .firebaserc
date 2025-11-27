@@ -1,5 +1,5 @@
 {
-  "hosting": {
+ "hosting": {
     "site": "aiphotostudioapp",
     "public": "public",
     "ignore": [
