@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Sign in · AI Photo Studio</title>
   <meta name="theme-color" content="#ffffff" />
+
   <style>
     body{margin:0;font-family:system-ui,-apple-system,Roboto,Arial,sans-serif;background:#f9fafb;display:flex;justify-content:center;align-items:center;min-height:100vh}
     .card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:32px;width:100%;max-width:400px;box-shadow:0 8px 24px rgba(0,0,0,.05);text-align:center}
@@ -25,21 +26,41 @@
     .error{color:#dc2626;font-size:13px;margin-top:6px;display:none}
     .hide{display:none}
   </style>
+
+  <!-- FIREBASE FIRST (IMPORTANT) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDsBDuaZ_rl7ro63Fv5gPh37EwSkfh-NqM",
+      authDomain: "aiphotostudioapp.firebaseapp.com",
+      projectId: "aiphotostudioapp",
+      storageBucket: "aiphotostudioapp.appspot.com",
+      messagingSenderId: "1056724519182",
+      appId: "1:1056724519182:web:93410e1b71a292e531ef5f",
+      measurementId: "G-YMB9JJHNBE"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db   = firebase.firestore();
+  </script>
 </head>
+
 <body>
   <div class="card">
     <img src="/apple-touch-icon.png" class="logo" alt="Logo" />
     <h1>Welcome</h1>
     <p class="sub">Sign in or create your account</p>
 
-    <!-- LOGIN FORM -->
     <div id="formBox">
       <div class="social">
         <button id="btnGoogle" class="sbtn">Google</button>
         <button id="btnPhone" class="sbtn">Phone</button>
       </div>
 
-      <!-- Phone UI -->
+      <!-- PHONE LOGIN UI -->
       <div id="phoneBox" class="hide">
         <div class="field">
           <label>Phone Number</label>
@@ -57,15 +78,16 @@
 
       <hr style="margin:20px 0; opacity:0.2">
 
-      <!-- Email Login -->
+      <!-- EMAIL LOGIN -->
       <div class="field">
-        <label>Your Email Address</label>
-        <input id="email" type="email" placeholder="you@example.com" />
+        <label>Email</label>
+        <input id="email" type="email" />
       </div>
       <div class="field">
         <label>Password</label>
-        <input id="password" type="password" placeholder="••••••••" />
+        <input id="password" type="password" />
       </div>
+
       <div class="actions">
         <label><input type="checkbox" id="remember" /> Remember me</label>
         <a href="#" id="forgotPassword">Forgot password?</a>
@@ -75,195 +97,91 @@
       <div id="emailError" class="error"></div>
 
       <div class="footer">
-        Don’t have an account? <a href="#" id="btnEmailSignUp">Sign up</a>
+        Don’t have an account? <a href="/signup.html">Sign up</a>
       </div>
-    </div>
-
-    <!-- After-login -->
-    <div id="afterLogin" class="hide">
-      <p class="sub" id="who"></p>
-      <button id="btnStartTrial" class="btn secondary">Start 7-day Free Trial</button>
-      <button id="btnGoApp" class="btn">Continue to the app</button>
-      <div id="note" class="footer" style="margin-top:8px;"></div>
     </div>
   </div>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDsBDuaZ_rl7ro63Fv5gPh37EwSkfh-NqM",
-      authDomain: "aiphotostudioapp.firebaseapp.com",
-      projectId: "aiphotostudioapp",
-      storageBucket: "aiphotostudioapp.appspot.com",
-      messagingSenderId: "1056724519182",
-      appId: "1:1056724519182:web:93410e1b71a292e531ef5f",
-      measurementId: "G-YMB9JJHNBE"
-    };
-    firebase.initializeApp(firebaseConfig);
-
-    const auth = firebase.auth();
-    const db   = firebase.firestore();
     const $ = id => document.getElementById(id);
-    const show = (el, on=true)=> el && (el.classList.toggle('hide', !on));
+    const show = (el, on=true)=> el.classList.toggle('hide', !on);
 
-    // SAVE USER DOC
     async function saveUserDoc(user){
       if (!user) return;
       const ref = db.collection('users').doc(user.uid);
       await ref.set({
-        displayName: user.displayName || "",
         email: user.email || "",
         phone: user.phoneNumber || "",
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         tier: "free"
-      }, { merge: true });
+      }, { merge:true });
     }
 
     // GOOGLE SIGN-IN
     $('btnGoogle').onclick = async () => {
+      const provider = new firebase.auth.GoogleAuthProvider();
       try {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        if (/Mobi|Android/i.test(navigator.userAgent)) {
-          await auth.signInWithRedirect(provider);
-        } else {
-          const cred = await auth.signInWithPopup(provider);
-          await saveUserDoc(cred.user);
-        }
-      } catch (e) { alert(e.message); }
+        const result = await auth.signInWithPopup(provider);
+        await saveUserDoc(result.user);
+        location.replace('/');
+      } catch(e){ alert(e.message); }
     };
 
-    // GOOGLE REDIRECT RESULT
-    auth.getRedirectResult().then(async (result) => {
-      if (result.user) await saveUserDoc(result.user);
-    });
-
-    // EMAIL LOGIN
+    // EMAIL SIGN-IN
     $('btnEmailSignIn').onclick = async () => {
       $('emailError').style.display='none';
-      const email = $('email').value.trim();
-      const pass = $('password').value;
-      if (!email || !pass){
-        $('emailError').textContent="Enter email & password";
-        $('emailError').style.display='block';
-        return;
-      }
-      try{
-        await auth.signInWithEmailAndPassword(email,pass);
-      }catch(e){
-        $('emailError').textContent=e.message;
-        $('emailError').style.display='block';
-      }
-    };
-
-    // EMAIL SIGN-UP
-    $('btnEmailSignUp').onclick = async (e)=>{
-      e.preventDefault();
-      $('emailError').style.display='none';
-      const email = $('email').value.trim();
-      const pass  = $('password').value;
-      if (!email || !pass){
-        $('emailError').textContent="Enter email & password";
-        $('emailError').style.display='block';
-        return;
-      }
-      try{
-        const cred = await auth.createUserWithEmailAndPassword(email,pass);
-        await saveUserDoc(cred.user);
-      }catch(e){
-        $('emailError').textContent=e.message;
+      try {
+        const result = await auth.signInWithEmailAndPassword(
+          $('email').value.trim(),
+          $('password').value
+        );
+        await saveUserDoc(result.user);
+        location.replace('/');
+      } catch(e){
+        $('emailError').textContent = e.message;
         $('emailError').style.display='block';
       }
     };
 
     // FORGOT PASSWORD
-    $('forgotPassword').onclick = async (e)=>{
-      e.preventDefault();
-      const email = $('email').value.trim();
-      if (!email) return alert("Enter email first");
-      try{ await auth.sendPasswordResetEmail(email); alert("Reset email sent"); }
-      catch(e){ alert(e.message); }
+    $('forgotPassword').onclick = async () => {
+      try {
+        await auth.sendPasswordResetEmail($('email').value.trim());
+        alert("Reset email sent");
+      } catch(e){ alert(e.message); }
     };
 
-    // PHONE LOGIN — UI
-    $('btnPhone').onclick = () => {
-      show($('phoneBox'), true);
-    };
-
-    // RECPTCHA + SEND CODE
-    let phoneVerifier, confirmationResult;
+    // PHONE LOGIN
+    let verifier, confirmation;
     window.onload = () => {
-      phoneVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container',{ size:'invisible' });
+      verifier = new firebase.auth.RecaptchaVerifier(
+        'recaptcha-container',
+        { size: 'invisible' }
+      );
     };
+
+    $('btnPhone').onclick = () => show($('phoneBox'), true);
 
     $('btnSendCode').onclick = async () => {
       try {
-        const phone = $('phoneInput').value.trim();
-        if (!phone) return alert("Enter phone number");
-
-        confirmationResult = await auth.signInWithPhoneNumber(phone, phoneVerifier);
+        confirmation = await auth.signInWithPhoneNumber(
+          $('phoneInput').value.trim(),
+          verifier
+        );
         show($('codeBox'), true);
         show($('btnVerifyCode'), true);
         alert("Code sent!");
       } catch(e){ alert(e.message); }
     };
 
-    // VERIFY CODE
     $('btnVerifyCode').onclick = async () => {
       try {
-        const code = $('codeInput').value.trim();
-        const result = await confirmationResult.confirm(code);
+        const result = await confirmation.confirm($('codeInput').value.trim());
         await saveUserDoc(result.user);
+        location.replace('/');
       } catch(e){ alert(e.message); }
     };
+  </script>
 
-    // AUTH STATE
-    auth.onAuthStateChanged(async user=>{
-      if (!user){
-        show($('formBox'), true);
-        show($('afterLogin'), false);
-        return;
-      }
-
-      await saveUserDoc(user);
-
-      const snap = await db.collection('users').doc(user.uid).get();
-      const d = snap.data() || {};
-
-      $('who').textContent = `Signed in as ${user.email || user.phoneNumber}`;
-      $('note').textContent = d.tier === "trial" ? "Your trial is active." : "You can start a trial.";
-
-      show($('formBox'), false);
-      show($('afterLogin'), true);
-
-      $('btnStartTrial').disabled = d.tier === "trial" || d.tier === "pro";
-    });
-
-    // START TRIAL
-    $('btnStartTrial').onclick = async () => {
-      const user = auth.currentUser;
-      if (!user) return;
-      const ref = db.collection('users').doc(user.uid);
-
-      const now = new Date();
-      const ends = new Date(now.getTime() + 7*24*60*60*1000);
-
-      await ref.set({
-        tier: "trial",
-        trial:{
-          startsAt: firebase.firestore.Timestamp.fromDate(now),
-          endsAt:   firebase.firestore.Timestamp.fromDate(ends)
-        }
-      },{merge:true});
-
-      alert("Trial Activated!");
-      location.replace('/');
-    };
-
-    $('btnGoApp').onclick = () => location. 
-</script>
 </body>
 </html>
