@@ -6,69 +6,309 @@
   <title>My Account · AI Photo Studio</title>
 
   <style>
+    :root{
+      --bg: radial-gradient(circle at top, #1e293b 0, #020617 45%, #020617 100%);
+      --card-bg: rgba(15,23,42,0.92);
+      --accent: #6366f1;
+      --accent-soft: rgba(99,102,241,0.16);
+      --accent-strong: #4f46e5;
+      --danger: #ef4444;
+    }
+
+    *{box-sizing:border-box}
+
     body{
-      margin:0; 
-      font-family:system-ui,-apple-system,Roboto,Arial;
-      background:#f9fafb;
-    }
-    header{
-      background:#111827;
-      color:#fff;
-      padding:16px 24px;
+      margin:0;
+      font-family:system-ui,-apple-system,Roboto,Arial,sans-serif;
+      background:var(--bg);
+      color:#e5e7eb;
+      min-height:100vh;
       display:flex;
-      justify-content:space-between;
+      flex-direction:column;
+    }
+
+    /* Top nav */
+    header{
+      position:sticky;
+      top:0;
+      z-index:20;
+      backdrop-filter:blur(14px);
+      background:linear-gradient(to right, rgba(15,23,42,0.92), rgba(15,23,42,0.6));
+      border-bottom:1px solid rgba(148,163,184,0.2);
+      padding:12px 20px;
+      display:flex;
       align-items:center;
+      justify-content:space-between;
     }
-    header .brand{
-      font-size:20px;
-      font-weight:700;
-      letter-spacing:.3px;
+    .brand-wrap{
+      display:flex;
+      align-items:center;
+      gap:10px;
     }
-    header a{
-      color:#fff;
+    .logo-dot{
+      width:28px;
+      height:28px;
+      border-radius:9px;
+      background:conic-gradient(from 210deg, #22c55e, #06b6d4, #6366f1, #a855f7, #22c55e);
+      box-shadow:0 0 20px rgba(129,140,248,0.6);
+    }
+    .brand-title{
+      font-weight:800;
+      letter-spacing:.04em;
+      font-size:18px;
+    }
+
+    nav a{
+      color:#e5e7eb;
       text-decoration:none;
+      font-size:14px;
       margin-left:18px;
-      font-weight:600;
+      position:relative;
+      opacity:.85;
+      transition:opacity .2s, transform .2s;
     }
-    .wrap{
-      max-width:700px;
-      margin:40px auto;
-      background:#fff;
-      border:1px solid #e5e7eb;
-      border-radius:12px;
-      padding:32px;
-      box-shadow:0 6px 20px rgba(0,0,0,.06);
+    nav a::after{
+      content:"";
+      position:absolute;
+      left:0;bottom:-4px;
+      width:0;
+      height:2px;
+      border-radius:999px;
+      background:linear-gradient(90deg,#6366f1,#22c55e);
+      transition:width .18s ease-out;
     }
-    h2{margin-top:0;font-size:26px;color:#111827}
-    .label{font-size:14px;color:#6b7280;margin-bottom:4px}
-    .value{font-size:16px;color:#111827;margin-bottom:16px}
-    .badge{
-      display:inline-block;
-      padding:6px 12px;
-      border-radius:9999px;
+    nav a:hover{
+      opacity:1;
+      transform:translateY(-1px);
+    }
+    nav a:hover::after{width:100%;}
+
+    /* Layout */
+    .page{
+      flex:1;
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+      padding:32px 16px 40px;
+    }
+
+    .shell{
+      width:100%;
+      max-width:960px;
+      display:grid;
+      grid-template-columns:minmax(0,3fr) minmax(0,2fr);
+      gap:24px;
+      animation:fade-up .6s ease-out;
+    }
+
+    @media(max-width:768px){
+      .shell{
+        grid-template-columns:1fr;
+      }
+    }
+
+    .card{
+      background:var(--card-bg);
+      border:1px solid rgba(148,163,184,0.25);
+      border-radius:18px;
+      padding:22px 20px 20px;
+      box-shadow:0 18px 45px rgba(15,23,42,0.7);
+      position:relative;
+      overflow:hidden;
+    }
+    .card::before{
+      content:"";
+      position:absolute;
+      inset:-40%;
+      background:radial-gradient(circle at top left, rgba(96,165,250,0.24), transparent 60%);
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .5s;
+    }
+    .card:hover::before{opacity:1;}
+
+    .card-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:12px;
+    }
+    .card-title{
+      font-size:18px;
       font-weight:700;
-      font-size:12px;
-      margin-bottom:16px;
+      display:flex;
+      align-items:center;
+      gap:8px;
     }
-    .pro{background:#d1fae5;color:#065f46}
-    .trial{background:#e0e7ff;color:#3730a3}
-    .free{background:#fee2e2;color:#991b1b}
+    .dot-live{
+      width:8px;height:8px;border-radius:999px;
+      background:#22c55e;
+      box-shadow:0 0 10px rgba(34,197,94,0.9);
+      animation:pulse 1.6s infinite;
+    }
+    .card-sub{
+      font-size:13px;
+      color:#9ca3af;
+      margin-bottom:18px;
+    }
+
+    .row{
+      display:flex;
+      gap:16px;
+      flex-wrap:wrap;
+    }
+    .chip{
+      font-size:12px;
+      padding:5px 10px;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,0.6);
+      color:#e5e7eb;
+    }
+
+    .label{
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.12em;
+      color:#9ca3af;
+      margin-bottom:4px;
+    }
+    .value{
+      font-size:15px;
+      margin-bottom:12px;
+      color:#f9fafb;
+      word-break:break-all;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 12px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:700;
+      margin-bottom:10px;
+    }
+    .badge.pro{
+      background:rgba(22,163,74,0.16);
+      color:#4ade80;
+      border:1px solid rgba(34,197,94,0.8);
+    }
+    .badge.trial{
+      background:rgba(129,140,248,0.18);
+      color:#a5b4fc;
+      border:1px solid rgba(129,140,248,0.85);
+    }
+    .badge.free{
+      background:rgba(248,250,252,0.04);
+      color:#e5e7eb;
+      border:1px solid rgba(148,163,184,0.55);
+    }
+
+    .pill{
+      padding:7px 12px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:600;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      border:1px solid rgba(148,163,184,0.55);
+      color:#9ca3af;
+    }
 
     .btn{
-      display:inline-block;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
       padding:10px 16px;
-      background:#111827;
-      color:#fff;
-      font-weight:700;
+      border-radius:999px;
       border:none;
-      border-radius:8px;
       cursor:pointer;
-      margin-top:10px;
+      font-size:14px;
+      font-weight:600;
+      margin-top:8px;
+      transition:transform .16s ease, box-shadow .16s ease, background .16s;
       text-decoration:none;
     }
-    .btn.logout{
-      background:#991b1b;
-      margin-top:20px;
+    .btn-primary{
+      background:linear-gradient(135deg,#6366f1,#22c55e);
+      color:white;
+      box-shadow:0 12px 30px rgba(79,70,229,0.6);
+    }
+    .btn-primary:hover{
+      transform:translateY(-1px);
+      box-shadow:0 16px 40px rgba(79,70,229,0.7);
+    }
+    .btn-ghost{
+      background:rgba(15,23,42,0.9);
+      color:#e5e7eb;
+      border:1px solid rgba(148,163,184,0.6);
+    }
+    .btn-ghost:hover{
+      background:rgba(15,23,42,1);
+      transform:translateY(-1px);
+    }
+    .btn-danger{
+      background:rgba(248,113,113,0.12);
+      color:#fecaca;
+      border:1px solid rgba(248,113,113,0.7);
+      margin-top:14px;
+    }
+    .btn-danger:hover{
+      background:rgba(239,68,68,0.22);
+    }
+
+    .plan-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:12px;
+      margin-top:12px;
+    }
+    @media(max-width:480px){
+      .plan-grid{grid-template-columns:1fr;}
+    }
+    .plan-tile{
+      border-radius:16px;
+      padding:12px 12px 10px;
+      background:linear-gradient(135deg,rgba(15,23,42,0.98),rgba(30,64,175,0.85));
+      border:1px solid rgba(129,140,248,0.5);
+      position:relative;
+      overflow:hidden;
+    }
+    .plan-tile::after{
+      content:"";
+      position:absolute;
+      inset:auto -40px -40px auto;
+      width:120px;height:120px;
+      background:radial-gradient(circle at center,rgba(94,234,212,0.5),transparent 60%);
+      opacity:.5;
+      pointer-events:none;
+    }
+    .plan-label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#c7d2fe;}
+    .plan-main{font-size:15px;font-weight:600;color:#e5e7eb;margin-top:2px;}
+    .plan-sub{font-size:12px;color:#cbd5f5;margin-top:2px;}
+
+    .stat{
+      font-size:13px;
+      color:#9ca3af;
+      margin-top:10px;
+    }
+
+    /* Animations */
+    @keyframes fade-up{
+      from{
+        opacity:0;
+        transform:translateY(14px);
+      }
+      to{
+        opacity:1;
+        transform:translateY(0);
+      }
+    }
+    @keyframes pulse{
+      0%,100%{transform:scale(1);opacity:1;}
+      50%{transform:scale(1.35);opacity:.4;}
     }
   </style>
 
@@ -97,110 +337,204 @@
 <body>
 
 <header>
-  <div class="brand">AI Photo Studio</div>
+  <div class="brand-wrap">
+    <div class="logo-dot"></div>
+    <div>
+      <div class="brand-title">AI Photo Studio</div>
+      <div style="font-size:11px;color:#9ca3af;">Smart background remover & AI editor</div>
+    </div>
+  </div>
   <nav>
-    <a href="/">Home</a>
+    <a href="/">Editor</a>
     <a href="/profile.html">My Account</a>
   </nav>
 </header>
 
-<div class="wrap">
-  <h2>My Account</h2>
+<div class="page">
+  <div class="shell">
+    <!-- LEFT: Account + Plan -->
+    <section class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <span class="dot-live"></span>
+          Account Overview
+        </div>
+        <span id="planPill" class="pill">Checking plan…</span>
+      </div>
+      <p class="card-sub">Manage your subscription, trial and sign-in details in one place.</p>
 
-  <div id="userEmail" class="value">Loading…</div>
-  <div id="planBadge"></div>
+      <div class="label">Email</div>
+      <div id="userEmail" class="value">Loading…</div>
 
-  <div class="label">Created</div>
-  <div id="createdAt" class="value">—</div>
+      <div class="label">Account created</div>
+      <div id="createdAt" class="value">—</div>
 
-  <div class="label">Trial Status</div>
-  <div id="trialStatus" class="value">—</div>
+      <div class="label">Current plan</div>
+      <div id="planBadge"></div>
 
-  <button id="btnStartTrial" class="btn" style="display:none;">Start 7-Day Free Trial</button>
-  <a id="btnBuy" href="#" class="btn" style="display:none;">Buy Pro · £4.99/yr</a>
+      <div class="plan-grid">
+        <div class="plan-tile">
+          <div class="plan-label">Usage</div>
+          <div id="usageSummary" class="plan-main">Unlimited local edits</div>
+          <div class="plan-sub">Cloud & HD exports follow your plan limits.</div>
+        </div>
+        <div class="plan-tile" style="background:linear-gradient(135deg,rgba(15,23,42,0.98),rgba(22,101,52,0.9));border-color:rgba(74,222,128,0.7);">
+          <div class="plan-label">Trial & Billing</div>
+          <div id="trialSummary" class="plan-main">Checking status…</div>
+          <div class="plan-sub">Control your 7-day trial and Pro subscription.</div>
+        </div>
+      </div>
 
-  <button id="btnLogout" class="btn logout">Sign Out</button>
+      <div class="row" style="margin-top:14px;">
+        <button id="btnStartTrial" class="btn btn-primary" style="display:none;">
+          Start 7-Day Free Trial
+        </button>
+        <a id="btnBuy" href="#" class="btn btn-ghost" style="display:none;">
+          Upgrade to Pro · £4.99/yr
+        </a>
+      </div>
+
+      <p class="stat" id="trialStatus">—</p>
+
+      <button id="btnLogout" class="btn btn-danger">
+        Sign out
+      </button>
+    </section>
+
+    <!-- RIGHT: Quick actions / Hints -->
+    <aside class="card">
+      <div class="card-header">
+        <div class="card-title">
+          Quick Actions
+        </div>
+      </div>
+      <p class="card-sub">
+        A couple of shortcuts and hints for your AI Photo Studio account.
+      </p>
+
+      <div class="label">Where to start</div>
+      <div class="value">
+        • Go back to the editor and try a few background removals.  
+        • When you’re happy, enable your trial and unlock HD downloads.
+      </div>
+
+      <div class="label">Tips</div>
+      <div class="value">
+        • Free plan always watermarks exports.<br>
+        • Trial & Pro remove the watermark and unlock HD PNG/JPEG.<br>
+        • All images are processed on-device where possible for speed.
+      </div>
+
+      <a href="/" class="btn btn-ghost" style="margin-top:6px;">
+        Open Editor
+      </a>
+    </aside>
+  </div>
 </div>
 
 <script>
   const STRIPE_LINK = "https://buy.stripe.com/eVq6oJ3wugiPcFJ7QGd3i02";
 
-  const elEmail      = document.getElementById("userEmail");
-  const elBadge      = document.getElementById("planBadge");
-  const elCreated    = document.getElementById("createdAt");
-  const elTrial      = document.getElementById("trialStatus");
-  const btnTrial     = document.getElementById("btnStartTrial");
-  const btnBuy       = document.getElementById("btnBuy");
-  const btnLogout    = document.getElementById("btnLogout");
+  const elEmail       = document.getElementById("userEmail");
+  const elCreated     = document.getElementById("createdAt");
+  const elPlanBadge   = document.getElementById("planBadge");
+  const elPlanPill    = document.getElementById("planPill");
+  const elTrialStatus = document.getElementById("trialStatus");
+  const elTrialSummary= document.getElementById("trialSummary");
 
-  // REDIRECT if not logged in
+  const btnTrial      = document.getElementById("btnStartTrial");
+  const btnBuy        = document.getElementById("btnBuy");
+  const btnLogout     = document.getElementById("btnLogout");
+
+  function fmtDate(ts){
+    if(!ts) return "—";
+    if(ts.toDate) ts = ts.toDate();
+    try{
+      return ts.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
+    }catch(_){
+      return "—";
+    }
+  }
+
   auth.onAuthStateChanged(async user=>{
     if(!user){
+      // Not logged in: send back to sign in
       location.replace("/signin.html");
       return;
     }
 
-    elEmail.textContent = user.email || "No email";
+    elEmail.textContent = user.email || user.phoneNumber || "No email";
 
-    // Load profile from Firestore
-    const ref = db.collection("users").doc(user.uid);
+    const ref  = db.collection("users").doc(user.uid);
     const snap = await ref.get();
-    const d = snap.data() || {};
+    const d    = snap.data() || {};
 
-    // CREATED DATE
-    if(d.createdAt?.toDate){
-      const t = d.createdAt.toDate();
-      elCreated.textContent = t.toDateString();
-    }
-
-    // PLAN BADGE
-    let badgeHTML = "";
-    if(d.isPro || d.tier === "pro"){
-      badgeHTML = `<span class="badge pro">PRO USER</span>`;
-    } else if (d.trial?.endsAt?.toMillis){
-      const timeLeft = d.trial.endsAt.toMillis() - Date.now();
-      if(timeLeft > 0){
-        const days = Math.ceil(timeLeft / 86400000);
-        badgeHTML = `<span class="badge trial">${days} days left (Trial)</span>`;
-      } else {
-        badgeHTML = `<span class="badge free">Trial Ended</span>`;
-      }
+    if(d.createdAt){
+      elCreated.textContent = fmtDate(d.createdAt);
+    } else if (user.metadata?.creationTime){
+      elCreated.textContent = fmtDate(new Date(user.metadata.creationTime));
     } else {
-      badgeHTML = `<span class="badge free">FREE PLAN</span>`;
+      elCreated.textContent = "—";
     }
-    elBadge.innerHTML = badgeHTML;
 
-    // TRIAL TEXT
-    if(d.trial?.endsAt?.toMillis){
-      const left = d.trial.endsAt.toMillis() - Date.now();
+    // Plan logic
+    let isPro   = !!d.isPro || d.tier === "pro";
+    let trialEndMillis = d.trial?.endsAt?.toMillis ? d.trial.endsAt.toMillis() : null;
+
+    // Pill at top-right
+    if(isPro){
+      elPlanPill.textContent = "PRO ACTIVE";
+      elPlanPill.style.borderColor = "rgba(74,222,128,0.9)";
+      elPlanPill.style.color       = "#bbf7d0";
+    } else if (trialEndMillis && trialEndMillis > Date.now()){
+      elPlanPill.textContent = "TRIAL ACTIVE";
+      elPlanPill.style.borderColor = "rgba(129,140,248,0.9)";
+      elPlanPill.style.color       = "#c7d2fe";
+    } else {
+      elPlanPill.textContent = "FREE PLAN";
+    }
+
+    // Badge in main body
+    if(isPro){
+      elPlanBadge.innerHTML = `<span class="badge pro">Pro · All features unlocked</span>`;
+      elTrialSummary.textContent = "You’re on Pro – billing managed via Stripe.";
+      elTrialStatus.textContent  = "No trial running (full Pro access).";
+    } 
+    else if (trialEndMillis){
+      const left = trialEndMillis - Date.now();
       if(left > 0){
         const days = Math.ceil(left / 86400000);
-        elTrial.textContent = `${days} day(s) remaining`;
+        elPlanBadge.innerHTML = `<span class="badge trial">Trial · ${days} day${days===1?"":"s"} left</span>`;
+        elTrialSummary.textContent = `${days} day${days===1?"":"s"} remaining on your free trial.`;
+        elTrialStatus.textContent  = "When the trial ends, you’ll drop back to the free plan unless you upgrade.";
       } else {
-        elTrial.textContent = "Expired";
+        elPlanBadge.innerHTML = `<span class="badge free">Free · Trial ended</span>`;
+        elTrialSummary.textContent = "Your trial has ended. You’re on the free plan.";
+        elTrialStatus.textContent  = "Upgrade to Pro any time to unlock HD downloads and remove watermarks.";
       }
-    } else {
-      elTrial.textContent = "No active trial";
+    } 
+    else {
+      elPlanBadge.innerHTML = `<span class="badge free">Free plan</span>`;
+      elTrialSummary.textContent = "Start your 7-day trial to unlock HD, no watermark.";
+      elTrialStatus.textContent  = "No active trial. You can start one now – one per account.";
     }
 
-    // BUTTONS VISIBILITY
-    if(d.isPro || d.tier === "pro"){
-      btnBuy.style.display = "none";
+    // Buttons visibility
+    if(isPro){
       btnTrial.style.display = "none";
-    } 
-    else if(d.trial?.endsAt?.toMillis && d.trial.endsAt.toMillis() > Date.now()){
+      btnBuy.style.display   = "none";
+    } else if (trialEndMillis && trialEndMillis > Date.now()){
       btnTrial.style.display = "none";
-      btnBuy.style.display = "inline-block";
-      btnBuy.href = STRIPE_LINK;
-    }
-    else {
-      btnTrial.style.display = "inline-block";
-      btnBuy.style.display = "inline-block";
-      btnBuy.href = STRIPE_LINK;
+      btnBuy.style.display   = "inline-flex";
+      btnBuy.href            = STRIPE_LINK;
+    } else {
+      btnTrial.style.display = "inline-flex";
+      btnBuy.style.display   = "inline-flex";
+      btnBuy.href            = STRIPE_LINK;
     }
   });
 
-  // START TRIAL
+  // Start trial
   btnTrial.onclick = async ()=>{
     const user = auth.currentUser;
     if(!user) return;
@@ -208,20 +542,27 @@
     const now = new Date();
     const end = new Date(now.getTime() + 7*24*60*60*1000);
 
-    await db.collection("users")
-      .doc(user.uid)
-      .set({
-        tier:"trial",
-        trial:{
-          startsAt: firebase.firestore.Timestamp.fromDate(now),
-          endsAt:   firebase.firestore.Timestamp.fromDate(end)
-        }
-      },{merge:true});
+    await db.collection("users").doc(user.uid).set({
+      tier:"trial",
+      trial:{
+        startsAt: firebase.firestore.Timestamp.fromDate(now),
+        endsAt:   firebase.firestore.Timestamp.fromDate(end)
+      },
+      isPro:false
+    },{merge:true});
 
-    alert("7-day free trial started!");
+    alert("✅ 7-day free trial started");
     location.reload();
   };
 
+  // Buy Pro via Stripe
+  btnBuy.onclick = (e)=>{
+    e.preventDefault();
+    if(!STRIPE_LINK) return alert("Stripe link missing.");
+    window.location.href = STRIPE_LINK;
+  };
+
+  // Logout
   btnLogout.onclick = ()=> auth.signOut();
 </script>
 
