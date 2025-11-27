@@ -1,50 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Your Profile · AI Photo Studio</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Account · AI Photo Studio</title>
 
   <style>
     body{
-      margin:0;
-      font-family:system-ui,-apple-system,Roboto,Arial,sans-serif;
+      margin:0; 
+      font-family:system-ui,-apple-system,Roboto,Arial;
       background:#f9fafb;
     }
-    nav{
+    header{
       background:#111827;
       color:#fff;
-      padding:16px;
+      padding:16px 24px;
       display:flex;
       justify-content:space-between;
       align-items:center;
     }
-    nav .logo{
-      font-size:18px;
-      font-weight:600;
+    header .brand{
+      font-size:20px;
+      font-weight:700;
+      letter-spacing:.3px;
     }
-    nav button{
-      background:#ef4444;
-      border:none;
-      padding:8px 14px;
-      border-radius:6px;
+    header a{
       color:#fff;
-      cursor:pointer;
+      text-decoration:none;
+      margin-left:18px;
       font-weight:600;
     }
-    .container{
-      max-width:600px;
+    .wrap{
+      max-width:700px;
       margin:40px auto;
-      padding:20px;
       background:#fff;
-      border-radius:16px;
       border:1px solid #e5e7eb;
-      box-shadow:0 4px 10px rgba(0,0,0,.05);
+      border-radius:12px;
+      padding:32px;
+      box-shadow:0 6px 20px rgba(0,0,0,.06);
     }
-    h1{margin-top:0;font-size:26px}
-    .row{margin-bottom:16px}
-    .label{font-weight:600;color:#374151}
-    .value{color:#111827;margin-top:2px}
+    h2{margin-top:0;font-size:26px;color:#111827}
+    .label{font-size:14px;color:#6b7280;margin-bottom:4px}
+    .value{font-size:16px;color:#111827;margin-bottom:16px}
+    .badge{
+      display:inline-block;
+      padding:6px 12px;
+      border-radius:9999px;
+      font-weight:700;
+      font-size:12px;
+      margin-bottom:16px;
+    }
+    .pro{background:#d1fae5;color:#065f46}
+    .trial{background:#e0e7ff;color:#3730a3}
+    .free{background:#fee2e2;color:#991b1b}
+
+    .btn{
+      display:inline-block;
+      padding:10px 16px;
+      background:#111827;
+      color:#fff;
+      font-weight:700;
+      border:none;
+      border-radius:8px;
+      cursor:pointer;
+      margin-top:10px;
+      text-decoration:none;
+    }
+    .btn.logout{
+      background:#991b1b;
+      margin-top:20px;
+    }
   </style>
 
   <!-- Firebase -->
@@ -63,71 +88,142 @@
       measurementId: "G-YMB9JJHNBE"
     };
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-  </script>
 
+    const auth = firebase.auth();
+    const db   = firebase.firestore();
+  </script>
 </head>
+
 <body>
 
-  <!-- NAVBAR -->
+<header>
+  <div class="brand">AI Photo Studio</div>
   <nav>
-    <div class="logo">AI Photo Studio</div>
-    <button id="logoutBtn">Logout</button>
+    <a href="/">Home</a>
+    <a href="/profile.html">My Account</a>
   </nav>
+</header>
 
-  <!-- PROFILE CARD -->
-  <div class="container">
-    <h1>Your Account</h1>
+<div class="wrap">
+  <h2>My Account</h2>
 
-    <div class="row">
-      <div class="label">Email</div>
-      <div class="value" id="email">Loading…</div>
-    </div>
+  <div id="userEmail" class="value">Loading…</div>
+  <div id="planBadge"></div>
 
-    <div class="row">
-      <div class="label">Plan</div>
-      <div class="value" id="plan">Loading…</div>
-    </div>
+  <div class="label">Created</div>
+  <div id="createdAt" class="value">—</div>
 
-    <div class="row">
-      <div class="label">Joined</div>
-      <div class="value" id="created">Loading…</div>
-    </div>
+  <div class="label">Trial Status</div>
+  <div id="trialStatus" class="value">—</div>
 
-  </div>
+  <button id="btnStartTrial" class="btn" style="display:none;">Start 7-Day Free Trial</button>
+  <a id="btnBuy" href="#" class="btn" style="display:none;">Buy Pro · £4.99/yr</a>
 
-  <script>
-    // Redirect if not signed in
-    auth.onAuthStateChanged(async user => {
-      if(!user){
-        location.replace("/signin.html");
-        return;
-      }
+  <button id="btnLogout" class="btn logout">Sign Out</button>
+</div>
 
-      document.getElementById("email").textContent = user.email;
+<script>
+  const STRIPE_LINK = "https://buy.stripe.com/eVq6oJ3wugiPcFJ7QGd3i02";
 
-      const ref = db.collection("users").doc(user.uid);
-      const snap = await ref.get();
+  const elEmail      = document.getElementById("userEmail");
+  const elBadge      = document.getElementById("planBadge");
+  const elCreated    = document.getElementById("createdAt");
+  const elTrial      = document.getElementById("trialStatus");
+  const btnTrial     = document.getElementById("btnStartTrial");
+  const btnBuy       = document.getElementById("btnBuy");
+  const btnLogout    = document.getElementById("btnLogout");
 
-      if(snap.exists){
-        const data = snap.data();
-        document.getElementById("plan").textContent = data.tier || "free";
-
-        if(data.createdAt)
-          document.getElementById("created").textContent =
-            data.createdAt.toDate().toLocaleDateString();
-        else
-          document.getElementById("created").textContent = "N/A";
-      }
-    });
-
-    // Logout button
-    document.getElementById("logoutBtn").onclick = async () => {
-      await auth.signOut();
+  // REDIRECT if not logged in
+  auth.onAuthStateChanged(async user=>{
+    if(!user){
       location.replace("/signin.html");
-    };
-  </script>
+      return;
+    }
+
+    elEmail.textContent = user.email || "No email";
+
+    // Load profile from Firestore
+    const ref = db.collection("users").doc(user.uid);
+    const snap = await ref.get();
+    const d = snap.data() || {};
+
+    // CREATED DATE
+    if(d.createdAt?.toDate){
+      const t = d.createdAt.toDate();
+      elCreated.textContent = t.toDateString();
+    }
+
+    // PLAN BADGE
+    let badgeHTML = "";
+    if(d.isPro || d.tier === "pro"){
+      badgeHTML = `<span class="badge pro">PRO USER</span>`;
+    } else if (d.trial?.endsAt?.toMillis){
+      const timeLeft = d.trial.endsAt.toMillis() - Date.now();
+      if(timeLeft > 0){
+        const days = Math.ceil(timeLeft / 86400000);
+        badgeHTML = `<span class="badge trial">${days} days left (Trial)</span>`;
+      } else {
+        badgeHTML = `<span class="badge free">Trial Ended</span>`;
+      }
+    } else {
+      badgeHTML = `<span class="badge free">FREE PLAN</span>`;
+    }
+    elBadge.innerHTML = badgeHTML;
+
+    // TRIAL TEXT
+    if(d.trial?.endsAt?.toMillis){
+      const left = d.trial.endsAt.toMillis() - Date.now();
+      if(left > 0){
+        const days = Math.ceil(left / 86400000);
+        elTrial.textContent = `${days} day(s) remaining`;
+      } else {
+        elTrial.textContent = "Expired";
+      }
+    } else {
+      elTrial.textContent = "No active trial";
+    }
+
+    // BUTTONS VISIBILITY
+    if(d.isPro || d.tier === "pro"){
+      btnBuy.style.display = "none";
+      btnTrial.style.display = "none";
+    } 
+    else if(d.trial?.endsAt?.toMillis && d.trial.endsAt.toMillis() > Date.now()){
+      btnTrial.style.display = "none";
+      btnBuy.style.display = "inline-block";
+      btnBuy.href = STRIPE_LINK;
+    }
+    else {
+      btnTrial.style.display = "inline-block";
+      btnBuy.style.display = "inline-block";
+      btnBuy.href = STRIPE_LINK;
+    }
+  });
+
+  // START TRIAL
+  btnTrial.onclick = async ()=>{
+    const user = auth.currentUser;
+    if(!user) return;
+
+    const now = new Date();
+    const end = new Date(now.getTime() + 7*24*60*60*1000);
+
+    await db.collection("users")
+      .doc(user.uid)
+      .set({
+        tier:"trial",
+        trial:{
+          startsAt: firebase.firestore.Timestamp.fromDate(now),
+          endsAt:   firebase.firestore.Timestamp.fromDate(end)
+        }
+      },{merge:true});
+
+    alert("7-day free trial started!");
+    location.reload();
+  };
+
+  btnLogout.onclick = ()=> auth.signOut();
+</script>
 
 </body>
 </html>
