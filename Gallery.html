@@ -47,7 +47,7 @@
     letter-spacing:.03em;
   }
 
-  /* Masonry Grid */
+  /* Grid layout */
   .grid{
     column-count:3;
     column-gap:16px;
@@ -67,11 +67,7 @@
     transition:transform .2s ease;
   }
   .item:hover{transform:scale(1.02);}
-
-  .item img{
-    width:100%;
-    display:block;
-  }
+  .item img{width:100%; display:block;}
 
   /* Hover toolbar */
   .toolbar{
@@ -151,6 +147,7 @@
     appId: "1:1056724519182:web:93410e1b71a292e531ef5f",
     measurementId: "G-YMB9JJHNBE"
   };
+
   firebase.initializeApp(firebaseConfig);
   const auth    = firebase.auth();
   const storage = firebase.storage();
@@ -162,7 +159,7 @@
 <header>
   <div class="title">📸 My Gallery</div>
   <div>
-    <a href="/">Editor</a>
+    <a href="/index.html">Editor</a>
     <a href="/profile.html">Account</a>
   </div>
 </header>
@@ -181,7 +178,6 @@
   const viewerImg   = document.getElementById("viewerImg");
   const closeViewer = document.getElementById("closeViewer");
 
-  // Load user gallery
   auth.onAuthStateChanged(async user=>{
     if(!user){
       location.replace("/signin.html");
@@ -196,7 +192,7 @@
       grid.innerHTML = "";
 
       if(list.items.length === 0){
-        grid.innerHTML = "<p style='opacity:.6'>Your gallery is empty.</p>";
+        grid.innerHTML = "<p style='opacity:.6;text-align:center;'>Your gallery is empty.</p>";
         return;
       }
 
@@ -221,16 +217,15 @@
     }
   });
 
-  // Open fullscreen viewer
   document.addEventListener("click",(e)=>{
     if(e.target.dataset.view){
       viewerImg.src = e.target.dataset.view;
       viewer.classList.add("active");
     }
   });
+
   closeViewer.onclick = ()=> viewer.classList.remove("active");
 
-  // Delete image
   document.addEventListener("click", async (e)=>{
     if(!e.target.dataset.del) return;
 
@@ -239,9 +234,10 @@
     try{
       const ref = storage.ref(e.target.dataset.del);
       await ref.delete();
-      location.reload();
+      e.target.closest(".item").remove(); // remove instantly, no reload
     }catch(err){
-      alert("Couldn't delete.");
+      alert("Couldn't delete this image.");
+      console.error(err);
     }
   });
 </script>
