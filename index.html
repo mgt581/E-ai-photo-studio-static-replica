@@ -57,19 +57,21 @@
       <span class="brand-text">AI Photo Studio</span>
     </div>
 
-    <div class="row">
-      <a href="gallery.html" class="ghost">Gallery</a>
-<a href="profile.html" class="ghost">Account</a>
-<a href="signin.html" class="ghost">Sign in / Sign up</a>
-      <span id="authStatus" class="muted">Not signed in</span>
-      <button id="btnLogout" class="ghost" style="display:none">Sign out</button>
+<header>
+  <div class="row">
+    <a href="gallery.html" class="ghost">Gallery</a>
+    <a href="profile.html" class="ghost">Account</a>
+    <a href="signin.html" class="ghost">Sign in / Sign up</a>
 
-      <span id="trialLeft" class="badge" style="display:none"></span>
-      <button class="pill" id="btnTrial">Start 7-day Free Trial</button>
-      <button class="pill" id="btnBuy">Buy Pro · £4.99/yr</button>
-    </div>
-  </header>
+    <span id="authStatus" class="muted">Not signed in</span>
+    <button id="btnLogout" class="ghost" style="display:none">Sign out</button>
+  </div>
 
+  <span id="trialLeft" class="badge" style="display:none"></span>
+  <button class="pill" id="btnTrial">Start 7-day Free Trial</button>
+  <button class="pill" id="btnBuy">Buy Pro · £4.99/yr</button>
+</header>
+    
   <div class="wrap" ondragover="event.preventDefault()" ondrop="Studio.handleDrop(event)">
     <div class="card">
       <p class="status" id="status">Upload a photo to begin.</p>
