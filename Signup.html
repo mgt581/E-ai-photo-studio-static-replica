@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Create Account · AI Photo Studio</title>
   <meta name="theme-color" content="#ffffff" />
+
   <style>
     body{margin:0;font-family:system-ui,-apple-system,Roboto,Arial,sans-serif;background:#f9fafb;display:flex;justify-content:center;align-items:center;min-height:100vh}
     .card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:32px;width:100%;max-width:400px;box-shadow:0 8px 24px rgba(0,0,0,.05);text-align:center}
@@ -14,77 +15,19 @@
     .social{display:flex;gap:12px;justify-content:center;margin-bottom:20px}
     .sbtn{flex:1;border:1px solid #d1d5db;border-radius:8px;height:44px;display:flex;align-items:center;justify-content:center;background:#fff;cursor:pointer;font-weight:500}
     .field{text-align:left;margin-bottom:14px}
-    .field label{display:block;font-size:13px;color:#374151;margin-bottom:4px}
     .field input{width:100%;height:44px;border:1px solid #d1d5db;border-radius:8px;padding:0 12px;font-size:14px}
     .btn{width:100%;height:46px;border:none;border-radius:8px;background:#111827;color:#fff;font-weight:600;cursor:pointer;margin-bottom:14px}
     .btn.secondary{background:#eef2ff;color:#4338ca}
-    .footer{font-size:13px;color:#6b7280}
-    .footer a{color:#4f46e5;text-decoration:none}
     .error{color:#dc2626;font-size:13px;margin-top:6px;display:none}
     .hide{display:none}
   </style>
-</head>
-<body>
-  <div class="card">
-    <img src="/apple-touch-icon.png" class="logo" alt="Logo" />
-    <h1>Create your account</h1>
-    <p class="sub">Join AI Photo Studio</p>
 
-    <div id="formBox">
-
-      <div class="social">
-        <button id="btnGoogle" class="sbtn">Google</button>
-        <button id="btnPhone"  class="sbtn">Phone</button>
-      </div>
-
-      <!-- PHONE SIGNUP UI -->
-      <div id="phoneBox" class="hide">
-        <div class="field">
-          <label>Phone Number</label>
-          <input id="phoneInput" type="tel" placeholder="+44 7700 900123" />
-        </div>
-
-        <div id="recaptcha-container"></div>
-
-        <button id="btnSendCode" class="btn secondary">Send Code</button>
-
-        <div class="field hide" id="codeBox">
-          <label>Enter Code</label>
-          <input id="codeInput" type="text" placeholder="123456" />
-        </div>
-
-        <button id="btnVerifyCode" class="btn hide">Verify & Create Account</button>
-      </div>
-
-      <hr style="margin:20px 0; opacity:0.2">
-
-      <!-- EMAIL SIGNUP FIELDS -->
-      <div class="field">
-        <label>Email Address</label>
-        <input id="email" type="email" placeholder="you@example.com" />
-      </div>
-
-      <div class="field">
-        <label>Password</label>
-        <input id="password" type="password" placeholder="••••••••" />
-      </div>
-
-      <button id="btnEmailSignUp" class="btn">Sign Up</button>
-      <div id="emailError" class="error"></div>
-
-      <div class="footer">
-        Already have an account? <a href="/signin.html">Sign in</a>
-      </div>
-    </div>
-  </div>
-
-  <!-- FIREBASE SDK -->
+  <!-- FIREBASE FIRST -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <script>
-    // --- Firebase Config ---
     const firebaseConfig = {
       apiKey: "AIzaSyDsBDuaZ_rl7ro63Fv5gPh37EwSkfh-NqM",
       authDomain: "aiphotostudioapp.firebaseapp.com",
@@ -95,18 +38,67 @@
       measurementId: "G-YMB9JJHNBE"
     };
     firebase.initializeApp(firebaseConfig);
-
     const auth = firebase.auth();
     const db   = firebase.firestore();
+  </script>
+</head>
+
+<body>
+  <div class="card">
+    <img src="/apple-touch-icon.png" class="logo" alt="Logo" />
+    <h1>Create your account</h1>
+    <p class="sub">Join AI Photo Studio</p>
+
+    <div class="social">
+      <button id="btnGoogle" class="sbtn">Google</button>
+      <button id="btnPhone" class="sbtn">Phone</button>
+    </div>
+
+    <!-- PHONE SIGN-UP -->
+    <div id="phoneBox" class="hide">
+      <div class="field">
+        <label>Phone Number</label>
+        <input id="phoneInput" type="tel" placeholder="+44 7700 900123" />
+      </div>
+
+      <div id="recaptcha-container"></div>
+
+      <button id="btnSendCode" class="btn secondary">Send Code</button>
+
+      <div class="field hide" id="codeBox">
+        <label>Enter Code</label>
+        <input id="codeInput" type="text" placeholder="123456" />
+      </div>
+
+      <button id="btnVerifyCode" class="btn hide">Verify & Create Account</button>
+    </div>
+
+    <hr style="margin:20px 0; opacity:0.2">
+
+    <!-- EMAIL SIGN-UP -->
+    <div class="field">
+      <label>Email</label>
+      <input id="email" type="email" />
+    </div>
+
+    <div class="field">
+      <label>Password</label>
+      <input id="password" type="password" />
+    </div>
+
+    <button id="btnEmailSignUp" class="btn">Sign Up</button>
+    <div id="emailError" class="error"></div>
+
+    <p class="sub">Already have an account? <a href="/signin.html">Sign in</a></p>
+  </div>
+
+  <script>
     const $ = id => document.getElementById(id);
     const show = (el,on=true)=> el.classList.toggle("hide",!on);
 
-    // Save user profile
     async function saveUserDoc(user){
-      if (!user) return;
       const ref = db.collection("users").doc(user.uid);
       await ref.set({
-        displayName: user.displayName || "",
         email: user.email || "",
         phone: user.phoneNumber || "",
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -114,41 +106,25 @@
       }, { merge:true });
     }
 
-    // GOOGLE Sign-Up
+    // GOOGLE SIGN-UP
     $('btnGoogle').onclick = async ()=>{
       const provider = new firebase.auth.GoogleAuthProvider();
-      if (/Mobi|Android/i.test(navigator.userAgent)){
-        await auth.signInWithRedirect(provider);
-      } else {
-        const cred = await auth.signInWithPopup(provider);
-        await saveUserDoc(cred.user);
+      try {
+        const result = await auth.signInWithPopup(provider);
+        await saveUserDoc(result.user);
         location.replace('/');
-      }
+      } catch(e){ alert(e.message); }
     };
 
-    // GOOGLE Redirect Result
-    auth.getRedirectResult().then(async(res)=>{
-      if (res.user){
-        await saveUserDoc(res.user);
-        location.replace('/');
-      }
-    });
-
-    // EMAIL Sign-Up
+    // EMAIL SIGN-UP
     $('btnEmailSignUp').onclick = async ()=>{
       $('emailError').style.display='none';
-      const email = $('email').value.trim();
-      const pass  = $('password').value;
-
-      if (!email || !pass){
-        $('emailError').textContent="Enter email & password";
-        $('emailError').style.display='block';
-        return;
-      }
-
-      try {
-        const cred = await auth.createUserWithEmailAndPassword(email,pass);
-        await saveUserDoc(cred.user);
+      try{
+        const result = await auth.createUserWithEmailAndPassword(
+          $('email').value.trim(),
+          $('password').value
+        );
+        await saveUserDoc(result.user);
         location.replace('/');
       } catch(e){
         $('emailError').textContent=e.message;
@@ -156,41 +132,37 @@
       }
     };
 
-    // PHONE Sign-Up UI
-    $('btnPhone').onclick = ()=>{
-      show($('phoneBox'),true);
+    // PHONE SIGN-UP
+    let verifier, confirmation;
+    window.onload = () => {
+      verifier = new firebase.auth.RecaptchaVerifier(
+        'recaptcha-container',
+        { size:"invisible" }
+      );
     };
 
-    let phoneVerifier, confirmationResult;
-
-    window.onload = ()=>{
-      phoneVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container',{ size:"invisible" });
-    };
+    $('btnPhone').onclick = ()=> show($('phoneBox'),true);
 
     $('btnSendCode').onclick = async ()=>{
-      try {
-        const phone = $('phoneInput').value.trim();
-        if (!phone) return alert("Enter phone number");
-
-        confirmationResult = await auth.signInWithPhoneNumber(phone, phoneVerifier);
+      try{
+        confirmation = await auth.signInWithPhoneNumber(
+          $('phoneInput').value.trim(),
+          verifier
+        );
         alert("Code sent!");
         show($('codeBox'),true);
         show($('btnVerifyCode'),true);
-      } catch(e){
-        alert(e.message);
-      }
+      }catch(e){ alert(e.message); }
     };
 
     $('btnVerifyCode').onclick = async ()=>{
-      try {
-        const code = $('codeInput').value.trim();
-        const result = await confirmationResult.confirm(code);
+      try{
+        const result = await confirmation.confirm($('codeInput').value.trim());
         await saveUserDoc(result.user);
         location.replace('/');
-      } catch(e){
-        alert(e.message);
-      }
+      }catch(e){ alert(e.message); }
     };
   </script>
+
 </body>
 </html>
