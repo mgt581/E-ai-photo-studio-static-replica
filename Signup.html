@@ -10,13 +10,10 @@
     body{margin:0;font-family:system-ui,-apple-system,Roboto,Arial,sans-serif;background:#f9fafb;display:flex;justify-content:center;align-items:center;min-height:100vh}
     .card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:32px;width:100%;max-width:400px;box-shadow:0 8px 24px rgba(0,0,0,.05);text-align:center}
     .logo{width:50px;height:50px;margin:0 auto 12px}
-    h1{margin:0;font-size:22px;font-weight:700;color:#111827}
-    p.sub{margin:4px 0 20px;font-size:14px;color:#6b7280}
-    .social{display:flex;gap:12px;justify-content:center;margin-bottom:20px}
-    .sbtn{flex:1;border:1px solid #d1d5db;border-radius:8px;height:44px;display:flex;align-items:center;justify-content:center;background:#fff;cursor:pointer;font-weight:500}
-    .field{text-align:left;margin-bottom:14px}
-    .field input{width:100%;height:44px;border:1px solid #d1d5db;border-radius:8px;padding:0 12px;font-size:14px}
-    .btn{width:100%;height:46px;border:none;border-radius:8px;background:#111827;color:#fff;font-weight:600;cursor:pointer;margin-bottom:14px}
+    .sbtn{width:100%;height:44px;border:1px solid #d1d5db;border-radius:8px;background:#fff;font-weight:500;cursor:pointer;margin-bottom:12px}
+    .field{text-align:left;margin-bottom:12px}
+    .field input{width:100%;height:44px;border:1px solid #d1d5db;border-radius:8px;padding:0 12px}
+    .btn{width:100%;height:46px;border:none;border-radius:8px;background:#111827;color:#fff;font-weight:600;cursor:pointer;margin-bottom:12px}
     .error{color:#dc2626;font-size:13px;margin-top:6px;display:none}
   </style>
 
@@ -37,23 +34,18 @@
     };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
-    const db   = firebase.firestore();
+    const db = firebase.firestore();
   </script>
 </head>
 
 <body>
   <div class="card">
-    <img src="/apple-touch-icon.png" class="logo" />
-
+    <img src="/apple-touch-icon.png" class="logo" alt="Logo" />
     <h1>Create your account</h1>
     <p class="sub">Join AI Photo Studio</p>
 
-    <!-- GOOGLE -->
-    <div class="social">
-      <button id="btnGoogle" class="sbtn">Google</button>
-    </div>
+    <button id="btnGoogle" class="sbtn">Sign up with Google</button>
 
-    <!-- EMAIL SIGN-UP -->
     <div class="field">
       <label>Email</label>
       <input id="email" type="email" />
@@ -73,35 +65,42 @@
   <script>
     const $ = id => document.getElementById(id);
 
-    async function saveUser(user){
-      await db.collection("users").doc(user.uid).set({
+    // AUTO-REDIRECT if already logged in
+    auth.onAuthStateChanged(user => {
+      if (user) location.replace("/profile.html");
+    });
+
+    async function saveUserDoc(user){
+      const ref = db.collection("users").doc(user.uid);
+      await ref.set({
         email: user.email || "",
-        phone: user.phoneNumber || "",
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         tier: "free"
       }, { merge:true });
     }
 
+    // GOOGLE SIGN-UP
     $('btnGoogle').onclick = async ()=>{
       const provider = new firebase.auth.GoogleAuthProvider();
       try{
-        const r = await auth.signInWithPopup(provider);
-        await saveUser(r.user);
+        const result = await auth.signInWithPopup(provider);
+        await saveUserDoc(result.user);
         location.replace('/');
-      } catch(e){ alert(e.message); }
+      }catch(e){ alert(e.message); }
     };
 
+    // EMAIL SIGN-UP
     $('btnEmailSignUp').onclick = async ()=>{
       $('emailError').style.display='none';
       try{
-        const res = await auth.createUserWithEmailAndPassword(
+        const result = await auth.createUserWithEmailAndPassword(
           $('email').value.trim(),
           $('password').value
         );
-        await saveUser(res.user);
+        await saveUserDoc(result.user);
         location.replace('/');
       } catch(e){
-        $('emailError').textContent = e.message;
+        $('emailError').textContent=e.message;
         $('emailError').style.display='block';
       }
     };
