@@ -1,18 +1,15 @@
 {
   "hosting": {
-    "public": ".",
+    "site": "ai-photo-studio-24354",
+    "public": "public",
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**",
-      "README_DEPLOY.md"
+      "**/node_modules/**"
     ],
     "cleanUrls": true,
     "rewrites": [
-      {
-        "source": "/signin",
-        "destination": "/signin.html"
-      }
+      { "source": "**", "destination": "/404.html" }
     ]
   }
 }
