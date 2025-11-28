@@ -57,21 +57,20 @@
       <span class="brand-text">AI Photo Studio</span>
     </div>
 
-   <header>
-  <div class="row">
-    <a href="Gallery.html" class="ghost">Gallery</a>
-    <a href="Profile.html" class="ghost">Account</a>
-    <a href="signin.html" class="ghost">Sign In</a>
-    <a href="signup.html" class="ghost">Sign Up</a>
+    <div class="row">
+      <a href="Gallery.html" class="ghost">Gallery</a>
+      <a href="Profile.html" class="ghost">Account</a>
+      <a href="signin.html" class="ghost">Sign In</a>
+      <a href="signup.html" class="ghost">Sign Up</a>
 
-    <span id="authStatus" class="muted">Not signed in</span>
-    <button id="btnLogout" class="ghost" style="display:none">Sign out</button>
-  </div>
+      <span id="authStatus" class="muted">Not signed in</span>
+      <button id="btnLogout" class="ghost" style="display:none">Sign out</button>
+    </div>
 
-  <span id="trialLeft" class="badge" style="display:none"></span>
-  <button class="pill" id="btnTrial">Start 7-day Free Trial</button>
-  <button class="pill" id="btnBuy">Buy Pro · £4.99/yr</button>
-</header>
+    <span id="trialLeft" class="badge" style="display:none"></span>
+    <button class="pill" id="btnTrial">Start 7-day Free Trial</button>
+    <button class="pill" id="btnBuy">Buy Pro · £4.99/yr</button>
+  </header>
     
   <div class="wrap" ondragover="event.preventDefault()" ondrop="Studio.handleDrop(event)">
     <div class="card">
@@ -134,6 +133,50 @@
     const db   = firebase.firestore();
     const storage = firebase.storage();
     const functions = firebase.functions ? firebase.functions() : null;
+
+    // ----------------------------------------------------
+    // GLOBAL AUTH HELPERS (used by signin/signup/profile)
+    // ----------------------------------------------------
+    const googleProvider = new firebase.auth.GoogleAuthProvider();
+
+    // Google Sign-In
+    window.loginWithGoogle = async () => {
+      try {
+        await auth.signInWithPopup(googleProvider);
+        window.location.href = "Profile.html";
+      } catch (err) {
+        alert("Google sign-in failed: " + err.message);
+      }
+    };
+
+    // Email login
+    window.loginWithEmail = async (email, pass) => {
+      try {
+        await auth.signInWithEmailAndPassword(email, pass);
+        window.location.href = "Profile.html";
+      } catch (err) {
+        alert("Login failed: " + err.message);
+      }
+    };
+
+    // Email signup
+    window.signupWithEmail = async (email, pass) => {
+      try {
+        await auth.createUserWithEmailAndPassword(email, pass);
+        window.location.href = "Profile.html";
+      } catch (err) {
+        alert("Signup failed: " + err.message);
+      }
+    };
+
+    // Protect a page (redirects to signin if not logged in)
+    window.protectPage = () => {
+      auth.onAuthStateChanged(user => {
+        if (!user) {
+          window.location.href = "signin.html";
+        }
+      });
+    };
 
     const elStatus   = document.getElementById('authStatus');
     const btnLogout  = document.getElementById('btnLogout');
