@@ -69,7 +69,6 @@
   .item:hover{transform:scale(1.02);}
   .item img{width:100%; display:block;}
 
-  /* Hover toolbar */
   .toolbar{
     position:absolute;
     bottom:0;left:0;right:0;
@@ -95,7 +94,6 @@
   }
   .btn-small:hover{background:rgba(255,255,255,0.25);}
 
-  /* Fullscreen Viewer */
   #viewer{
     position:fixed;
     inset:0;
@@ -159,14 +157,13 @@
 <header>
   <div class="title">📸 My Gallery</div>
   <div>
-    <a href="/index.html">Editor</a>
-    <a href="/profile.html">Account</a>
+    <a href="index.html">Editor</a>
+    <a href="Profile.html">Account</a>
   </div>
 </header>
 
 <div id="grid" class="grid">Loading…</div>
 
-<!-- Fullscreen Viewer -->
 <div id="viewer">
   <img id="viewerImg" src="">
   <div id="closeViewer">Close</div>
@@ -180,7 +177,7 @@
 
   auth.onAuthStateChanged(async user=>{
     if(!user){
-      location.replace("/signin.html");
+      location.replace("signin.html");
       return;
     }
 
@@ -234,7 +231,7 @@
     try{
       const ref = storage.ref(e.target.dataset.del);
       await ref.delete();
-      e.target.closest(".item").remove(); // remove instantly, no reload
+      e.target.closest(".item").remove();
     }catch(err){
       alert("Couldn't delete this image.");
       console.error(err);
