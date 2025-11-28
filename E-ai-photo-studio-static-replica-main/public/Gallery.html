@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Your Gallery • AI Photo Studio</title>
+
+  <style>
+    body { margin:0; font-family:system-ui; background:#f9fafb; padding:20px; }
+    h2 { margin-bottom:20px; }
+    .grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+      gap:16px;
+    }
+    .card {
+      background:white;
+      border-radius:10px;
+      padding:10px;
+      box-shadow:0 2px 8px rgba(0,0,0,0.07);
+      text-align:center;
+    }
+    img {
+      width:100%; border-radius:8px; object-fit:cover;
+    }
+    .back {
+      display:inline-block;
+      margin-bottom:16px;
+      color:#4f46e5;
+      text-decoration:none;
+      font-weight:600;
+    }
+  </style>
+</head>
+
+<body>
+
+  <a href="/profile.html" class="back">← Back to Account</a>
+  <h2>Your Saved Images</h2>
+
+  <p id="status">Loading...</p>
+  <div id="gallery" class="grid"></div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCM6r66kW9xkBA5rgVcz4sP57N2v2BMbkg",
+      authDomain: "ai-photo-studio-24354.firebaseapp.com",
+      projectId: "ai-photo-studio-24354",
+      storageBucket: "ai-photo-studio-24354.appspot.com",
+      messagingSenderId: "411346648650",
+      appId: "1:411346648650:web:5ecd86ffecd05472fab0b3",
+      measurementId: "G-R3G160W8BQ"
+    };
+    firebase.initializeApp(firebaseConfig);
+
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // Protect page
+    auth.onAuthStateChanged(async user => {
+      if (!user) {
+        window.location.href = "/signin.html";
+        return;
+      }
+
+      loadGallery(user.uid);
+    });
+
+    async function loadGallery(uid) {
+      const galleryDiv = document.getElementById("gallery");
+      const status = document.getElementById("status");
+
+      const snap = await db.collection("users")
+        .doc(uid)
+        .collection("gallery")
+        .orderBy("createdAt", "desc")
+        .get();
+
+      if (snap.empty) {
+        status.textContent = "No saved images yet.";
+        return;
+      }
+
+      status.textContent = "";
+
+      snap.forEach(doc => {
+        const data = doc.data();
+        if (!data.url) return;
+
+        const card = document.createElement("div");
+        card.className = "card";
+
+        const img = document.createElement("img");
+        img.src = data.url;
+
+        card.appendChild(img);
+        galleryDiv.appendChild(card);
+      });
+    }
+  </script>
+
+</body>
+</html>

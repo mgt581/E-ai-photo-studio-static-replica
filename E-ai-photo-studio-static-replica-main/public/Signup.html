@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign Up • AI Photo Studio</title>
+
+  <style>
+    body { margin:0; font-family:system-ui; background:#f9fafb; padding:20px; }
+    .box { max-width:420px; margin:40px auto; background:white; padding:24px;
+           border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+    input { width:100%; padding:10px; margin-top:8px; margin-bottom:12px;
+            border:1px solid #ccc; border-radius:6px; font-size:16px; }
+    .btn { width:100%; padding:12px; border:0; border-radius:6px; cursor:pointer;
+           font-size:16px; font-weight:600; }
+    .primary { background:#4f46e5; color:white; }
+    .google { background:white; border:1px solid #ccc; }
+    a { color:#4f46e5; text-decoration:none; font-weight:600; }
+  </style>
+</head>
+
+<body>
+  <div class="box">
+    <h2>Create an Account</h2>
+
+    <input id="email" type="email" placeholder="Email">
+    <input id="pass" type="password" placeholder="Password">
+
+    <button class="btn primary" onclick="signupEmail()">Create Account</button>
+
+    <p style="text-align:center; margin:14px 0;">or</p>
+
+    <button class="btn google" onclick="signupGoogle()">
+      Continue with Google
+    </button>
+
+    <p style="text-align:center; margin-top:18px;">
+      Already have an account? <a href="/signin.html">Sign In</a>
+    </p>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCM6r66kW9xkBA5rgVcz4sP57N2v2BMbkg",
+      authDomain: "ai-photo-studio-24354.firebaseapp.com",
+      projectId: "ai-photo-studio-24354",
+      storageBucket: "ai-photo-studio-24354.appspot.com",
+      messagingSenderId: "411346648650",
+      appId: "1:411346648650:web:5ecd86ffecd05472fab0b3",
+      measurementId: "G-R3G160W8BQ"
+    };
+    firebase.initializeApp(firebaseConfig);
+
+    const auth = firebase.auth();
+    const googleProvider = new firebase.auth.GoogleAuthProvider();
+
+    function signupEmail() {
+      const email = document.getElementById("email").value;
+      const pass = document.getElementById("pass").value;
+
+      auth.createUserWithEmailAndPassword(email, pass)
+        .then(() => window.location.href = "/profile.html")
+        .catch(err => alert(err.message));
+    }
+
+    function signupGoogle() {
+      auth.signInWithPopup(googleProvider)
+        .then(() => window.location.href = "/profile.html")
+        .catch(err => alert("Google signup failed: " + err.message));
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,31 @@
+{
+ "hosting": {
+    "site": "aiphotostudioapp",
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "cleanUrls": true,
+    "rewrites": [
+      { "source": "/", "destination": "/index.html" },
+      { "source": "/index", "destination": "/index.html" },
+      { "source": "/profile", "destination": "/profile.html" },
+      { "source": "/profile/*", "destination": "/profile.html" },
+      { "source": "/gallery", "destination": "/gallery.html" },
+      { "source": "/gallery/*", "destination": "/gallery.html" },
+      { "source": "/signin", "destination": "/signin.html" },
+      { "source": "/signin/*", "destination": "/signin.html" }
+    ],
+    "headers": [
+      {
+        "source": "**/*.html",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache" }
+        ]
+      }
+    ],
+    "errorPage": "/404.html"
+  }
+}
