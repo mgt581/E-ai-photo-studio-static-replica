@@ -57,27 +57,27 @@
     <button id="btnEmailSignin" class="btn">Sign In</button>
     <div id="emailError" class="error"></div>
 
-    <p>Don't have an account? <a href="/signup.html">Create one</a></p>
+    <p>Don't have an account? <a href="Signup.html">Create one</a></p>
   </div>
 
   <script>
     const $ = id => document.getElementById(id);
 
-    // AUTO-REDIRECT if user already logged in
+    // Redirect if already signed in
     auth.onAuthStateChanged(user => {
-      if (user) location.replace("/profile.html");
+      if (user) location.replace("Profile.html");
     });
 
-    // GOOGLE SIGN-IN
+    // Google Sign-In
     $('btnGoogle').onclick = async ()=>{
       const provider = new firebase.auth.GoogleAuthProvider();
       try{
         await auth.signInWithPopup(provider);
-        location.replace('/');
+        location.replace("Profile.html");
       }catch(e){ alert(e.message); }
     };
 
-    // EMAIL SIGN-IN
+    // Email Sign-In
     $('btnEmailSignin').onclick = async ()=>{
       $('emailError').style.display='none';
       try{
@@ -85,7 +85,7 @@
           $('email').value.trim(),
           $('password').value
         );
-        location.replace('/');
+        location.replace("Profile.html");
       } catch(e){
         $('emailError').textContent = e.message;
         $('emailError').style.display='block';
