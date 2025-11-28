@@ -1068,6 +1068,30 @@
         const swUrl = `/sw.js?v=${Date.now()}`;
         navigator.serviceWorker.register(swUrl).catch(() => {});
       });
+
+      <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyCM6r66kW9xkBA5rgVcz4sP57N2v2BMbkg",
+    authDomain: "ai-photo-studio-24354.firebaseapp.com",
+    projectId: "ai-photo-studio-24354",
+    storageBucket: "ai-photo-studio-24354.firebasestorage.app",
+    messagingSenderId: "411346648650",
+    appId: "1:411346648650:web:5ecd86ffecd05472fab0b3",
+    measurementId: "G-R3G160W8BQ"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>      
     }
   </script>
 </body>
