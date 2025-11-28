@@ -177,16 +177,16 @@
   </div>
 
   <nav>
-    <a href="/index.html">Editor</a>
-    <a href="/gallery.html">My Gallery</a>
-    <a href="/profile.html">My Account</a>
+    <a href="index.html">Editor</a>
+    <a href="Gallery.html">My Gallery</a>
+    <a href="Profile.html">My Account</a>
   </nav>
 </header>
 
 <div class="page">
   <div class="shell">
 
-    <!-- LEFT SIDE -->
+    <!-- LEFT COLUMN -->
     <section class="card">
       <div class="card-header">
         <div class="card-title">
@@ -216,7 +216,7 @@
       <button id="btnLogout" class="btn btn-danger">Sign out</button>
     </section>
 
-    <!-- RIGHT SIDE -->
+    <!-- RIGHT COLUMN -->
     <aside class="card">
       <div class="card-header">
         <div class="card-title">Quick Actions</div>
@@ -225,10 +225,10 @@
       <div class="label">Where to start</div>
       <div class="value">
         • Open the editor and try background removal.<br>
-        • Start the trial to unlock HD downloads and remove the watermark.
+        • Start the trial to unlock HD downloads & remove watermark.
       </div>
 
-      <a href="/index.html" class="btn btn-ghost">Open Editor</a>
+      <a href="index.html" class="btn btn-ghost">Open Editor</a>
     </aside>
 
   </div>
@@ -255,7 +255,7 @@
 
   auth.onAuthStateChanged(async user=>{
     if(!user){
-      location.replace("/signin.html");
+      location.replace("signin.html");
       return;
     }
 
@@ -280,7 +280,7 @@
       elPlanPill.textContent = "PRO ACTIVE";
       elPlanPill.className = "badge pro";
       elPlanBadge.innerHTML = `<span class="badge pro">Pro · All features unlocked</span>`;
-      elTrialSummary.textContent = "Your subscription is active via Stripe.";
+      elTrialSummary.textContent = "Your subscription is active.";
       btnTrial.style.display = "none";
       btnBuy.style.display = "none";
     }
