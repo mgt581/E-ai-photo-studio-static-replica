@@ -15,6 +15,7 @@
     .field input{width:100%;height:44px;border:1px solid #d1d5db;border-radius:8px;padding:0 12px}
     .btn{width:100%;height:46px;border:none;border-radius:8px;background:#111827;color:#fff;font-weight:600;cursor:pointer;margin-bottom:12px}
     .error{color:#dc2626;font-size:13px;margin-top:6px;display:none}
+    .sub{color:#6b7280;margin-top:-6px;margin-bottom:20px}
   </style>
 
   <!-- Firebase -->
@@ -39,6 +40,7 @@
 </head>
 
 <body>
+
   <div class="card">
     <img src="/apple-touch-icon.png" class="logo" alt="Logo" />
     <h1>Create your account</h1>
@@ -59,15 +61,15 @@
     <button id="btnEmailSignUp" class="btn">Sign Up</button>
     <div id="emailError" class="error"></div>
 
-    <p class="sub">Already have an account? <a href="/signin.html">Sign in</a></p>
+    <p class="sub">Already have an account? <a href="signin.html">Sign in</a></p>
   </div>
 
   <script>
     const $ = id => document.getElementById(id);
 
-    // AUTO-REDIRECT if already logged in
+    // Auto redirect if user already signed in
     auth.onAuthStateChanged(user => {
-      if (user) location.replace("/profile.html");
+      if (user) location.replace("Profile.html");
     });
 
     async function saveUserDoc(user){
@@ -85,7 +87,7 @@
       try{
         const result = await auth.signInWithPopup(provider);
         await saveUserDoc(result.user);
-        location.replace('/');
+        location.replace("Profile.html");
       }catch(e){ alert(e.message); }
     };
 
@@ -98,12 +100,13 @@
           $('password').value
         );
         await saveUserDoc(result.user);
-        location.replace('/');
+        location.replace("Profile.html");
       } catch(e){
         $('emailError').textContent=e.message;
         $('emailError').style.display='block';
       }
     };
   </script>
+
 </body>
 </html>
