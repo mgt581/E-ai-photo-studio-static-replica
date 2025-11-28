@@ -1,243 +1,109 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>My Gallery · AI Photo Studio</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Your Gallery • AI Photo Studio</title>
 
-<style>
-  :root{
-    --bg: radial-gradient(circle at top, #0f172a 0, #020617 60%);
-    --card: rgba(255,255,255,0.04);
-    --border: rgba(255,255,255,0.08);
-    --accent: #6366f1;
-  }
-
-  *{box-sizing:border-box;}
-
-  body{
-    margin:0;
-    font-family:-apple-system,system-ui,Roboto,Arial;
-    background:var(--bg);
-    color:#e5e7eb;
-    min-height:100vh;
-  }
-
-  header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:16px 22px;
-    backdrop-filter:blur(14px);
-    background:rgba(15,23,42,0.65);
-    border-bottom:1px solid var(--border);
-    position:sticky;top:0;z-index:10;
-  }
-  header a{
-    color:#e5e7eb;
-    text-decoration:none;
-    margin-left:18px;
-    opacity:.85;
-  }
-  header a:hover{opacity:1;}
-
-  .title{
-    font-size:20px;
-    font-weight:700;
-    letter-spacing:.03em;
-  }
-
-  /* Grid layout */
-  .grid{
-    column-count:3;
-    column-gap:16px;
-    padding:20px;
-    animation:fade .6s ease-out;
-  }
-  @media(max-width:900px){ .grid{column-count:2;} }
-  @media(max-width:550px){ .grid{column-count:1;} }
-
-  .item{
-    position:relative;
-    margin-bottom:16px;
-    break-inside:avoid-column;
-    border-radius:12px;
-    overflow:hidden;
-    cursor:pointer;
-    transition:transform .2s ease;
-  }
-  .item:hover{transform:scale(1.02);}
-  .item img{width:100%; display:block;}
-
-  .toolbar{
-    position:absolute;
-    bottom:0;left:0;right:0;
-    background:linear-gradient(to top, rgba(0,0,0,0.55), transparent);
-    padding:10px;
-    display:flex;
-    justify-content:flex-end;
-    gap:10px;
-    opacity:0;
-    transition:opacity .2s;
-  }
-  .item:hover .toolbar{opacity:1;}
-
-  .btn-small{
-    background:rgba(255,255,255,0.15);
-    border:none;
-    padding:6px 10px;
-    border-radius:6px;
-    color:white;
-    cursor:pointer;
-    font-size:13px;
-    backdrop-filter:blur(6px);
-  }
-  .btn-small:hover{background:rgba(255,255,255,0.25);}
-
-  #viewer{
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,0.88);
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    opacity:0;pointer-events:none;
-    transition:opacity .25s;
-  }
-  #viewer.active{
-    opacity:1;pointer-events:auto;
-  }
-  #viewer img{
-    max-width:90vw;
-    max-height:88vh;
-    border-radius:12px;
-    box-shadow:0 0 25px rgba(0,0,0,0.5);
-  }
-
-  #closeViewer{
-    position:fixed;
-    top:20px;right:20px;
-    background:rgba(255,255,255,0.15);
-    padding:10px 14px;
-    border-radius:8px;
-    cursor:pointer;
-    font-weight:600;
-  }
-
-  @keyframes fade{
-    from{opacity:0; transform:translateY(10px);}
-    to{opacity:1; transform:translateY(0);}
-  }
-</style>
-
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyDsBDuaZ_rl7ro63Fv5gPh37EwSkfh-NqM",
-    authDomain: "aiphotostudioapp.firebaseapp.com",
-    projectId: "aiphotostudioapp",
-    storageBucket: "aiphotostudioapp.appspot.com",
-    messagingSenderId: "1056724519182",
-    appId: "1:1056724519182:web:93410e1b71a292e531ef5f",
-    measurementId: "G-YMB9JJHNBE"
-  };
-
-  firebase.initializeApp(firebaseConfig);
-  const auth    = firebase.auth();
-  const storage = firebase.storage();
-</script>
+  <style>
+    body { margin:0; font-family:system-ui; background:#f9fafb; padding:20px; }
+    h2 { margin-bottom:20px; }
+    .grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+      gap:16px;
+    }
+    .card {
+      background:white;
+      border-radius:10px;
+      padding:10px;
+      box-shadow:0 2px 8px rgba(0,0,0,0.07);
+      text-align:center;
+    }
+    img {
+      width:100%; border-radius:8px; object-fit:cover;
+    }
+    .back {
+      display:inline-block;
+      margin-bottom:16px;
+      color:#4f46e5;
+      text-decoration:none;
+      font-weight:600;
+    }
+  </style>
 </head>
 
 <body>
 
-<header>
-  <div class="title">📸 My Gallery</div>
-  <div>
-    <a href="index.html">Editor</a>
-    <a href="Profile.html">Account</a>
-  </div>
-</header>
+  <a href="/profile.html" class="back">← Back to Account</a>
+  <h2>Your Saved Images</h2>
 
-<div id="grid" class="grid">Loading…</div>
+  <p id="status">Loading...</p>
+  <div id="gallery" class="grid"></div>
 
-<div id="viewer">
-  <img id="viewerImg" src="">
-  <div id="closeViewer">Close</div>
-</div>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
-<script>
-  const grid        = document.getElementById("grid");
-  const viewer      = document.getElementById("viewer");
-  const viewerImg   = document.getElementById("viewerImg");
-  const closeViewer = document.getElementById("closeViewer");
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCM6r66kW9xkBA5rgVcz4sP57N2v2BMbkg",
+      authDomain: "ai-photo-studio-24354.firebaseapp.com",
+      projectId: "ai-photo-studio-24354",
+      storageBucket: "ai-photo-studio-24354.appspot.com",
+      messagingSenderId: "411346648650",
+      appId: "1:411346648650:web:5ecd86ffecd05472fab0b3",
+      measurementId: "G-R3G160W8BQ"
+    };
+    firebase.initializeApp(firebaseConfig);
 
-  auth.onAuthStateChanged(async user=>{
-    if(!user){
-      location.replace("signin.html");
-      return;
-    }
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-    const folder = `users/${user.uid}/images/`;
-    const ref = storage.ref(folder);
-
-    try{
-      const list = await ref.listAll();
-      grid.innerHTML = "";
-
-      if(list.items.length === 0){
-        grid.innerHTML = "<p style='opacity:.6;text-align:center;'>Your gallery is empty.</p>";
+    // Protect page
+    auth.onAuthStateChanged(async user => {
+      if (!user) {
+        window.location.href = "/signin.html";
         return;
       }
 
-      for(const fileRef of list.items){
-        const url = await fileRef.getDownloadURL();
+      loadGallery(user.uid);
+    });
 
-        const div = document.createElement("div");
-        div.className = "item";
-        div.innerHTML = `
-          <img src="${url}">
-          <div class="toolbar">
-            <button class="btn-small" data-view="${url}">View</button>
-            <button class="btn-small" data-del="${fileRef.fullPath}">Delete</button>
-          </div>
-        `;
-        grid.appendChild(div);
+    async function loadGallery(uid) {
+      const galleryDiv = document.getElementById("gallery");
+      const status = document.getElementById("status");
+
+      const snap = await db.collection("users")
+        .doc(uid)
+        .collection("gallery")
+        .orderBy("createdAt", "desc")
+        .get();
+
+      if (snap.empty) {
+        status.textContent = "No saved images yet.";
+        return;
       }
 
-    }catch(err){
-      grid.innerHTML = "<p>Error loading gallery.</p>";
-      console.error(err);
+      status.textContent = "";
+
+      snap.forEach(doc => {
+        const data = doc.data();
+        if (!data.url) return;
+
+        const card = document.createElement("div");
+        card.className = "card";
+
+        const img = document.createElement("img");
+        img.src = data.url;
+
+        card.appendChild(img);
+        galleryDiv.appendChild(card);
+      });
     }
-  });
-
-  document.addEventListener("click",(e)=>{
-    if(e.target.dataset.view){
-      viewerImg.src = e.target.dataset.view;
-      viewer.classList.add("active");
-    }
-  });
-
-  closeViewer.onclick = ()=> viewer.classList.remove("active");
-
-  document.addEventListener("click", async (e)=>{
-    if(!e.target.dataset.del) return;
-
-    if(!confirm("Delete this image?")) return;
-
-    try{
-      const ref = storage.ref(e.target.dataset.del);
-      await ref.delete();
-      e.target.closest(".item").remove();
-    }catch(err){
-      alert("Couldn't delete this image.");
-      console.error(err);
-    }
-  });
-</script>
+  </script>
 
 </body>
 </html>
