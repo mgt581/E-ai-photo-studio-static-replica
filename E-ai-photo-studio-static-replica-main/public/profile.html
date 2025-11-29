@@ -7,88 +7,243 @@
   <title>My Account · AI Photo Studio</title>
   <meta name="theme-color" content="#4f46e5"/>
   <link rel="manifest" href="/manifest.webmanifest"/>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
   <style>
-    body{margin:0;font-family:system-ui;background:#0b1220;color:#e5e7eb}
-    header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(148,163,184,.2);background:rgba(2,6,23,.7);backdrop-filter:blur(10px)}
-    nav a{color:#e5e7eb;text-decoration:none;margin-left:12px}
-    .wrap{max-width:960px;margin:24px auto;padding:0 16px}
-    .card{background:rgba(15,23,42,.92);border:1px solid rgba(148,163,184,.25);border-radius:16px;padding:18px}
-    .badge{display:inline-block;margin-top:8px;padding:6px 12px;border-radius:999px;font-weight:800;font-size:12px;border:1px solid rgba(148,163,184,.45)}
-    .pro{color:#4ade80;border-color:rgba(34,197,94,.7);background:rgba(22,163,74,.12)}
-    .trial{color:#a5b4fc;border-color:rgba(129,140,248,.7);background:rgba(129,140,248,.12)}
-    .free{color:#e5e7eb;background:rgba(148,163,184,.12)}
-    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;border:1px solid #475569;background:#0b1220;color:#e5e7eb;cursor:pointer;font-weight:700;margin-top:10px;text-decoration:none}
-    .primary{background:linear-gradient(135deg,#6366f1,#22c55e);border:none}
-    .danger{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.6);color:#fecaca}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif;
+      background:#0b1220;
+      color:#e5e7eb;
+    }
+    header{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:12px 16px;
+      border-bottom:1px solid rgba(148,163,184,.2);
+      background:rgba(2,6,23,.7);
+      backdrop-filter:blur(10px);
+    }
+    header a{color:#e5e7eb;text-decoration:none;margin-right:8px;font-size:0.9rem;}
+    header strong{font-size:0.9rem;}
+    .wrap{max-width:960px;margin:24px auto;padding:0 16px;}
+    .card{
+      background:rgba(15,23,42,.92);
+      border:1px solid rgba(148,163,184,.25);
+      border-radius:16px;
+      padding:18px;
+    }
+    .profilePic{
+      width:72px;height:72px;border-radius:50%;object-fit:cover;
+      margin:12px 0;border:2px solid rgba(148,163,184,.25);
+    }
+    .label{margin-top:12px;font-size:0.85rem;color:#9ca3af;}
+    .value{margin-top:4px;}
+    .badge{
+      display:inline-block;margin-top:8px;padding:6px 12px;
+      border-radius:999px;font-weight:800;font-size:12px;
+      border:1px solid rgba(148,163,184,.45);
+    }
+    .pro{color:#4ade80;border-color:rgba(34,197,94,.7);background:rgba(22,163,74,.12);}
+    .trial{color:#a5b4fc;border-color:rgba(129,140,248,.7);background:rgba(129,140,248,.12);}
+    .free{color:#e5e7eb;background:rgba(148,163,184,.12);}
+    .btn{
+      display:inline-flex;align-items:center;justify-content:center;
+      gap:8px;padding:10px 14px;
+      border-radius:10px;border:1px solid #475569;
+      background:#0b1220;color:#e5e7eb;
+      cursor:pointer;font-weight:700;margin-top:10px;
+      text-decoration:none;font-size:0.9rem;
+      width:100%;
+    }
+    .primary{background:linear-gradient(135deg,#6366f1,#22c55e);border:none;}
+    .danger{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.6);color:#fecaca;}
+    .muted{color:#9ca3af;font-size:0.85rem;margin-top:8px;}
   </style>
-  <script type="module" src="/auth.js"></script>
 </head>
 <body>
   <header>
-    <div><a href="/index.html">Editor</a> · <a href="/gallery.html">Gallery</a> · <strong>Account</strong></div>
-    <nav><a href="/signin.html">Sign in</a></nav>
+    <div>
+      <a href="/index.html">Editor</a>·
+      <a href="/gallery.html">Gallery</a>·
+      <strong>Account</strong>
+    </div>
+    <div id="headerStatus" style="font-size:0.8rem;color:#9ca3af;">Checking sign-in…</div>
   </header>
 
   <div class="wrap">
     <section class="card">
-      <h2 style="margin:0 0 6px">Account Overview</h2>
-      <span id="planPill" class="badge free">Checking…</span>
-      <div style="margin-top:12px">Email</div><div id="email" style="margin:6px 0 0">—</div>
-      <div style="margin-top:12px">Name</div><div id="name" style="margin:6px 0 0">—</div>
-      <div style="margin-top:12px">Plan</div><div id="planBadge" class="badge free">Free</div>
-      <p id="summary" style="color:#9ca3af;margin:8px 0 0">Loading…</p>
-      <button id="btnTrial" class="btn primary">Start 7-Day Free Trial</button>
-      <button id="btnUpgrade" class="btn">Upgrade to Pro</button>
-      <button id="btnManage" class="btn">Manage billing</button>
+      <h2 style="margin:0 0 8px">Account Overview</h2>
+      <span id="planBadge" class="badge free">Free</span>
+
+      <img id="profilePicture" class="profilePic" src="" alt="Profile picture" onerror="this.style.display='none'"/>
+
+      <div class="label">Name</div>
+      <div id="name" class="value">—</div>
+
+      <div class="label">Email</div>
+      <div id="email" class="value">—</div>
+
+      <div class="label">Plan</div>
+      <div id="planSummary" class="muted">Loading plan…</div>
+
+      <button id="btnTrial" class="btn primary">Start 7-day Free Trial</button>
+      <button id="btnUpgrade" class="btn">Upgrade to Pro · £4.99/yr</button>
       <button id="btnLogout" class="btn danger">Sign out</button>
     </section>
   </div>
 
-  <script type="module">
-    import { requireAuth, getUser, getServerPlan, signOut, startCheckout, openBillingPortal } from '/auth.js';
-    if (!requireAuth('/signin.html')) throw new Error('no-auth');
-
-    const u = getUser();
-    document.getElementById('email').textContent = u?.email || '—';
-    document.getElementById('name').textContent  = u?.name  || '—';
-
-    const planKey = (sub)=>`aips.plan.${sub}`;
-    function getPlan(sub){ try{ const raw=localStorage.getItem(planKey(sub)); return raw? JSON.parse(raw):{}; }catch{ return {}; } }
-    function setPlan(sub,data){ localStorage.setItem(planKey(sub), JSON.stringify(data||{})); }
-
-    function renderPlan(){
-      const p = getServerPlan();
-      const local = getPlan(u.sub);
-      const activeTrial = local.trialEnds && local.trialEnds > Date.now();
-      const pill = document.getElementById('planPill');
-      const badge= document.getElementById('planBadge');
-      const sum  = document.getElementById('summary');
-      if (p.pro){
-        pill.className='badge pro'; pill.textContent='PRO ACTIVE';
-        badge.className='badge pro'; badge.textContent='Pro (server verified)';
-        sum.textContent='Subscription active via Stripe.';
-      } else if (activeTrial){
-        pill.className='badge trial'; pill.textContent='TRIAL ACTIVE';
-        const days=Math.max(1,Math.ceil((local.trialEnds-Date.now())/86400000));
-        badge.className='badge trial'; badge.textContent=`Trial · ${days} day${days===1?'':'s'} left`;
-        sum.textContent='Trial enables HD locally on this device.';
-      } else {
-        pill.className='badge free'; pill.textContent='FREE PLAN';
-        badge.className='badge free'; badge.textContent='Free';
-        sum.textContent='Upgrade to Pro to unlock HD everywhere.';
-      }
-    }
-    renderPlan();
-
-    document.getElementById('btnTrial').onclick = () => {
-      const cur = getPlan(u.sub);
-      if (cur.trialEnds && cur.trialEnds > Date.now()) { alert('Trial already active.'); return; }
-      setPlan(u.sub, { ...cur, trialEnds: Date.now()+7*864e5 });
-      alert('✅ 7-day trial started'); renderPlan();
+  <script>
+    // SAME config as index.html
+    const firebaseConfig = {
+      apiKey: "AIzaSyDsBDuaZ_rl7ro63Fv5gPh37EwSkfh-NqM",
+      authDomain: "aiphotostudioapp.firebaseapp.com",
+      projectId: "aiphotostudioapp",
+      storageBucket: "aiphotostudioapp.appspot.com",
+      messagingSenderId: "1056724519182",
+      appId: "1:1056724519182:web:93410e1b71a292e531ef5f",
+      measurementId: "G-YMB9JJHNBE"
     };
-    document.getElementById('btnUpgrade').onclick = async () => { try{ await startCheckout(); }catch(e){ alert(e.message);} };
-    document.getElementById('btnManage').onclick  = async () => { try{ await openBillingPortal(); }catch(e){ alert(e.message);} };
-    document.getElementById('btnLogout').onclick  = () => signOut().then(()=>location.replace('/signin.html'));
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+    const db   = firebase.firestore();
+
+    // re-use your existing Stripe Payment Link
+    const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/eVq6oJ3wugiPcFJ7QGd3i02";
+
+    const headerStatus = document.getElementById("headerStatus");
+    const nameEl   = document.getElementById("name");
+    const emailEl  = document.getElementById("email");
+    const picEl    = document.getElementById("profilePicture");
+    const planBadge= document.getElementById("planBadge");
+    const planSummary = document.getElementById("planSummary");
+    const btnTrial   = document.getElementById("btnTrial");
+    const btnUpgrade = document.getElementById("btnUpgrade");
+    const btnLogout  = document.getElementById("btnLogout");
+
+    function setPlanUI({ tier, isPro, trialEnds }) {
+      if (isPro) {
+        planBadge.className = "badge pro";
+        planBadge.textContent = "PRO ACTIVE";
+        planSummary.textContent = "Subscription active via Stripe.";
+        return;
+      }
+      if (trialEnds && trialEnds > Date.now()) {
+        const days = Math.max(1, Math.ceil((trialEnds - Date.now()) / 86400000));
+        planBadge.className = "badge trial";
+        planBadge.textContent = `TRIAL · ${days} day${days === 1 ? "" : "s"} left`;
+        planSummary.textContent = "Trial unlocks Pro on this account.";
+        return;
+      }
+      planBadge.className = "badge free";
+      planBadge.textContent = "FREE PLAN";
+      planSummary.textContent = "Upgrade to Pro to unlock HD everywhere.";
+    }
+
+    async function refreshUserPlan(user) {
+      if (!user) {
+        setPlanUI({ tier: "free", isPro:false, trialEnds:null });
+        return;
+      }
+      const ref = db.collection("users").doc(user.uid);
+      const snap = await ref.get();
+      if (!snap.exists) {
+        setPlanUI({ tier:"free", isPro:false, trialEnds:null });
+        return;
+      }
+      const d = snap.data() || {};
+      const isPro = !!d.isPro || d.tier === "pro";
+
+      let trialEndMillis = null;
+      if (d.trial?.endsAt?.toMillis) {
+        trialEndMillis = d.trial.endsAt.toMillis();
+      } else if (d.trialEnd?.toMillis) {
+        trialEndMillis = d.trialEnd.toMillis();
+      }
+
+      setPlanUI({ tier: d.tier || "free", isPro, trialEnds: trialEndMillis });
+    }
+
+    async function startFreeTrial(user) {
+      if (!user) {
+        alert("Please sign in first.");
+        window.location.href = "/signin.html";
+        return;
+      }
+      if (user.isAnonymous) {
+        alert("Create a full account to start a trial.");
+        return;
+      }
+
+      const ref = db.collection("users").doc(user.uid);
+      const now = new Date();
+      const end = new Date(now.getTime() + 7*24*60*60*1000);
+
+      const snap = await ref.get();
+      if (snap.exists) {
+        const d = snap.data() || {};
+        const activeEnds =
+          d.trial?.endsAt?.toMillis?.() ||
+          d.trialEnd?.toMillis?.();
+        if (activeEnds && activeEnds > Date.now()) {
+          alert("You already have an active trial.");
+          return;
+        }
+      }
+
+      await ref.set({
+        tier: "trial",
+        trial: {
+          startsAt: firebase.firestore.Timestamp.fromDate(now),
+          endsAt:   firebase.firestore.Timestamp.fromDate(end)
+        },
+        isPro: false
+      }, { merge: true });
+
+      alert("✅ 7-day free trial started");
+      await refreshUserPlan(user);
+    }
+
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        headerStatus.textContent = "Not signed in";
+        window.location.href = "/signin.html";
+        return;
+      }
+
+      headerStatus.textContent = "Signed in";
+      nameEl.textContent  = user.displayName || "—";
+      emailEl.textContent = user.email || "—";
+      if (user.photoURL) {
+        picEl.src = user.photoURL;
+        picEl.style.display = "block";
+      }
+
+      try {
+        await refreshUserPlan(user);
+      } catch (e) {
+        console.warn("Plan load failed:", e);
+        planSummary.textContent = "Could not load plan. Try again later.";
+      }
+
+      btnTrial.onclick = () => startFreeTrial(user);
+      btnUpgrade.onclick = () => {
+        if (!STRIPE_PAYMENT_LINK) {
+          alert("Stripe payment link not configured.");
+          return;
+        }
+        window.location.href = STRIPE_PAYMENT_LINK;
+      };
+      btnLogout.onclick = async () => {
+        await auth.signOut();
+        window.location.href = "/signin.html";
+      };
+    });
   </script>
 </body>
 </html>
