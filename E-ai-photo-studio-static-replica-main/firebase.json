@@ -1,12 +1,7 @@
 {
   "hosting": {
-    "public": "public",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    // 🥳 This new block will fix your 404 errors 🥳
+    "public": "public", 
+    // ... ignore rules ...
     "rewrites": [
       {
         "source": "**",
