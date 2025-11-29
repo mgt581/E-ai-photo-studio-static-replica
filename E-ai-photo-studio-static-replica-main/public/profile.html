@@ -1,44 +1,63 @@
+<!-- /profile.html (drop-in replacement) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Your Account • AI Photo Studio</title>
-
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Account · AI Photo Studio</title>
   <style>
-    body { margin:0; font-family:system-ui; background:#f9fafb; padding:20px; }
-    .box { max-width:420px; margin:40px auto; background:white; padding:24px;
-           border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
-    .btn { width:100%; padding:12px; border:0; border-radius:6px;
-           background:#4f46e5; color:white; cursor:pointer; font-size:16px; font-weight:600; }
-    .ghost { background:white; border:1px solid #ccc; color:#333; }
-    a { color:#4f46e5; text-decoration:none; font-weight:600; }
+    :root{
+      --bg: radial-gradient(circle at top, #1e293b 0, #020617 45%, #020617 100%);
+      --card-bg: rgba(15,23,42,0.92);
+      --accent: #6366f1;
+      --accent-strong: #4f46e5;
+      --danger: #ef4444;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;font-family:system-ui,-apple-system,Roboto,Arial,sans-serif;
+      background:var(--bg);color:#e5e7eb;min-height:100vh;display:flex;flex-direction:column;
+    }
+    header{position:sticky;top:0;z-index:20;backdrop-filter:blur(14px);
+      background:linear-gradient(to right, rgba(15,23,42,0.92), rgba(15,23,42,0.6));
+      border-bottom:1px solid rgba(148,163,184,0.2);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;}
+    nav a{color:#e5e7eb;text-decoration:none;font-size:14px;margin-left:18px;opacity:.85;position:relative}
+    nav a:hover{opacity:1}
+    nav a::after{content:"";position:absolute;left:0;bottom:-4px;width:0;height:2px;background:linear-gradient(90deg,#6366f1,#22c55e);transition:width .18s}
+    nav a:hover::after{width:100%}
+    .brand-wrap{display:flex;align-items:center;gap:10px}
+    .logo-dot{width:28px;height:28px;border-radius:9px;background:conic-gradient(from 210deg, #22c55e,#06b6d4,#6366f1,#a855f7,#22c55e);box-shadow:0 0 20px rgba(129,140,248,0.6)}
+    .brand-title{font-weight:800;font-size:18px;letter-spacing:.04em}
+    .page{flex:1;display:flex;justify-content:center;padding:32px 16px}
+    .shell{width:100%;max-width:960px;display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:24px}
+    @media(max-width:768px){.shell{grid-template-columns:1fr}}
+    .card{background:var(--card-bg);border:1px solid rgba(148,163,184,0.25);border-radius:18px;padding:22px 20px 20px;box-shadow:0 18px 45px rgba(15,23,42,0.7);position:relative;overflow:hidden}
+    .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+    .card-title{font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px}
+    .dot-live{width:8px;height:8px;border-radius:99px;background:#22c55e;box-shadow:0 0 10px rgba(34,197,94,0.9);animation:pulse 1.6s infinite}
+    .label{font-size:12px;color:#9ca3af;text-transform:uppercase;margin-bottom:4px}
+    .value{font-size:15px;margin-bottom:12px;color:#f9fafb;word-break:break-all}
+    .badge{display:inline-flex;align-items:center;padding:6px 12px;border-radius:99px;font-size:12px;font-weight:700;margin-bottom:10px}
+    .badge.pro{background:rgba(22,163,74,0.16);color:#4ade80;border:1px solid rgba(34,197,94,0.8)}
+    .badge.trial{background:rgba(129,140,248,0.18);color:#a5b4fc;border:1px solid rgba(129,140,248,0.85)}
+    .badge.free{background:rgba(248,250,252,0.04);color:#e5e7eb;border:1px solid rgba(148,163,184,0.55)}
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:10px 16px;border-radius:999px;cursor:pointer;font-size:14px;font-weight:600;border:none;text-decoration:none;margin-top:8px}
+    .btn-primary{background:linear-gradient(135deg,#6366f1,#22c55e);color:white;box-shadow:0 12px 30px rgba(79,70,229,0.6)}
+    .btn-ghost{background:rgba(15,23,42,0.9);color:#e5e7eb;border:1px solid rgba(148,163,184,0.6)}
+    .btn-danger{background:rgba(248,113,113,0.12);color:#fecaca;border:1px solid rgba(248,113,113,0.7);margin-top:16px}
+    .muted{color:#9ca3af}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
   </style>
-</head>
 
-<body>
-  <div class="box">
-    <h2>Your Account</h2>
+  <!-- Firebase (modular v9) -->
+  <script type="module">
+    // IMPORTANT: Use ONE project config everywhere. Replace with your chosen project.
+    // Pick the 'ai-photo-studio-24354' project (used by gallery/profile originally). :contentReference[oaicite:11]{index=11} :contentReference[oaicite:12]{index=12}
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, Timestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-    <p id="userInfo" style="margin-bottom:20px; color:#555;"></p>
-
-    <button class="btn ghost" onclick="logout()">Sign Out</button>
-
-    <p style="text-align:center; margin-top:20px;">
-      <a href="/gallery.html">Go to your Gallery</a>
-    </p>
-
-    <p style="text-align:center; margin-top:10px;">
-      <a href="/index.html">Back to Home</a>
-    </p>
-
-  </div>
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-
-  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCM6r66kW9xkBA5rgVcz4sP57N2v2BMbkg",
       authDomain: "ai-photo-studio-24354.firebaseapp.com",
@@ -48,27 +67,181 @@
       appId: "1:411346648650:web:5ecd86ffecd05472fab0b3",
       measurementId: "G-R3G160W8BQ"
     };
-    firebase.initializeApp(firebaseConfig);
 
-    const auth = firebase.auth();
+    const STRIPE_LINK = "https://buy.stripe.com/eVq6oJ3wugiPcFJ7QGd3i02"; /* centralize price link */ // why: avoid duplication. :contentReference[oaicite:13]{index=13}
 
-    // PROTECT PAGE — only allow logged-in users
-    auth.onAuthStateChanged(user => {
-      if (!user) {
-        window.location.href = "/signin.html";
-        return;
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
+
+    const elEmail = () => document.getElementById("userEmail");
+    const elCreated = () => document.getElementById("createdAt");
+    const elPlanBadge = () => document.getElementById("planBadge");
+    const elPlanPill  = () => document.getElementById("planPill");
+    const elTrialSummary = () => document.getElementById("trialSummary");
+    const btnTrial  = () => document.getElementById("btnStartTrial");
+    const btnBuy    = () => document.getElementById("btnBuy");
+    const btnLogout = () => document.getElementById("btnLogout");
+
+    const fmtDate = (ts) => {
+      try{
+        if(!ts) return "—";
+        const d = ts instanceof Date ? ts : (ts.toDate ? ts.toDate() : new Date(ts));
+        return d.toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"});
+      }catch{ return "—"; }
+    };
+
+    const setPlanUI = (state) => {
+      const pill = elPlanPill();
+      const badge = elPlanBadge();
+      const summary = elTrialSummary();
+      const buy = btnBuy();
+      const trial = btnTrial();
+
+      if(state.kind === "pro"){
+        pill.textContent = "PRO ACTIVE"; pill.className = "badge pro";
+        badge.innerHTML = `<span class="badge pro">Pro · All features unlocked</span>`;
+        summary.textContent = "Your subscription is active via Stripe.";
+        buy.style.display = "none"; trial.style.display = "none";
+      } else if(state.kind === "trial"){
+        pill.textContent = "TRIAL ACTIVE"; pill.className = "badge trial";
+        badge.innerHTML = `<span class="badge trial">Trial · ${state.days} day${state.days===1?"":"s"} left</span>`;
+        summary.textContent = `${state.days} day${state.days===1?"":"s"} left in your free trial.`;
+        buy.style.display = "inline-flex"; buy.href = STRIPE_LINK;
+        trial.style.display = "none";
+      } else {
+        pill.textContent = "FREE PLAN"; pill.className = "badge free";
+        badge.innerHTML = `<span class="badge free">Free plan</span>`;
+        summary.textContent = "Start your trial to unlock HD and remove watermark.";
+        buy.style.display = "inline-flex"; buy.href = STRIPE_LINK;
+        trial.style.display = "inline-flex";
       }
+    };
 
-      document.getElementById("userInfo").textContent =
-        "Signed in as: " + (user.email || "Unknown user");
+    onAuthStateChanged(auth, async (user) => {
+      if(!user){ location.replace("/signin.html"); return; } /* strict guard */  // why: protect route. :contentReference[oaicite:14]{index=14} :contentReference[oaicite:15]{index=15}
+
+      elEmail().textContent = user.email || "No email";
+
+      try{
+        const ref  = doc(db, "users", user.uid);
+        const snap = await getDoc(ref);
+        const data = snap.exists() ? snap.data() : {};
+
+        // creation date: prefer Firestore, fall back to auth metadata
+        if(data.createdAt){
+          elCreated().textContent = fmtDate(data.createdAt);
+        }else{
+          elCreated().textContent = fmtDate(new Date(user.metadata.creationTime));
+        }
+
+        const isPro = data.tier === "pro" || data.isPro === true;
+        const trialEnds = data?.trial?.endsAt?.toMillis ? data.trial.endsAt.toMillis() : (data?.trial?.endsAt || null);
+        const now = Date.now();
+
+        if(isPro){
+          setPlanUI({kind:"pro"});
+        }else if(trialEnds && trialEnds > now){
+          const days = Math.max(1, Math.ceil((trialEnds - now)/86400000));
+          setPlanUI({kind:"trial", days});
+        }else{
+          setPlanUI({kind:"free"});
+        }
+      }catch(e){
+        console.error(e);
+        elPlanBadge().innerHTML = `<span class="badge free">Unknown</span>`;
+        elTrialSummary().textContent = "Could not load plan info.";
+      }
     });
 
-    function logout() {
-      auth.signOut().then(() => {
-        window.location.href = "/signin.html";
-      });
-    }
-  </script>
+    // Start trial
+    window.startTrial = async () => {
+      const user = auth.currentUser;
+      if(!user) return;
+      const now = new Date();
+      const end = new Date(now.getTime() + 7*86400000);
+      try{
+        const ref = doc(db, "users", user.uid);
+        await setDoc(ref, {
+          tier:"trial",
+          trial:{
+            startsAt: Timestamp.fromDate(now),
+            endsAt:   Timestamp.fromDate(end)
+          }
+        }, { merge:true });
+        alert("7-day trial started!");
+        location.reload();
+      }catch(e){
+        alert("Failed to start trial. Please try again.");
+        console.error(e);
+      }
+    };
 
+    // Logout
+    window.doLogout = () => signOut(auth);
+  </script>
+</head>
+
+<body>
+  <header>
+    <div class="brand-wrap" aria-label="AI Photo Studio brand">
+      <div class="logo-dot" aria-hidden="true"></div>
+      <div>
+        <div class="brand-title">AI Photo Studio</div>
+        <div class="muted" style="font-size:11px;">Smart background remover & AI editor</div>
+      </div>
+    </div>
+    <nav>
+      <a href="/index.html">Editor</a>
+      <a href="/gallery.html">My Gallery</a>
+      <a aria-current="page" href="/profile.html">My Account</a>
+    </nav>
+  </header>
+
+  <main class="page" role="main">
+    <div class="shell">
+      <section class="card" aria-labelledby="account-title">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="dot-live" aria-hidden="true"></span>
+            <span id="account-title">Account Overview</span>
+          </div>
+          <span id="planPill" class="badge free">Checking…</span>
+        </div>
+
+        <p class="muted" style="margin-bottom:18px">
+          Manage your subscription, trial, and sign-in details.
+        </p>
+
+        <div class="label">Email</div>
+        <div id="userEmail" class="value">Loading…</div>
+
+        <div class="label">Account created</div>
+        <div id="createdAt" class="value">—</div>
+
+        <div class="label">Current plan</div>
+        <div id="planBadge"></div>
+
+        <div id="trialSummary" class="muted" style="margin-top:6px"></div>
+
+        <button id="btnStartTrial" class="btn btn-primary" onclick="startTrial()">Start 7-Day Free Trial</button>
+        <a id="btnBuy" class="btn btn-ghost" href="#" rel="noopener">Upgrade to Pro · £4.99/mo</a>
+
+        <button id="btnLogout" class="btn btn-danger" onclick="doLogout()">Sign out</button>
+      </section>
+
+      <aside class="card">
+        <div class="card-header">
+          <div class="card-title">Quick Actions</div>
+        </div>
+        <div class="label">Where to start</div>
+        <div class="value">
+          • Open the editor and try background removal.<br />
+          • Start the trial to unlock HD downloads and remove the watermark.
+        </div>
+        <a href="/index.html" class="btn btn-ghost">Open Editor</a>
+      </aside>
+    </div>
+  </main>
 </body>
 </html>
