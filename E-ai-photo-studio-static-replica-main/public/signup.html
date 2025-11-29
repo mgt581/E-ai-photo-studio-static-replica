@@ -1,36 +1,130 @@
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyCM6r66kW9xkBA5rgVcz4sP57N2v2BMbkg",
-    authDomain: "ai-photo-studio-24354.firebaseapp.com",
-    projectId: "ai-photo-studio-24354",
-    storageBucket: "ai-photo-studio-24354.appspot.com",
-    messagingSenderId: "411346648650",
-    appId: "1:411346648650:web:5ecd86ffecd05472fab0b3",
-    measurementId: "G-R3G160W8BQ"
-  };
-  firebase.initializeApp(firebaseConfig);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sign Up • AI Photo Studio</title>
+    
+    <style>
+        :root{--grad:linear-gradient(90deg,#6366f1,#8b5cf6)}
+        body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#f9fafb;color:#111827}
+        .wrap{max-width:400px;margin:50px auto;padding:24px;text-align:center}
+        .card{background:#fff;padding:24px;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,.05)}
+        h2 { margin-top: 0; margin-bottom: 24px; }
+        form { display: grid; gap: 16px; }
+        input[type="email"], input[type="password"] {
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        .btn{height:44px;padding:0 16px;border-radius:10px;border:0;cursor:pointer;font-size:15px;font-weight:700;background:#e5e7eb;color:#111827}
+        .btn.primary{background:var(--grad);color:#fff}
+        .status{font-size:14px;color:#ef4444;min-height:20px;}
+        .link { color:#4f46e5; text-decoration:none; font-weight:600; font-size:14px; }
+    </style>
+</head>
 
-  const auth = firebase.auth();
-  const googleProvider = new firebase.auth.GoogleAuthProvider();
+<body>
+    <div class="wrap">
+        <h2>Create Your Account</h2>
+        <div class="card">
+            <form id="signUpForm">
+                <input type="email" id="email" placeholder="Email Address" required>
+                <input type="password" id="password" placeholder="Password (min 6 characters)" required>
+                <p id="status" class="status"></p>
+                <button type="submit" id="btnSignUp" class="btn primary">Sign Up</button>
+            </form>
+            <p style="margin-top:20px; font-size:14px;">
+                Already have an account? <a href="/signin.html" class="link">Sign In</a>
+            </p>
+            <p style="margin-top:10px; font-size:14px;">
+                <a href="/index.html" class="link">← Back to Home</a>
+            </p>
+        </div>
+    </div>
 
-  function signupEmail() {
-    const email = document.getElementById("email").value;
-    const pass = document.getElementById("pass").value;
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    
+    <script>
+        // CRITICAL: Ensure this is the same config from index.html (aiphotostudioapp)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDsBDuaZ_rl7ro63Fv5gPh37EwSkfh-NqM",
+            authDomain: "aiphotostudioapp.firebaseapp.com",
+            projectId: "aiphotostudioapp",
+            storageBucket: "aiphotostudioapp.appspot.com",
+            messagingSenderId: "1056724519182",
+            appId: "1:1056724519182:web:93410e1b71a292e531ef5f",
+            measurementId: "G-YMB9JJHNBE"
+        };
+        firebase.initializeApp(firebaseConfig);
 
-    auth.createUserWithEmailAndPassword(email, pass)
-      .then(() => {
-        // FIXED → redirect to main homepage
-        window.location.href = "/index.html";
-      })
-      .catch(err => alert(err.message));
-  }
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const signUpForm = document.getElementById('signUpForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const statusEl = document.getElementById('status');
+        const btnSignUp = document.getElementById('btnSignUp');
 
-  function signupGoogle() {
-    auth.signInWithPopup(googleProvider)
-      .then(() => {
-        // FIXED → redirect to main homepage
-        window.location.href = "/index.html";
-      })
-      .catch(err => alert("Google signup failed: " + err.message));
-  }
-</script>
+        // 🛑 PROTECTION: Redirect users who are already logged in
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                // Redirect logged-in users to the account page
+                window.location.href = "/profile.html";
+            }
+        });
+
+        // --- Sign Up Handler ---
+        signUpForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = emailInput.value;
+            const password = passwordInput.value;
+
+            btnSignUp.disabled = true;
+            statusEl.textContent = 'Creating account...';
+
+            try {
+                // 1. Firebase function to create a new user
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+
+                // 2. Add a default record to Firestore (optional but good practice)
+                await db.collection('users').doc(user.uid).set({
+                    email: user.email,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    isPro: false,
+                    tier: 'free'
+                });
+                
+                // 3. Success: Redirect the new user
+                statusEl.textContent = 'Success! Redirecting to account...';
+                window.location.href = "/profile.html";
+
+            } catch (error) {
+                console.error("Sign Up Error:", error);
+                let message;
+                
+                // Provide user-friendly error messages
+                switch (error.code) {
+                    case 'auth/weak-password':
+                        message = 'Password should be at least 6 characters.';
+                        break;
+                    case 'auth/email-already-in-use':
+                        message = 'This email is already in use. Try signing in.';
+                        break;
+                    case 'auth/invalid-email':
+                        message = 'The email address is not valid.';
+                        break;
+                    default:
+                        message = 'Sign Up failed. Please try again.';
+                }
+                statusEl.textContent = message;
+                btnSignUp.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
