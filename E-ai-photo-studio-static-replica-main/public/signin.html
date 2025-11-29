@@ -1,49 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sign In • AI Photo Studio</title>
-
-  <style>
-    body { margin:0; font-family:system-ui; background:#f9fafb; padding:20px; }
-    .box { max-width:420px; margin:40px auto; background:white; padding:24px;
-           border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
-    input { width:100%; padding:10px; margin-top:8px; margin-bottom:12px;
-            border:1px solid #ccc; border-radius:6px; font-size:16px; }
-    .btn { width:100%; padding:12px; border:0; border-radius:6px; cursor:pointer;
-           font-size:16px; font-weight:600; }
-    .primary { background:#4f46e5; color:white; }
-    .google { background:white; border:1px solid #ccc; }
-    a { color:#4f46e5; text-decoration:none; font-weight:600; }
-  </style>
-</head>
-
-<body>
-  <div class="box">
-    <h2>Sign In</h2>
-
-    <input id="email" type="email" placeholder="Email">
-    <input id="pass" type="password" placeholder="Password">
-
-    <button class="btn primary" onclick="loginEmail()">Sign In</button>
-
-    <p style="text-align:center; margin:14px 0;">or</p>
-
-    <button class="btn google" onclick="loginGoogle()">
-      Sign in with Google
-    </button>
-
-    <p style="text-align:center; margin-top:18px;">
-      Don't have an account? <a href="/signup.html">Sign Up</a>
-    </p>
-  </div>
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-
-  <script>
+<script>
+    // 1. Your Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyCM6r66kW9xkBA5rgVcz4sP57N2v2BMbkg",
       authDomain: "ai-photo-studio-24354.firebaseapp.com",
@@ -57,21 +13,49 @@
 
     const auth = firebase.auth();
     const googleProvider = new firebase.auth.GoogleAuthProvider();
+    const emailInput = document.getElementById("email");
+    const passInput = document.getElementById("pass");
 
-    function loginEmail() {
-      const email = document.getElementById("email").value;
-      const pass = document.getElementById("pass").value;
+    // CRITICAL: Check if user is already signed in on load
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        // Redirect if already logged in
+        window.location.href = "/index.html"; 
+      }
+    });
 
-      auth.signInWithEmailAndPassword(email, pass)
-        .then(() => window.location.href = "/index.html")   // FIXED
-        .catch(err => alert(err.message));
+    // 2. Function to handle Email/Password login
+    async function loginEmail() {
+        // Optional: Add a status message element to show "Signing in..."
+        const email = emailInput.value;
+        const pass = passInput.value;
+        if (!email || !pass) return alert("Please enter both email and password.");
+
+        try {
+            // Set persistence (remembers user across sessions)
+            await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+            await auth.signInWithEmailAndPassword(email, pass);
+            
+            // Success: Redirection handled by onAuthStateChanged listener
+            // window.location.href = "/index.html";
+        } catch (err) {
+            alert("Sign In failed: " + err.message);
+        }
     }
 
-    function loginGoogle() {
-      auth.signInWithPopup(googleProvider)
-        .then(() => window.location.href = "/index.html")   // FIXED
-        .catch(err => alert("Google sign-in failed: " + err.message));
+    // 3. Function to handle Google login
+    async function loginGoogle() {
+        try {
+            await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+            await auth.signInWithPopup(googleProvider);
+            
+            // Success: Redirection handled by onAuthStateChanged listener
+            // window.location.href = "/index.html";
+        } catch (err) {
+            // Error codes often include 'auth/popup-closed-by-user'
+            if (err.code !== 'auth/popup-closed-by-user') {
+                alert("Google sign-in failed: " + err.message);
+            }
+        }
     }
-  </script>
-</body>
-</html>
+</script>
