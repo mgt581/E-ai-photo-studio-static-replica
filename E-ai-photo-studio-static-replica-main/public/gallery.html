@@ -1,109 +1,73 @@
+<!-- /public/gallery.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Your Gallery • AI Photo Studio</title>
-
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Your Gallery · AI Photo Studio</title>
+  <meta name="theme-color" content="#4f46e5"/>
+  <link rel="manifest" href="/manifest.webmanifest"/>
   <style>
-    body { margin:0; font-family:system-ui; background:#f9fafb; padding:20px; }
-    h2 { margin-bottom:20px; }
-    .grid {
-      display:grid;
-      grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
-      gap:16px;
-    }
-    .card {
-      background:white;
-      border-radius:10px;
-      padding:10px;
-      box-shadow:0 2px 8px rgba(0,0,0,0.07);
-      text-align:center;
-    }
-    img {
-      width:100%; border-radius:8px; object-fit:cover;
-    }
-    .back {
-      display:inline-block;
-      margin-bottom:16px;
-      color:#4f46e5;
-      text-decoration:none;
-      font-weight:600;
-    }
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#f9fafb;color:#111827}
+    header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #e5e7eb;background:#fff}
+    a{color:#4f46e5;text-decoration:none}
+    .wrap{max-width:1000px;margin:18px auto;padding:0 16px}
+    #status{color:#6b7280;margin:8px 0 16px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+    .card{background:#fff;border-radius:12px;padding:8px;box-shadow:0 2px 8px rgba(0,0,0,.06);text-align:center}
+    img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:8px}
+    .toolbar{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+    button{padding:8px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-weight:700;cursor:pointer}
+    button[disabled]{opacity:.6;cursor:not-allowed}
+    .err{color:#b91c1c}
   </style>
+  <script type="module" src="/auth.js"></script>
+  <script type="module" src="/db.js"></script>
 </head>
-
 <body>
+  <header>
+    <div><a href="/index.html">Editor</a> · <strong>Gallery</strong> · <a href="/profile.html">Account</a></div>
+    <nav><a href="/signin.html">Sign in</a></nav>
+  </header>
 
-  <a href="/profile.html" class="back">← Back to Account</a>
-  <h2>Your Saved Images</h2>
+  <div class="wrap">
+    <div class="toolbar">
+      <button id="btnMore">Load more</button>
+    </div>
+    <p id="status">Loading…</p>
+    <div id="grid" class="grid" aria-live="polite"></div>
+  </div>
 
-  <p id="status">Loading...</p>
-  <div id="gallery" class="grid"></div>
+  <script type="module">
+    import { requireAuth, getUser } from '/auth.js';
+    import { listImages } from '/db.js';
+    if (!requireAuth('/signin.html')) throw new Error('no-auth');
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    const $ = (id)=>document.getElementById(id);
+    const setStatus = (m, err=false) => { const el=$('status'); el.textContent=m||''; el.className = err? 'err' : ''; };
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCM6r66kW9xkBA5rgVcz4sP57N2v2BMbkg",
-      authDomain: "ai-photo-studio-24354.firebaseapp.com",
-      projectId: "ai-photo-studio-24354",
-      storageBucket: "ai-photo-studio-24354.appspot.com",
-      messagingSenderId: "411346648650",
-      appId: "1:411346648650:web:5ecd86ffecd05472fab0b3",
-      measurementId: "G-R3G160W8BQ"
-    };
-    firebase.initializeApp(firebaseConfig);
+    let cursor = null; const PAGE = 12; const user = getUser();
 
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-
-    // Protect page
-    auth.onAuthStateChanged(async user => {
-      if (!user) {
-        window.location.href = "/signin.html";
-        return;
-      }
-
-      loadGallery(user.uid);
-    });
-
-    async function loadGallery(uid) {
-      const galleryDiv = document.getElementById("gallery");
-      const status = document.getElementById("status");
-
-      const snap = await db.collection("users")
-        .doc(uid)
-        .collection("gallery")
-        .orderBy("createdAt", "desc")
-        .get();
-
-      if (snap.empty) {
-        status.textContent = "No saved images yet.";
-        return;
-      }
-
-      status.textContent = "";
-
-      snap.forEach(doc => {
-        const data = doc.data();
-        if (!data.url) return;
-
-        const card = document.createElement("div");
-        card.className = "card";
-
-        const img = document.createElement("img");
-        img.src = data.url;
-
-        card.appendChild(img);
-        galleryDiv.appendChild(card);
-      });
+    async function fetchPage(){
+      $('btnMore').disabled = true; setStatus('Loading…');
+      try{
+        const { items, nextCursor } = await listImages({ sub: user.sub, cursor, limit: PAGE });
+        if (!items.length && !cursor){ setStatus('No saved images yet.'); $('btnMore').style.display='none'; return; }
+        for (const it of items){
+          const card = document.createElement('div'); card.className='card';
+          const img = document.createElement('img'); img.loading='lazy'; img.decoding='async'; img.alt='Saved image';
+          img.src = URL.createObjectURL(it.blob);
+          card.appendChild(img); $('grid').appendChild(card);
+        }
+        cursor = nextCursor;
+        if (!cursor) $('btnMore').style.display='none';
+        setStatus('');
+      }catch(e){ console.error(e); setStatus('Failed to load your gallery.', true); }
+      finally{ $('btnMore').disabled = !cursor; }
     }
-  </script>
 
+    $('btnMore').onclick = fetchPage;
+    fetchPage();
+  </script>
 </body>
 </html>
