@@ -6,12 +6,12 @@
       "**/.*",
       "**/node_modules/**"
     ],
+    // 🥳 This new block will fix your 404 errors 🥳
     "rewrites": [
-      { "source": "/signin", "destination": "/signin.html" },
-      { "source": "/signup", "destination": "/signup.html" },
-      { "source": "/profile", "destination": "/profile.html" },
-      { "source": "/gallery", "destination": "/gallery.html" },
-      { "source": "/home", "destination": "/index.html" }
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
     ]
   }
 }
