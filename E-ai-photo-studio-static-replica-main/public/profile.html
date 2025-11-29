@@ -27,6 +27,11 @@
     <p style="text-align:center; margin-top:20px;">
       <a href="/gallery.html">Go to your Gallery</a>
     </p>
+
+    <p style="text-align:center; margin-top:10px;">
+      <a href="/index.html">Back to Home</a>
+    </p>
+
   </div>
 
   <!-- Firebase -->
@@ -47,7 +52,7 @@
 
     const auth = firebase.auth();
 
-    // PROTECT PAGE
+    // PROTECT PAGE — only allow logged-in users
     auth.onAuthStateChanged(user => {
       if (!user) {
         window.location.href = "/signin.html";
