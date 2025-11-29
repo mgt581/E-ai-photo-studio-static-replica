@@ -1,3 +1,4 @@
+<!-- /index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -58,10 +59,11 @@
     </div>
 
     <div class="row">
-      <a href="Gallery.html" class="ghost">Gallery</a>
-      <a href="Profile.html" class="ghost">Account</a>
-      <a href="signin.html" class="ghost">Sign In</a>
-      <a href="signup.html" class="ghost">Sign Up</a>
+      <!-- why: lowercase absolute paths prevent 404s on case-sensitive hosts -->
+      <a href="/gallery.html" class="ghost">Gallery</a>
+      <a href="/profile.html" class="ghost">Account</a>
+      <a href="/signin.html" class="ghost">Sign In</a>
+      <a href="/signup.html" class="ghost">Sign Up</a>
 
       <span id="authStatus" class="muted">Not signed in</span>
       <button id="btnLogout" class="ghost" style="display:none">Sign out</button>
@@ -194,7 +196,7 @@
       ctx.beginPath();
       ctx.moveTo(bx+r, by); ctx.lineTo(bx+bw-r, by); ctx.quadraticCurveTo(bx+bw, by, bx+bw, by+r);
       ctx.lineTo(bx+bw, by+bh-r); ctx.quadraticCurveTo(bx+bw, by+bh, bx+bw-r, by+bh);
-      ctx.lineTo(bx+r, by+bh); ctx.quadraticCurveTo(bx, by+bh, bx, by+bh-r);
+      ctx.lineTo(bx+r, by+bh); ctx.quadraticCurveTo(bx, by+bh, bx+r, by+bh);
       ctx.lineTo(bx, by+r); ctx.quadraticCurveTo(bx, by, bx+r, by); ctx.closePath(); ctx.fill();
       ctx.fillStyle = "#111827"; ctx.fillText(text, x, y); ctx.restore();
     }
