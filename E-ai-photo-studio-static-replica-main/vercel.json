@@ -1,0 +1,29 @@
+// /vercel.json  (full file — safe to use as-is if you had no custom config)
+{
+  "version": 2,
+  "cleanUrls": true,
+  "trailingSlash": false,
+
+  "redirects": [
+    { "source": "/Gallery.html", "destination": "/gallery.html", "permanent": false },
+    { "source": "/Profile.html", "destination": "/profile.html", "permanent": false },
+    { "source": "/Signin.html",  "destination": "/signin.html",  "permanent": false },
+    { "source": "/Signup.html",  "destination": "/signin.html",  "permanent": false }
+  ],
+
+  "functions": {
+    "api/auth/verify.js":   { "runtime": "edge" },
+    "api/billing/create.js":{ "memory": 256, "maxDuration": 10 },
+    "api/billing/portal.js":{ "memory": 256, "maxDuration": 10 },
+    "api/stripe/webhook.js":{ "memory": 256, "maxDuration": 10 }
+  }
+
+  /* If you already have rewrites/headers, merge them like this:
+  ,"rewrites": [
+    { "source": "/old-path", "destination": "/index.html" }
+  ],
+  "headers": [
+    { "source": "/(.*)", "headers": [ { "key": "X-Frame-Options", "value": "DENY" } ] }
+  ]
+  */
+}
