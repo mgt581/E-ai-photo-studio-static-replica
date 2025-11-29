@@ -1,281 +1,764 @@
-<!-- /public/index.html  (GIS, no Firebase) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>AI Photo Studio</title>
-  <meta name="theme-color" content="#4f46e5">
-  <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-  <link rel="icon" type="image/png" href="/apple-touch-icon.png">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@latest/dist/background-removal.min.js"></script>
+  <meta charset="UTF-8" />
+  <title>AI Photo Studio – Create Stunning AI Photos Instantly</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="AI Photo Studio lets you transform your photos with powerful AI tools: background removal, filters, HD exports and more. Try the £1 Day Pass or unlock full access with a monthly or yearly plan." />
+  <meta name="theme-color" content="#050816" />
+
+  <!-- PWA + Icons -->
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/logo-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/logo-512.png" />
+
+  <!-- Basic styling (no external frameworks) -->
   <style>
-    :root{--grad:linear-gradient(90deg,#6366f1,#8b5cf6)}
-    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#f9fafb;color:#111827}
-    header{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;padding:16px 24px;border-bottom:1px solid #e5e7eb;background:#fff}
-    .brand{display:flex;align-items:center;gap:10px}
-    .brand-img{width:28px;height:28px;border-radius:6px}
-    .brand-text{font-size:20px;font-weight:800}
-    .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-    .pill{background:var(--grad);color:#fff;border:0;padding:8px 16px;border-radius:9999px;cursor:pointer;font-size:14px;font-weight:700}
-    .ghost{background:#eef2ff;color:#4338ca;border:0;padding:8px 12px;border-radius:10px;font-weight:700;text-decoration:none;display:inline-block;cursor:pointer}
-    .muted{color:#6b7280;font-size:13px}
-    .wrap{max-width:900px;margin:0 auto;padding:24px;display:grid;gap:16px}
-    .card{background:#fff;padding:20px;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.05)}
-    .btn{height:44px;padding:0 16px;border-radius:10px;border:0;cursor:pointer;font-size:15px;font-weight:700;background:#e5e7eb;color:#111827}
-    .btn.primary{background:var(--grad);color:#fff}
-    .btn.warn{background:#fee2e2;color:#991b1b}
-    .btn:disabled{opacity:.65;cursor:not-allowed}
-    .status{text-align:center;color:#6b7280;font-size:14px}
-    .stage{border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;position:relative}
-    canvas#stage{width:100%;height:auto;display:block;background:#f3f4f6}
-    canvas#mask{position:absolute;left:0;top:0;width:100%;height:100%;display:none;cursor:crosshair}
-    .actions{display:grid;gap:12px}
-    .hint{font-size:13px;color:#6b7280;text-align:center}
-    .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;background:#111827;color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.25);z-index:9999}
-    .toolbar{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
-    .badge{background:#eef2ff;color:#4338ca;border-radius:9999px;padding:6px 10px;font-weight:700;font-size:12px}
-  </style>
-  <script type="module" src="/auth.js"></script>
-  <script type="module" src="/db.js"></script>
-</head>
-<body>
-  <header>
-    <div class="brand">
-      <img src="/apple-touch-icon.png" alt="AI Photo Studio" width="28" height="28" class="brand-img" onerror="this.remove()">
-      <span class="brand-text">AI Photo Studio</span>
-    </div>
-
-    <div class="row">
-      <a href="/gallery.html" class="ghost">Gallery</a>
-      <a href="/profile.html" class="ghost">Account</a>
-      <a href="/signin.html" class="ghost" id="lnkSignin">Sign In</a>
-      <button id="btnLogout" class="ghost" style="display:none">Sign out</button>
-      <span id="authStatus" class="muted">Not signed in</span>
-    </div>
-
-    <span id="trialLeft" class="badge" style="display:none"></span>
-    <button class="pill" id="btnTrial">Start 7-day Free Trial</button>
-    <button class="pill" id="btnBuy">Upgrade to Pro</button>
-  </header>
-    
-  <div class="wrap" ondragover="event.preventDefault()" ondrop="Studio.handleDrop(event)">
-    <div class="card">
-      <p class="status" id="status">Upload a photo to begin.</p>
-      <div class="actions">
-        <div class="toolbar">
-          <button class="btn primary" onclick="document.getElementById('mainInput').click()">Choose Photo</button>
-          <input id="mainInput" type="file" accept="image/*" style="display:none" />
-          <input id="bgInput" type="file" accept="image/*" style="display:none" />
-          <button id="btnRemove" class="btn" disabled>Remove Background</button>
-          <button id="btnChange" class="btn" disabled>Change Background</button>
-          <button class="btn" id="btnPickBg">Choose Background</button>
-
-          <button id="btnBrush" class="btn" disabled>Remove Person (Brush)</button>
-          <button id="btnApply" class="btn warn" style="display:none">Apply Removal</button>
-          <button id="btnCancel" class="btn" style="display:none">Cancel</button>
-        </div>
-        <p class="hint">Drag & drop also works!</p>
-      </div>
-    </div>
-
-    <div class="stage card" id="stageWrap">
-      <canvas id="stage" width="960" height="600"></canvas>
-      <canvas id="mask" width="960" height="600"></canvas>
-    </div>
-
-    <div class="card actions">
-      <div class="toolbar">
-        <button class="btn" id="btnPrev">Download (Preview)</button>
-        <button id="btnHDpng" class="btn primary" style="display:none">Download HD (PNG)</button>
-        <button id="btnHDjpg" class="btn primary" style="display:none">Download HD (JPEG)</button>
-      </div>
-      <p class="hint">When signed in, your downloads save to your local gallery (this device).</p>
-    </div>
-  </div>
-
-  <script type="module">
-    import { initAuth, onAuthChange, getUser, getServerPlan, signOut, startCheckout } from '/auth.js';
-    import { saveImage } from '/db.js';
-
-    const elStatus   = document.getElementById('authStatus');
-    const btnLogout  = document.getElementById('btnLogout');
-    const elTrial    = document.getElementById('trialLeft');
-    const btnTrial   = document.getElementById('btnTrial');
-    const btnBuy     = document.getElementById('btnBuy');
-
-    const $status = document.getElementById('status');
-    const stage   = document.getElementById('stage');
-    const ctx     = stage.getContext('2d', { willReadFrequently: true });
-    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-
-    const maskCanvas = document.getElementById('mask');
-    const mctx       = maskCanvas.getContext('2d');
-    let brushing = false, brushDown = false, brushSize = 24;
-
-    const hdBtnPng  = document.getElementById('btnHDpng');
-    const hdBtnJpg  = document.getElementById('btnHDjpg');
-    const prevBtn   = document.getElementById('btnPrev');
-    const btnRemove = document.getElementById('btnRemove');
-    const btnChange = document.getElementById('btnChange');
-    const btnBrush  = document.getElementById('btnBrush');
-    const btnApply  = document.getElementById('btnApply');
-    const btnCancel = document.getElementById('btnCancel');
-    const mainInput = document.getElementById('mainInput');
-    const bgInput   = document.getElementById('bgInput');
-    const btnPickBg = document.getElementById('btnPickBg');
-
-    function toast(msg){ const el=document.createElement('div'); el.className='toast'; el.textContent=msg; document.body.appendChild(el); setTimeout(()=>el.remove(),2200); }
-    function setStatus(t){ $status.textContent = t; }
-    function drawChecker(){ const s=20; for(let y=0;y<stage.height;y+=s){ for(let x=0;x<stage.width;x+=s){ ctx.fillStyle=((x/s+y/s)%2===0)?'#e5e7eb':'#fff'; ctx.fillRect(x,y,s,s); } } }
-
-    const planKey = (sub)=>`aips.plan.${sub||'anon'}`;
-    function getPlan(sub){ try{ const raw=localStorage.getItem(planKey(sub)); return raw? JSON.parse(raw):{}; }catch{ return {}; } }
-    function setPlan(sub, data){ localStorage.setItem(planKey(sub), JSON.stringify(data||{})); refreshHDVisibility(); }
-
-    function canHDNow(){
-      const user = getUser();
-      const server = getServerPlan();
-      const local = getPlan(user?.sub);
-      const trialActive = local.trialEnds && local.trialEnds > Date.now();
-      return !!server.pro || trialActive;
+    :root {
+      --bg: #050816;
+      --bg-alt: #0b1020;
+      --card: #10152a;
+      --accent: #4f46e5;
+      --accent-soft: rgba(79, 70, 229, 0.15);
+      --text: #f9fafb;
+      --muted: #9ca3af;
+      --danger: #ef4444;
+      --radius-lg: 1.25rem;
+      --radius-full: 999px;
+      --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.45);
+      --shadow-card: 0 12px 30px rgba(15, 23, 42, 0.7);
     }
-    function refreshHDVisibility(){
-      const ok = canHDNow();
-      hdBtnPng.style.display = ok ? 'inline-block' : 'none';
-      hdBtnJpg.style.display = ok ? 'inline-block' : 'none';
-      elTrial.style.display  = ok && !getServerPlan().pro ? 'inline-block' : (getServerPlan().pro ? 'inline-block' : 'none');
-      if (getServerPlan().pro) elTrial.textContent = 'Pro active';
-      if (!getServerPlan().pro && ok){
-        const user = getUser(); const p=getPlan(user?.sub); const days=Math.max(1,Math.ceil((p.trialEnds-Date.now())/86400000));
-        elTrial.textContent = `${days} day${days===1?'':'s'} left`;
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      background: radial-gradient(circle at top, #111827, #020617 60%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .page {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 3rem;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .brand-logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 1rem;
+      background: radial-gradient(circle at 30% 20%, #a855f7, #0ea5e9 40%, #4f46e5 80%);
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.1rem;
+      letter-spacing: 0.04em;
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+
+    .brand-text h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+
+    .brand-text span {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    nav {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .nav-link {
+      font-size: 0.85rem;
+      padding: 0.45rem 0.9rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      color: var(--muted);
+      transition: 0.18s ease all;
+    }
+
+    .nav-link:hover {
+      color: var(--text);
+      border-color: rgba(209, 213, 219, 0.7);
+      transform: translateY(-1px);
+    }
+
+    .nav-link.primary {
+      background: linear-gradient(135deg, #4f46e5, #06b6d4);
+      color: #f9fafb;
+      border-color: transparent;
+      font-weight: 600;
+      box-shadow: 0 10px 26px rgba(37, 99, 235, 0.6);
+    }
+
+    .nav-link.primary:hover {
+      filter: brightness(1.05);
+      transform: translateY(-1px) scale(1.01);
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.1fr);
+      gap: 2rem;
+      align-items: center;
+    }
+
+    @media (max-width: 840px) {
+      main {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      nav {
+        justify-content: flex-start;
       }
     }
 
-    btnTrial.onclick = () => {
-      const user = getUser(); if (!user) return alert('Sign in first.');
-      const cur = getPlan(user.sub);
-      if (cur.trialEnds && cur.trialEnds > Date.now()) return alert('Trial already active.');
-      setPlan(user.sub, { ...cur, trialEnds: Date.now()+7*864e5 });
-      toast('✅ 7-day free trial started');
-    };
-    btnBuy.onclick = async () => {
-      try { await startCheckout(); } catch(e){ alert(e.message || 'Checkout not configured'); }
-    };
-
-    const readFileURL = (f)=>new Promise((res,rej)=>{ if(!f) return res(null); const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f); });
-    const loadImage = (src)=>new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=src; });
-
-    let mainSrc = null, cutoutURL = null, bgSrc = null, busy = false, proEnabled = false;
-    function stampWatermark(){ if (proEnabled) return; const text = "AI Photo Studio — FREE"; ctx.save(); ctx.font="bold 34px ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial"; const w=ctx.measureText(text).width; const x=(stage.width-w)/2; const y=stage.height/2+12; const pad=14,r=10,bx=x-pad,by=y-34,bw=w+pad*2,bh=44; ctx.fillStyle="rgba(255,255,255,0.88)"; ctx.beginPath(); ctx.moveTo(bx+r,by); ctx.lineTo(bx+bw-r,by); ctx.quadraticCurveTo(bx+bw,by,bx+bw,by+r); ctx.lineTo(bx+bw,by+bh-r); ctx.quadraticCurveTo(bx+bw,by+bh,bx+bw-r,by+bh); ctx.lineTo(bx+r,by+bh); ctx.quadraticCurveTo(bx,by+bh,bx,by+bh-r); ctx.lineTo(bx,by+r); ctx.quadraticCurveTo(bx,by,bx+r,by); ctx.closePath(); ctx.fill(); ctx.fillStyle="#111827"; ctx.fillText(text,x,y); ctx.restore(); }
-    function setBusy(b){ busy=b; btnRemove.disabled=b||!mainSrc; btnChange.disabled=b||!cutoutURL; btnBrush.disabled=b||(!mainSrc && !cutoutURL); }
-    function updateButtons(){ btnRemove.disabled = busy || !mainSrc; btnChange.disabled = busy || !cutoutURL; btnBrush.disabled  = busy || (!mainSrc && !cutoutURL); }
-
-    async function downscaleToMax(dataUrl, maxSide = 1400){
-      const img = await loadImage(dataUrl); const max = Math.max(img.width, img.height);
-      if (max <= maxSide) return img;
-      const ratio = maxSide / max, w = Math.round(img.width * ratio), h = Math.round(img.height * ratio);
-      const c = document.createElement('canvas'); c.width=w; c.height=h; const cx=c.getContext('2d'); cx.imageSmoothingEnabled=true; cx.imageSmoothingQuality='high'; cx.drawImage(img,0,0,w,h);
-      const out = new Image(); out.src=c.toDataURL('image/png',0.92); await (out.decode ? out.decode() : new Promise(r=> out.onload=r)); return out;
-    }
-    async function draw({img, bg=null}){
-      ctx.clearRect(0,0,stage.width,stage.height);
-      if (bg){ const b=await loadImage(bg); const s=Math.max(stage.width/b.width, stage.height/b.height); const bw=b.width*s, bh=b.height*s; ctx.drawImage(b,(stage.width-bw)/2,(stage.height-bh)/2,bw,bh); }
-      else drawChecker();
-      const im=await loadImage(img); const sc=Math.min(stage.width/im.width, stage.height/im.height); const w=im.width*sc, h=im.height*sc;
-      ctx.drawImage(im,(stage.width-w)/2,(stage.height-h)/2,w,h); stampWatermark();
-    }
-    async function ensureSelfieSegmentation(){
-      if (window.SelfieSegmentation) return;
-      await new Promise((resolve,reject)=>{ const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1/selfie_segmentation.js'; s.onload=resolve; s.onerror=()=>reject(new Error('mediapipe-load-failed')); document.head.appendChild(s); });
-    }
-    async function maskWithSelfie(img){
-      await ensureSelfieSegmentation();
-      const ss = new SelfieSegmentation({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${f}` });
-      ss.setOptions({ modelSelection: 1 });
-      const mc = document.createElement('canvas'); mc.width = img.width; mc.height = img.height;
-      await new Promise((resolve)=>{ ss.onResults((r)=>{ const m = mc.getContext('2d'); m.drawImage(r.segmentationMask,0,0,img.width,img.height); resolve(); }); ss.send({ image: img }); });
-      return mc;
-    }
-    async function removeBg(){
-      if(!mainSrc) return alert("Upload a photo first.");
-      setBusy(true);
-      try{
-        setStatus("Removing background… (on your device)");
-        const safeImg = await downscaleToMax(mainSrc, 1400);
-        let blob;
-        try { blob = await removeBackground(safeImg, { model:"u2net", output:"image/png" }); }
-        catch { const maskC = await maskWithSelfie(safeImg); const out = document.createElement('canvas'); out.width  = safeImg.width; out.height = safeImg.height; const ox = out.getContext('2d'); ox.drawImage(safeImg,0,0); ox.globalCompositeOperation='destination-in'; ox.drawImage(maskC,0,0); blob = await new Promise(r => out.toBlob(r,'image/png',0.95)); }
-        if (cutoutURL) URL.revokeObjectURL(cutoutURL);
-        cutoutURL = URL.createObjectURL(blob);
-        await draw({img: cutoutURL, bg: bgSrc});
-        setStatus("Background removed. Choose a background, then press Change Background.");
-      }catch(e){ console.error(e); alert("Remove BG failed. Try a smaller image."); setStatus("Remove BG failed."); }
-      finally{ setBusy(false); updateButtons(); }
-    }
-    async function changeBg(){
-      if(!cutoutURL) return alert("Remove background first.");
-      if(!bgSrc) { bgInput.click(); return; }
-      setBusy(true);
-      try{ await draw({img: cutoutURL, bg: bgSrc}); setStatus("Background changed. You can download now."); }
-      finally{ setBusy(false); updateButtons(); }
-    }
-    async function download(type="png", hd=false){
-      if (hd && !canHDNow()) return alert("HD requires active Trial or Pro.");
-      const mime = type==="jpeg" ? "image/jpeg" : "image/png";
-      stage.toBlob(async (b)=>{
-        if(!b) return;
-        const filename = `photo-studio.${type==="jpeg"?"jpg":"png"}`;
-        const url = URL.createObjectURL(b);
-        const a   = document.createElement('a'); a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url);
-        const user = getUser(); if (user) { try { await saveImage({ sub: user.sub, blob: b, mime }); toast('Saved to your local gallery'); } catch(e){ console.warn('Gallery save failed', e); } }
-      }, mime, .95);
+    .hero {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
     }
 
-    function startBrush(){
-      if (!mainSrc && !cutoutURL){ alert("Load an image first."); return; }
-      brushing = true; maskCanvas.style.display = 'block'; btnApply.style.display = btnCancel.style.display = 'inline-block';
-      mctx.clearRect(0,0,maskCanvas.width,maskCanvas.height); mctx.lineCap='round'; mctx.lineJoin='round'; mctx.strokeStyle='rgba(255,0,0,0.95)'; mctx.lineWidth=brushSize;
-      setStatus("Paint over the person, then Apply.");
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.3rem 0.7rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      font-size: 0.75rem;
+      color: var(--muted);
     }
-    function cancelBrush(){ brushing=false; brushDown=false; maskCanvas.style.display='none'; btnApply.style.display=btnCancel.style.display='none'; mctx.clearRect(0,0,maskCanvas.width,maskCanvas.height); setStatus("Brush canceled."); }
 
-    function getPos(e){ const r = maskCanvas.getBoundingClientRect(); const x = ((e.touches? e.touches[0].clientX : e.clientX) - r.left) * (maskCanvas.width / r.width); const y = ((e.touches? e.touches[0].clientY : e.clientY) - r.top) * (maskCanvas.height / r.height); return {x,y}; }
-    maskCanvas.addEventListener('mousedown', (e)=>{ if(!brushing) return; brushDown = true; const p=getPos(e); mctx.beginPath(); mctx.moveTo(p.x,p.y); });
-    maskCanvas.addEventListener('mousemove', (e)=>{ if(!brushing||!brushDown) return; const p=getPos(e); mctx.lineTo(p.x,p.y); mctx.stroke(); });
-    window.addEventListener('mouseup', ()=> brushDown=false);
-    maskCanvas.addEventListener('touchstart', (e)=>{ if(!brushing) return; brushDown = true; const p=getPos(e); mctx.beginPath(); mctx.moveTo(p.x,p.y); e.preventDefault(); });
-    maskCanvas.addEventListener('touchmove', (e)=>{ if(!brushing||!brushDown) return; const p=getPos(e); mctx.lineTo(p.x,p.y); mctx.stroke(); e.preventDefault(); });
-    window.addEventListener('touchend', ()=> brushDown=false);
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.3);
+    }
 
-    mainInput.addEventListener('change', async (e)=>{ const f=e.target.files[0]; if(!f) return; const reader = new FileReader(); reader.onload=async ()=>{ mainSrc = reader.result; if (cutoutURL) { URL.revokeObjectURL(cutoutURL); cutoutURL=null; } await draw({img: mainSrc}); setStatus("Photo loaded — tap Remove Background or Remove Person."); updateButtons(); btnBrush.disabled=false; }; reader.readAsDataURL(f); e.target.value=''; });
-    bgInput.addEventListener('change', async (e)=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=async ()=>{ bgSrc = r.result; if (cutoutURL){ await draw({img: cutoutURL, bg: bgSrc}); setStatus("Background selected."); } }; r.readAsDataURL(f); e.target.value=''; });
-    btnPickBg.onclick = ()=> bgInput.click();
-    btnRemove.onclick = removeBg;
-    btnChange.onclick = changeBg;
-    btnBrush.onclick  = startBrush;
-    btnApply.onclick  = ()=> alert('HD inpaint demo removed (no OpenCV/GPU here). Use standard background removal.');
-    btnCancel.onclick = cancelBrush;
-    prevBtn.onclick   = ()=> download("png", false);
-    hdBtnPng.onclick  = ()=> download("png", true);
-    hdBtnJpg.onclick  = ()=> download("jpeg", true);
+    .hero h2 {
+      font-size: clamp(2rem, 3vw, 2.6rem);
+      line-height: 1.15;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
 
-    await initAuth();
-    onAuthChange((user)=>{
-      elStatus.textContent = user ? `Signed in as ${user.email || user.name || user.sub}` : 'Not signed in';
-      document.getElementById('lnkSignin').style.display = user ? 'none' : 'inline-block';
-      btnLogout.style.display = user ? 'inline-block' : 'none';
-      refreshHDVisibility();
-    });
-    btnLogout.onclick = () => signOut();
+    .hero span.highlight {
+      background: linear-gradient(135deg, #a855f7, #22d3ee);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
 
-    drawChecker();
+    .hero p {
+      color: var(--muted);
+      font-size: 0.98rem;
+      line-height: 1.6;
+    }
 
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(() => {}); });
+    .hero-list {
+      margin-top: 0.5rem;
+      display: grid;
+      gap: 0.4rem;
+      font-size: 0.9rem;
+      color: #e5e7eb;
+    }
+
+    .hero-list span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .hero-list span::before {
+      content: "✔";
+      font-size: 0.8rem;
+      color: #22c55e;
+    }
+
+    .cta-row {
+      margin-top: 1.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      padding: 0.8rem 1.35rem;
+      border-radius: var(--radius-full);
+      border: 1px solid transparent;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.18s ease all;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #4f46e5, #06b6d4);
+      color: #f9fafb;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.05);
+      transform: translateY(-1px) scale(1.01);
+    }
+
+    .btn-ghost {
+      background: rgba(15, 23, 42, 0.7);
+      border-color: rgba(148, 163, 184, 0.45);
+      color: var(--muted);
+    }
+
+    .btn-ghost:hover {
+      border-color: rgba(209, 213, 219, 0.8);
+      color: #e5e7eb;
+      transform: translateY(-1px);
+    }
+
+    .cta-note {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .cta-note strong {
+      color: #e5e7eb;
+      font-weight: 500;
+    }
+
+    /* Pricing section */
+    .pricing-card {
+      background: radial-gradient(circle at top, #1f2937, #020617 70%);
+      border-radius: var(--radius-lg);
+      padding: 1.2rem 1.25rem 1.4rem;
+      box-shadow: var(--shadow-card);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pricing-card::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background:
+        radial-gradient(circle at 0% 0%, rgba(56, 189, 248, 0.25), transparent 55%),
+        radial-gradient(circle at 100% 0%, rgba(168, 85, 247, 0.25), transparent 55%);
+      opacity: 0.8;
+      pointer-events: none;
+    }
+
+    .pricing-inner {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .pricing-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.85rem;
+    }
+
+    .pricing-header h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .tag-save {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      background: rgba(22, 163, 74, 0.15);
+      border: 1px solid rgba(34, 197, 94, 0.5);
+      color: #bbf7d0;
+    }
+
+    .price-main {
+      font-size: 1.6rem;
+      font-weight: 800;
+    }
+
+    .price-main span {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    .pricedesc {
+      font-size: 0.85rem;
+      color: #e5e7eb;
+      line-height: 1.5;
+    }
+
+    .plans {
+      margin-top: 0.75rem;
+      display: grid;
+      gap: 0.6rem;
+    }
+
+    .plan-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.65rem 0.75rem;
+      border-radius: 0.9rem;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+    }
+
+    .plan-text {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+
+    .plan-text strong {
+      font-size: 0.9rem;
+    }
+
+    .plan-text span {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .btn-plan {
+      padding: 0.45rem 0.9rem;
+      font-size: 0.8rem;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #4f46e5, #06b6d4);
+      border: none;
+      color: #f9fafb;
+      cursor: pointer;
+      white-space: nowrap;
+      font-weight: 600;
+      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.6);
+      transition: 0.18s ease all;
+    }
+
+    .btn-plan:hover {
+      filter: brightness(1.06);
+      transform: translateY(-1px) scale(1.01);
+    }
+
+    .secondary-note {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.6rem;
+    }
+
+    /* Fake preview panel */
+    .preview-card {
+      background: linear-gradient(145deg, #020617, #111827);
+      border-radius: var(--radius-lg);
+      padding: 1rem;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      box-shadow: var(--shadow-card);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .preview-card::before {
+      content: "";
+      position: absolute;
+      inset: -25%;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(56, 189, 248, 0.2), transparent 55%),
+        radial-gradient(circle at 80% 0%, rgba(244, 114, 182, 0.25), transparent 55%);
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .preview-inner {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .preview-chip {
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .preview-main {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 0.6rem;
+    }
+
+    .preview-image {
+      background: radial-gradient(circle at 25% 20%, #f9fafb, #9ca3af 38%, #020617 80%);
+      border-radius: 0.9rem;
+      position: relative;
+      overflow: hidden;
+      min-height: 150px;
+    }
+
+    .preview-image::after {
+      content: "Before  ▸  After";
+      position: absolute;
+      left: 0.85rem;
+      bottom: 0.6rem;
+      font-size: 0.78rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(148, 163, 184, 0.5);
+    }
+
+    .preview-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .slider-row span {
+      white-space: nowrap;
+      width: 70px;
+    }
+
+    .slider {
+      flex: 1;
+      height: 5px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .slider-fill {
+      position: absolute;
+      inset: 0;
+      width: 70%;
+      background: linear-gradient(90deg, #22d3ee, #a855f7);
+    }
+
+    .preview-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 0.4rem;
+    }
+
+    .preview-footer span {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .btn-small {
+      padding: 0.45rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      background: rgba(15, 23, 42, 0.85);
+      font-size: 0.78rem;
+      cursor: pointer;
+      color: #e5e7eb;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      transition: 0.16s ease all;
+    }
+
+    .btn-small:hover {
+      border-color: rgba(209, 213, 219, 0.95);
+      transform: translateY(-1px);
+    }
+
+    footer {
+      margin-top: auto;
+      padding: 0.75rem 1.25rem 1.5rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    footer a {
+      color: #a5b4fc;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="brand">
+        <div class="brand-logo">AI</div>
+        <div class="brand-text">
+          <h1>AI Photo Studio</h1>
+          <span>Instant, pro-grade AI photo editing</span>
+        </div>
+      </div>
+
+      <nav>
+        <a href="/gallery" class="nav-link">Gallery</a>
+        <a href="/profile" class="nav-link">My Account</a>
+        <a href="/signin" class="nav-link">Sign In</a>
+        <a href="/signup" class="nav-link primary">Create Account</a>
+      </nav>
+    </header>
+
+    <main>
+      <!-- LEFT: Hero + CTA -->
+      <section class="hero">
+        <div class="badge">
+          <span class="badge-dot"></span>
+          Live · Hosted on Firebase · Secure payments by Stripe
+        </div>
+
+        <h2>
+          Transform any photo in seconds with<br />
+          <span class="highlight">AI-powered editing that actually looks pro.</span>
+        </h2>
+
+        <p>
+          Remove backgrounds, enhance lighting, sharpen details, add effects and export in HD –
+          all inside your browser. No bloated software. No tech headache. Just upload, tweak, download.
+        </p>
+
+        <div class="hero-list">
+          <span>Unlimited edits while your pass or subscription is active</span>
+          <span>Perfect for social content, side hustles, product photos and client work</span>
+          <span>Runs in the browser on desktop, tablet and mobile</span>
+        </div>
+
+        <div class="cta-row">
+          <a href="https://buy.stripe.com/28E28t1Lx7WKdzDcpX6J200" class="btn btn-primary">
+            Start for £1 – Day Pass
+          </a>
+          <a href="/signin" class="btn btn-ghost">
+            Already a member? Sign in
+          </a>
+        </div>
+
+        <p class="cta-note">
+          <strong>Want ongoing access?</strong>
+          Upgrade to the monthly or yearly plan below once you’ve tried the Day Pass.
+        </p>
+      </section>
+
+      <!-- RIGHT: Pricing + Fake preview -->
+      <section style="display: flex; flex-direction: column; gap: 1rem;">
+        <div class="pricing-card">
+          <div class="pricing-inner">
+            <div class="pricing-header">
+              <div>
+                <h3>Choose your access</h3>
+                <p class="pricedesc">
+                  Simple, transparent pricing. No contracts. Cancel anytime directly from your account.
+                </p>
+              </div>
+              <span class="tag-save">Save with yearly</span>
+            </div>
+
+            <div class="plans">
+              <!-- Day Pass -->
+              <div class="plan-row">
+                <div class="plan-text">
+                  <strong>Day Pass – £1.00</strong>
+                  <span>24 hours of full premium access. Ideal for quick jobs.</span>
+                </div>
+                <a
+                  href="https://buy.stripe.com/28E28t1Lx7WKdzDcpX6J200"
+                  class="btn-plan"
+                >
+                  Get Day Pass
+                </a>
+              </div>
+
+              <!-- Monthly -->
+              <div class="plan-row">
+                <div class="plan-text">
+                  <strong>Monthly – £4.99</strong>
+                  <span>Full access billed monthly. Cancel anytime.</span>
+                </div>
+                <a
+                  href="https://buy.stripe.com/7sY3cxdufgtg3Z361z6J201"
+                  class="btn-plan"
+                >
+                  Go Monthly
+                </a>
+              </div>
+
+              <!-- Yearly -->
+              <div class="plan-row">
+                <div class="plan-text">
+                  <strong>Yearly – £24.99</strong>
+                  <span>12 months of access. Best value for regular use.</span>
+                </div>
+                <a
+                  href="https://buy.stripe.com/7sY4gB3TFgtg0MR75D6J202"
+                  class="btn-plan"
+                >
+                  Best Value Plan
+                </a>
+              </div>
+            </div>
+
+            <p class="secondary-note">
+              All payments are securely processed by Stripe. Your statement may show
+              <strong>AIPS PRO</strong> as the descriptor.
+            </p>
+          </div>
+        </div>
+
+        <!-- Fake screenshot / preview of the app -->
+        <div class="preview-card">
+          <div class="preview-inner">
+            <div class="preview-header">
+              <span class="preview-chip">
+                <span style="width: 8px; height: 8px; border-radius: 999px; background: #22c55e;"></span>
+                Live editor
+              </span>
+              <span>AI Photo Studio · Browser based</span>
+            </div>
+
+            <div class="preview-main">
+              <div class="preview-image"></div>
+
+              <div class="preview-controls">
+                <div class="slider-row">
+                  <span>Enhance</span>
+                  <div class="slider">
+                    <div class="slider-fill" style="width: 82%;"></div>
+                  </div>
+                </div>
+                <div class="slider-row">
+                  <span>Sharpness</span>
+                  <div class="slider">
+                    <div class="slider-fill" style="width: 64%;"></div>
+                  </div>
+                </div>
+                <div class="slider-row">
+                  <span>Background</span>
+                  <div class="slider">
+                    <div class="slider-fill" style="width: 40%;"></div>
+                  </div>
+                </div>
+                <div class="slider-row">
+                  <span>Filters</span>
+                  <div class="slider">
+                    <div class="slider-fill" style="width: 70%;"></div>
+                  </div>
+                </div>
+
+                <div class="preview-footer">
+                  <span>Upload your photo, dial in the look, export in HD.</span>
+                  <button class="btn-small">
+                    Launch editor
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer>
+    &copy; <span id="year"></span> AI Photo Studio · Operated by Bryant Group Holdings ·
+    <a href="mailto:support@bryantgroupholdings.co.uk">support@bryantgroupholdings.co.uk</a>
+  </footer>
+
+  <script>
+    // Set current year in footer
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    // Register service worker if present
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("/sw.js").catch(function (err) {
+          console.warn("Service worker registration failed:", err);
+        });
+      });
     }
   </script>
 </body>
